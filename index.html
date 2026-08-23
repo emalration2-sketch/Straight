@@ -121,11 +121,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .bottom-area{width:100%;height:29vh;min-height:132px;display:flex;gap:5px;flex-shrink:0;}
 .hand-area{flex:1.5;display:flex;flex-direction:column;min-width:0;background:rgba(255,255,255,.03);border-radius:12px;padding:5px;}
 .hand-coins{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:min-content;gap:5px;align-content:center;justify-items:center;overflow-y:auto;padding:2px;}
-.hand-actions{display:flex;gap:8px;justify-content:center;align-items:center;padding:3px 0 1px;flex-wrap:wrap;}
-.btn.exchange-big{font-size:13.5px;font-weight:800;padding:10px 20px;border-radius:14px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
-.btn.exchange-big:active{transform:scale(.95);}
 
-.score-area{flex:1;background:rgba(255,255,255,.04);border-radius:12px;padding:5px;overflow:hidden;display:flex;flex-direction:column;gap:2px;min-width:0;}
+.score-area{flex:1;background:rgba(255,255,255,.04);border-radius:12px;padding:5px;overflow:hidden;display:flex;flex-direction:column;gap:4px;min-width:0;}
+.hand-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
+.hand-actions .btn{width:100%;font-size:11px;padding:6px 4px;border-radius:9px;line-height:1.2;}
+.btn.exchange-big{font-size:11px;font-weight:800;padding:7px 4px;border-radius:9px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
+.btn.exchange-big:active{transform:scale(.95);}
+.score-body{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;overflow:hidden;}
 .score-flow{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;gap:3px;overflow:hidden;min-height:0;}
 .score-total{font-size:11.5px;font-weight:800;flex-shrink:0;color:var(--accent);}
 
@@ -162,6 +164,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .modal-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 2px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;min-width:220px;}
 .settings-track-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:8px 0 2px;}
+.nickname-input{background:var(--panel2);border:1px solid rgba(255,255,255,.2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;width:120px;text-align:right;}
+
+.emoji-picker-panel{position:fixed;z-index:99999;display:flex;gap:4px;background:var(--panel);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:7px;box-shadow:0 12px 32px rgba(0,0,0,.5);pointer-events:auto;}
+.emoji-opt{font-size:21px;line-height:1;background:transparent;border:none;cursor:pointer;padding:4px;border-radius:8px;}
+.emoji-opt:active{transform:scale(.9);background:rgba(255,255,255,.08);}
 
 .win-emoji{font-size:60px;}
 </style>
@@ -175,7 +182,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
       <div class="title-sub">(STRAIGHT!)</div>
       <div class="title-by">by. PixelRooM</div>
     </div>
-    <button class="btn primary big" id="start-btn">게임 시작</button>
+    <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
+      <button class="btn primary big" id="start-btn">게임 시작</button>
+      <button class="icon-btn" id="start-settings-btn" title="설정">⚙️</button>
+    </div>
   </div>
 
   <div class="screen hidden" id="screen-mode">
@@ -269,13 +279,16 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
       <div class="bottom-area">
         <div class="hand-area">
           <div class="hand-coins" id="hand-coins"></div>
+        </div>
+        <div class="score-area" id="score-area">
           <div class="hand-actions">
-            <button class="btn exchange-big" id="exchange-btn">🃏 2장 뽑고 턴 종료</button>
+            <button class="btn exchange-big" id="exchange-btn">🃏 2장 뽑고<br>턴 종료</button>
             <button class="btn" id="sort-hand-btn">↕ 정렬</button>
+            <button class="btn" id="emoji-btn" title="이모지 보내기">😀</button>
             <button class="btn hidden" id="cancel-action-btn">✖ 취소</button>
           </div>
+          <div class="score-body" id="score-body"></div>
         </div>
-        <div class="score-area" id="score-area"></div>
       </div>
       <div class="log-panel" id="log-panel"></div>
     </div>
@@ -416,10 +429,10 @@ var BGM_TRACKS = [
     bass:   [110,110,87,87, 87,87,110,110, 110,110,98,98, 87,87,82,82]
   },
   {
-    name: "레트로",
-    stepMs: 190, melodyType: "square", bassType: "triangle",
-    melody: [659,784,880,784, 659,587,659,784, 880,988,880,784, 659,587,523,587],
-    bass:   [165,165,196,196, 165,165,147,147, 220,220,196,196, 165,165,131,131]
+    name: "평온",
+    stepMs: 460, melodyType: "sine", bassType: "sine",
+    melody: [392,440,494,440, 392,349,330,349, 392,440,494,523, 494,440,392,349],
+    bass:   [98,98,110,110, 98,98,87,87, 98,98,110,110, 123,123,98,98]
   }
 ];
 var bgmTrackIndex = 0;
@@ -566,12 +579,16 @@ var state = {
   winnerIndex: null,
   winnerStraight: null,
   ceremonyShown: false,
+  ceremonyPlaying: false,
+  isDraw: false,
   turnSeq: 0
 };
 
 var chosenCharacter = null;
 var chosenCount = null;
 var urlRoomCode = (new URLSearchParams(location.search)).get("room");
+var chosenNickname = null;
+try{ chosenNickname = localStorage.getItem("straightNickname") || null; }catch(e){}
 
 /* ---------------- multiplayer (Firebase) ---------------- */
 
@@ -611,6 +628,7 @@ function pushRoomState(){
     gameOver: state.gameOver,
     winnerIndex: state.winnerIndex,
     winnerStraight: state.winnerStraight,
+    isDraw: state.isDraw,
     log: state.log,
     phase: "playing",
     updatedAt: Date.now()
@@ -635,6 +653,7 @@ function subscribeRoom(code){
 }
 
 function applyRemoteRoomState(data){
+  if(state.ceremonyPlaying) return;
   var wasOver = state.gameOver;
   state.players = data.players || [];
   state.floor = data.floor || [];
@@ -646,6 +665,7 @@ function applyRemoteRoomState(data){
   state.gameOver = !!data.gameOver;
   state.winnerIndex = data.winnerIndex;
   state.winnerStraight = data.winnerStraight;
+  state.isDraw = !!data.isDraw;
   state.log = data.log || [];
   var idx = -1;
   for(var i=0;i<state.players.length;i++){ if(state.players[i].clientId===myClientId){ idx=i; break; } }
@@ -658,11 +678,15 @@ function applyRemoteRoomState(data){
 
   if(state.gameOver && !wasOver && !state.ceremonyShown){
     state.ceremonyShown = true;
-    var winner = state.players[state.winnerIndex];
-    if(winner && state.winnerStraight){
-      playWinCeremony(state.winnerIndex, state.winnerStraight, function(){
-        showWinScreen(winner, state.winnerStraight);
-      });
+    if(state.isDraw){
+      setTimeout(showDrawScreen, 800);
+    } else {
+      var winner = state.players[state.winnerIndex];
+      if(winner && state.winnerStraight){
+        playWinCeremony(state.winnerIndex, state.winnerStraight, function(){
+          showWinScreen(winner, state.winnerStraight);
+        });
+      }
     }
   }
 
@@ -688,7 +712,7 @@ function maybeDriveAi(idx, delay){
 function createRoom(maxPlayers, cb){
   ensureFirebase().then(function(){
     var code = genRoomCode();
-    var me = { clientId: myClientId, name:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
+    var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
     var roomData = {
       code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
@@ -721,7 +745,7 @@ function joinRoom(code, cb){
         return;
       }
       if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
-      var me = { clientId: myClientId, name:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
+      var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
       var newPlayers = data.players.concat([me]);
       fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
         state.mpRoomCode = code;
@@ -745,14 +769,59 @@ function pickAvatar(ch, cb){
       for(var i=0;i<players.length;i++){ if(players[i].clientId===myClientId){ mine=i; break; } }
       if(mine===-1) throw new Error("참가 정보를 찾을 수 없습니다.");
       if(players[mine].avatarPicked) return;
-      var taken = players.some(function(p,i){ return i!==mine && p.avatarPicked && p.name===ch.name; });
+      var taken = players.some(function(p,i){ return i!==mine && p.avatarPicked && p.characterName===ch.name; });
       if(taken) throw new Error("이미 다른 플레이어가 선택한 캐릭터입니다.");
       var updated = {}; for(var k in players[mine]) updated[k]=players[mine][k];
-      updated.name = ch.name; updated.avatar = avatarIconHTML(ch); updated.avatarPicked = true;
+      updated.name = chosenNickname || ch.name; updated.characterName = ch.name; updated.avatar = avatarIconHTML(ch); updated.avatarPicked = true;
       players[mine] = updated;
       tx.update(ref, { players: players, updatedAt: Date.now() });
     });
   }).then(function(){ cb(null); }).catch(function(e){ cb(e && e.message ? e.message : String(e)); });
+}
+
+function applyNickname(raw){
+  var nick = (raw||"").trim().slice(0,12);
+  chosenNickname = nick || null;
+  try{ localStorage.setItem("straightNickname", chosenNickname||""); }catch(e){}
+  updateMyDisplayName();
+}
+
+function updateMyDisplayName(){
+  if(!state.players || !state.players.length) return;
+  var idx;
+  if(isMultiplayer()){
+    idx = -1;
+    for(var i=0;i<state.players.length;i++){ if(state.players[i].clientId===myClientId){ idx=i; break; } }
+    if(idx===-1) return;
+  } else {
+    idx = 0;
+  }
+  var me = state.players[idx];
+  if(!me || !me.characterName) return;
+  var display = chosenNickname || me.characterName;
+  if(!isMultiplayer()) display += " (나)";
+  if(me.name===display) return;
+  me.name = display;
+  render();
+  if(isMultiplayer() && state.mpRoomCode && fbDb && fbRunTransaction){
+    var ref = fbDoc(fbDb,"rooms",state.mpRoomCode);
+    fbRunTransaction(fbDb, function(tx){
+      return tx.get(ref).then(function(snap){
+        if(!snap.exists()) return;
+        var data = snap.data();
+        var players = (data.players||[]).slice();
+        for(var i=0;i<players.length;i++){
+          if(players[i].clientId===myClientId){
+            var updated = {}; for(var k in players[i]) updated[k]=players[i][k];
+            updated.name = display;
+            players[i] = updated;
+            tx.update(ref, { players: players, updatedAt: Date.now() });
+            return;
+          }
+        }
+      });
+    }).catch(function(e){ console.error("닉네임 동기화 실패", e); });
+  }
 }
 
 function startOnlineGame(){
@@ -761,12 +830,12 @@ function startOnlineGame(){
   var lobbyPlayers = state.players.slice();
   var maxPlayers = state.mpMaxPlayers;
   var usedNames = {};
-  lobbyPlayers.forEach(function(p){ usedNames[p.name]=true; });
+  lobbyPlayers.forEach(function(p){ usedNames[p.characterName||p.name]=true; });
   while(lobbyPlayers.length < maxPlayers){
     var ch;
     do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(usedNames[ch.name]);
     usedNames[ch.name]=true;
-    lobbyPlayers.push({ clientId:null, name:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
+    lobbyPlayers.push({ clientId:null, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
   }
 
   var colors = colorsForCount(lobbyPlayers.length);
@@ -787,6 +856,8 @@ function startOnlineGame(){
   state.currentTurnPos = 0;
   state.gameOver = false;
   state.ceremonyShown = false;
+  state.ceremonyPlaying = false;
+  state.isDraw = false;
   state.turnSeq = 0;
   aiDriveGuard = {};
   state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
@@ -975,13 +1046,13 @@ function renderLobby(data){
   for(var i=0;i<data.players.length;i++){ if(data.players[i].clientId===myClientId){ me=data.players[i]; break; } }
   var myPicked = !!(me && me.avatarPicked);
   var takenNames = {};
-  data.players.forEach(function(p){ if(p.avatarPicked && p.clientId!==myClientId) takenNames[p.name]=true; });
+  data.players.forEach(function(p){ if(p.avatarPicked && p.clientId!==myClientId) takenNames[p.characterName]=true; });
 
   var grid = $("lobby-avatar-grid");
   grid.innerHTML = "";
   CHARACTERS.forEach(function(ch){
     var taken = !!takenNames[ch.name];
-    var mine = myPicked && me.name===ch.name;
+    var mine = myPicked && me.characterName===ch.name;
     var b = el("button","avatar-btn"+(mine?" selected":""));
     b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+(taken?" (선택됨)":"")+"</span>";
     if(taken || myPicked){
@@ -1016,13 +1087,13 @@ function runOrderCutscene(){
   $("order-start-btn").classList.add("hidden");
 
   var players = [];
-  players.push({ idx:0, name:chosenCharacter.name+" (나)", avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] });
+  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] });
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
     do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(used[ch.name]);
     used[ch.name]=true;
-    players.push({ idx:i, name:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
+    players.push({ idx:i, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
   }
 
   var draws = players.map(function(){ return 1+Math.floor(Math.random()*10); });
@@ -1072,6 +1143,8 @@ function startGame(players, order){
   state.myIndex = 0;
   state.mpRoomCode = null;
   state.ceremonyShown = false;
+  state.ceremonyPlaying = false;
+  state.isDraw = false;
   state.turnSeq = 0;
   aiDriveGuard = {};
   clearSelectionState();
@@ -1171,6 +1244,27 @@ function startTurnTimer(){
 }
 
 /* ---------------- win check ---------------- */
+function declareDraw(){
+  state.gameOver = true;
+  state.isDraw = true;
+  state.winnerIndex = null;
+  state.winnerStraight = null;
+  state.ceremonyShown = true;
+  clearTurnTimer();
+  pushLog("🤝 중앙 덱이 모두 소진되어 무승부로 게임이 종료되었습니다.");
+  render();
+  pushRoomState();
+  setTimeout(showDrawScreen, 1000);
+}
+
+function showDrawScreen(){
+  var emojiEl = document.querySelector(".win-emoji");
+  if(emojiEl) emojiEl.textContent = "🤝";
+  $("win-title").innerHTML = "무승부";
+  $("win-reason").textContent = "중앙 덱이 모두 소진되어 승부를 가리지 못했습니다.";
+  switchScreen("win");
+}
+
 function checkWin(playerIdx){
   var player = state.players[playerIdx];
   var straight = findStraight(player.score, state.colors);
@@ -1191,6 +1285,7 @@ function checkWin(playerIdx){
 }
 
 function playWinCeremony(playerIdx, straight, cb){
+  state.ceremonyPlaying = true;
   sfxWin();
   var player = state.players[playerIdx];
   var realCards = player.score.filter(function(c){
@@ -1199,7 +1294,7 @@ function playWinCeremony(playerIdx, straight, cb){
   var missing = 5 - realCards.length;
   var jokersUsed = player.score.filter(function(c){ return c.isJoker; }).slice(0, missing);
   var targets = realCards.concat(jokersUsed);
-  var containerSel = playerIdx===state.myIndex ? "#score-area" : '.opponent-card[data-player-idx="'+playerIdx+'"] .opp-score-wrap';
+  var containerSel = playerIdx===state.myIndex ? "#score-body" : '.opponent-card[data-player-idx="'+playerIdx+'"] .opp-score-wrap';
   var container = document.querySelector(containerSel);
   if(container){
     targets.forEach(function(c){
@@ -1208,7 +1303,7 @@ function playWinCeremony(playerIdx, straight, cb){
     });
   }
   pushLog("🎉 "+player.name+"가 "+COLOR_NAMES[straight.color]+" 스트레이트를 완성했습니다!");
-  setTimeout(cb, 1700);
+  setTimeout(function(){ state.ceremonyPlaying = false; cb(); }, 1700);
 }
 
 function showWinScreen(player, straight){
@@ -1296,7 +1391,7 @@ function playCaptureAnimation(opts, onComplete){
   function stageB(){
     floorCardEl.style.visibility = "hidden";
     var destEl;
-    if(opts.isHuman){ destEl = $("score-area"); }
+    if(opts.isHuman){ destEl = $("score-body"); }
     else { destEl = document.querySelector('.opponent-card[data-player-idx="'+opts.playerIdx+'"]'); }
     var destRect = destEl ? destEl.getBoundingClientRect() : floorRect;
     animateFly(floorRect, destRect, opts.capturedCoin, 380, onComplete);
@@ -1364,9 +1459,7 @@ function drawTwoAndEndTurn(){
   var n = Math.min(2, state.centerDeck.length);
   clearSelectionState();
   if(n<=0){
-    pushLog(player.name+"가 턴을 넘겼습니다. (중앙 덱 소진)");
-    render();
-    endTurn();
+    declareDraw();
     return;
   }
   state.animating = true;
@@ -1444,9 +1537,7 @@ function aiTakeTurn(playerIdx){
 
   var n2 = Math.min(2, state.centerDeck.length);
   if(n2<=0){
-    pushLog(player.name+"가 턴을 넘겼습니다. (중앙 덱 소진)");
-    render();
-    endTurn();
+    declareDraw();
     return;
   }
   state.animating = true;
@@ -1593,7 +1684,7 @@ function renderHand(){
 }
 
 function renderScore(){
-  var area = $("score-area");
+  var area = $("score-body");
   area.innerHTML = "";
   var player = state.players[state.myIndex];
   var flow = el("div","score-flow");
@@ -1676,6 +1767,61 @@ function sortHand(){
 $("exchange-btn").addEventListener("click", function(){ drawTwoAndEndTurn(); });
 $("sort-hand-btn").addEventListener("click", function(){ sortHand(); });
 $("cancel-action-btn").addEventListener("click", function(){ if(state.animating) return; clearSelectionState(); render(); });
+
+/* ---------------- emoji chat ---------------- */
+
+var EMOJI_SET = ["👍","😂","😮","😢","🔥"];
+
+function sendChatEmoji(emo){
+  if(!state.players || !state.players.length) return;
+  var player = state.players[state.myIndex];
+  if(!player) return;
+  pushLog((player.name||"플레이어")+": "+emo);
+  if(isMultiplayer() && fbDb && state.mpRoomCode){
+    fbUpdateDoc(fbDoc(fbDb,"rooms",state.mpRoomCode), { log: state.log, updatedAt: Date.now() }).catch(function(e){ console.error("이모지 전송 실패", e); });
+  }
+}
+
+function closeEmojiPicker(){
+  var p = document.getElementById("emoji-picker-panel");
+  if(p) p.remove();
+}
+
+function openEmojiPicker(){
+  closeEmojiPicker();
+  var btn = $("emoji-btn");
+  var rect = btn.getBoundingClientRect();
+  var panel = el("div","emoji-picker-panel");
+  panel.id = "emoji-picker-panel";
+  EMOJI_SET.forEach(function(emo){
+    var b = el("button","emoji-opt",emo);
+    b.addEventListener("click", function(ev){
+      ev.stopPropagation();
+      sendChatEmoji(emo);
+      closeEmojiPicker();
+    });
+    panel.appendChild(b);
+  });
+  tooltipLayer.appendChild(panel);
+  var panelRect = panel.getBoundingClientRect();
+  var left = Math.min(Math.max(8, rect.right-panelRect.width), window.innerWidth-panelRect.width-8);
+  var top = rect.top - panelRect.height - 8;
+  if(top < 8) top = rect.bottom + 8;
+  panel.style.left = left+"px";
+  panel.style.top = top+"px";
+}
+
+$("emoji-btn").addEventListener("click", function(e){
+  e.stopPropagation();
+  unlockAudio();
+  if(document.getElementById("emoji-picker-panel")){ closeEmojiPicker(); return; }
+  sfxSelect();
+  openEmojiPicker();
+});
+document.addEventListener("click", function(e){
+  var p = document.getElementById("emoji-picker-panel");
+  if(p && !p.contains(e.target) && e.target!==$("emoji-btn")){ closeEmojiPicker(); }
+});
 
 /* ---------------- modals ---------------- */
 
@@ -1783,8 +1929,20 @@ function openSettingsModal(){
     trackRow.appendChild(tb);
   });
 
+  var nickRow = el("div","settings-row");
+  nickRow.innerHTML = "<span>✏️ 닉네임</span>";
+  var nickInput = document.createElement("input");
+  nickInput.type = "text";
+  nickInput.maxLength = 12;
+  nickInput.placeholder = "캐릭터 이름 사용";
+  nickInput.value = chosenNickname || "";
+  nickInput.className = "nickname-input";
+  nickInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ nickInput.blur(); } });
+  nickInput.addEventListener("blur", function(){ applyNickname(nickInput.value); });
+  nickRow.appendChild(nickInput);
+
   var closeBtn = el("button","btn primary","닫기");
-  closeBtn.addEventListener("click", closeModal);
+  closeBtn.addEventListener("click", function(){ applyNickname(nickInput.value); closeModal(); });
   var actions = el("div","modal-actions");
   actions.appendChild(closeBtn);
 
@@ -1792,6 +1950,7 @@ function openSettingsModal(){
   box.appendChild(bgmRow);
   box.appendChild(trackLabel);
   box.appendChild(trackRow);
+  box.appendChild(nickRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
   backdrop.addEventListener("click", function(e){ if(e.target===backdrop) closeModal(); });
@@ -1799,6 +1958,10 @@ function openSettingsModal(){
 }
 
 $("settings-btn").addEventListener("click", function(){
+  unlockAudio();
+  openSettingsModal();
+});
+$("start-settings-btn").addEventListener("click", function(){
   unlockAudio();
   openSettingsModal();
 });
