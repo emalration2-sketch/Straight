@@ -516,6 +516,8 @@ function subscribeRoom(code){
     if(!snap.exists()) return;
     var data = snap.data();
     if(data.phase==="lobby"){
+      state.players = data.players || [];
+      state.mpMaxPlayers = data.maxPlayers;
       renderLobby(data);
       return;
     }
@@ -567,11 +569,11 @@ function applyRemoteRoomState(data){
 }
 
 var aiDriveGuard = {};
-function maybeDriveAi(idx){
-  if(aiDriveGuard[state.currentTurnPos+"-"+idx]) return;
-  aiDriveGuard = {};
-  aiDriveGuard[state.currentTurnPos+"-"+idx] = true;
-  setTimeout(function(){ aiTakeTurn(idx); }, 900);
+function maybeDriveAi(idx, delay){
+  var key = state.currentTurnPos+"-"+idx;
+  if(aiDriveGuard[key]) return;
+  aiDriveGuard[key] = true;
+  setTimeout(function(){ aiTakeTurn(idx); }, delay===undefined?900:delay);
 }
 
 function createRoom(maxPlayers, cb){
@@ -906,7 +908,7 @@ function startGame(players, order){
 
   var firstIdx = order[0];
   if(players[firstIdx].isAI){
-    setTimeout(function(){ aiTakeTurn(firstIdx); }, 900);
+    maybeDriveAi(firstIdx);
   } else {
     startTurnTimer();
   }
@@ -945,7 +947,7 @@ function endTurn(){
   if(state.gameOver) return;
   var nextIdx = currentPlayerIdx();
   if(state.players[nextIdx].isAI){
-    if(iAmHost()) setTimeout(function(){ aiTakeTurn(nextIdx); }, 850);
+    if(iAmHost()) maybeDriveAi(nextIdx, 850);
   } else if(nextIdx===state.myIndex){
     sfxTurn();
     startTurnTimer();
