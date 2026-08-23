@@ -120,7 +120,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
 .bottom-area{width:100%;height:29vh;min-height:132px;display:flex;gap:5px;flex-shrink:0;}
 .hand-area{flex:1.5;display:flex;flex-direction:column;min-width:0;background:rgba(255,255,255,.03);border-radius:12px;padding:5px;}
-.hand-coins{flex:1;display:flex;gap:4px;flex-wrap:wrap;align-content:center;justify-content:center;overflow:hidden;}
+.hand-coins{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:min-content;gap:5px;align-content:center;justify-items:center;overflow-y:auto;padding:2px;}
 .hand-actions{display:flex;gap:8px;justify-content:center;align-items:center;padding:3px 0 1px;flex-wrap:wrap;}
 .btn.exchange-big{font-size:13.5px;font-weight:800;padding:10px 20px;border-radius:14px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
 .btn.exchange-big:active{transform:scale(.95);}
@@ -141,7 +141,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 }
 .card.tiny{width:calc(var(--card-w)*0.55);height:calc(var(--card-h)*0.55);font-size:calc(var(--card-w)*0.26);border-width:1.5px;border-radius:6px;}
 .card.mini-back{width:calc(var(--card-w)*0.6);height:calc(var(--card-h)*0.6);border-radius:6px;}
-.card.opp{width:15px;height:21px;font-size:8.5px;border-width:1px;border-radius:4px;cursor:default;flex-shrink:0;}
+.card.hand{width:100%;max-width:66px;aspect-ratio:1/1.4;height:auto;font-size:clamp(13px,4.1vw,19px);border-radius:9px;border-width:1.5px;}
+.card.opp{width:19px;height:27px;font-size:10px;border-width:1px;border-radius:4px;cursor:default;flex-shrink:0;}
 .card.opp-back{width:11px;height:16px;border-radius:3px;border-width:1px;cursor:default;flex-shrink:0;}
 .card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
 .card.joker{background:linear-gradient(135deg,#ffffff,#e4e2ef);color:#2a2440;border-color:rgba(42,36,64,.35);}
@@ -376,6 +377,58 @@ function sfxTurn(){ beep(500,0.08,"sine",0.1); beep(700,0.1,"sine",0.1,0.09); }
 function sfxTick(){ beep(900,0.05,"square",0.07); }
 function sfxTimeout(){ beep(220,0.22,"sawtooth",0.14); beep(160,0.28,"sawtooth",0.12,0.12); }
 function sfxWin(){ [523,659,784,1047].forEach(function(f,i){ beep(f,0.28,"triangle",0.16,i*0.14); }); }
+
+/* ---------------- background music ---------------- */
+var BGM_MELODY = [523,587,659,587, 523,494,523,659, 698,659,587,659, 523,494,440,494];
+var BGM_BASS   = [131,131,165,165, 131,131,147,147, 175,175,165,165, 131,131,110,110];
+var BGM_STEP_MS = 280;
+var bgmPlaying = false;
+var bgmTimer = null;
+var bgmStep = 0;
+var bgmMasterGain = null;
+
+function bgmNote(freq, t0, duration, type, gainScale){
+  if(!audioCtx) return;
+  var osc = audioCtx.createOscillator();
+  var g = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(0.055*gainScale, t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+duration);
+  osc.connect(g);
+  g.connect(bgmMasterGain);
+  osc.start(t0);
+  osc.stop(t0+duration+0.02);
+}
+
+function scheduleBgmStep(){
+  if(!bgmPlaying) return;
+  if(soundOn && audioCtx){
+    var t0 = audioCtx.currentTime;
+    bgmNote(BGM_MELODY[bgmStep % BGM_MELODY.length], t0, 0.24, "triangle", 0.85);
+    if(bgmStep % 2 === 0) bgmNote(BGM_BASS[bgmStep % BGM_BASS.length], t0, 0.26, "sine", 1);
+  }
+  bgmStep++;
+  bgmTimer = setTimeout(scheduleBgmStep, BGM_STEP_MS);
+}
+
+function startBgm(){
+  if(bgmPlaying || !audioCtx) return;
+  if(!bgmMasterGain){
+    bgmMasterGain = audioCtx.createGain();
+    bgmMasterGain.gain.value = 1;
+    bgmMasterGain.connect(audioCtx.destination);
+  }
+  bgmPlaying = true;
+  bgmStep = 0;
+  scheduleBgmStep();
+}
+
+function stopBgm(){
+  bgmPlaying = false;
+  if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer = null; }
+}
 
 function shuffle(arr){
   for(var i=arr.length-1;i>0;i--){
@@ -683,6 +736,7 @@ CHARACTERS.forEach(function(ch){
 $("start-btn").addEventListener("click", function(){
   unlockAudio();
   sfxSelect();
+  startBgm();
   requestFS();
   switchScreen("avatar");
 });
@@ -1404,8 +1458,8 @@ function renderHand(){
   wrap.innerHTML = "";
   var player = state.players[state.myIndex];
   player.hand.forEach(function(hc, hi){
-    var cls = "";
-    if((state.mode==="eat-target"||state.mode==="joker-choice"||state.mode==="joker-eat-target") && state.selectedHandIdx===hi) cls="selected";
+    var cls = "hand";
+    if((state.mode==="eat-target"||state.mode==="joker-choice"||state.mode==="joker-eat-target") && state.selectedHandIdx===hi) cls+=" selected";
     if(!isHumanTurn()) cls += " disabled";
     var d = cardEl(hc, { cls:cls.trim() });
     d.addEventListener("click", function(){ onHandClick(hi); });
