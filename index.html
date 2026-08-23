@@ -160,6 +160,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .modal-box{background:var(--panel);border-radius:16px;padding:18px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.6);}
 .modal-box h2{margin:0 0 8px;font-size:17px;color:var(--pink);}
 .modal-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+.settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 2px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;min-width:220px;}
+.settings-track-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:8px 0 2px;}
 
 .win-emoji{font-size:60px;}
 </style>
@@ -174,12 +176,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
       <div class="title-by">by. PixelRooM</div>
     </div>
     <button class="btn primary big" id="start-btn">게임 시작</button>
-  </div>
-
-  <div class="screen hidden" id="screen-avatar">
-    <h1 style="font-size:20px;">캐릭터를 선택하세요</h1>
-    <div class="avatar-grid" id="avatar-grid"></div>
-    <button class="btn primary big" id="avatar-next-btn" disabled>다음</button>
   </div>
 
   <div class="screen hidden" id="screen-mode">
@@ -217,13 +213,15 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
   </div>
 
   <div class="screen hidden" id="screen-lobby">
-    <h1 style="font-size:20px;">대기실</h1>
-    <p class="sub">방 코드를 카톡이나 문자로 공유하세요</p>
-    <div style="font-family:var(--font-display);font-weight:400;font-size:44px;letter-spacing:10px;color:var(--accent);" id="lobby-code"></div>
+    <h1 style="font-size:18px;margin-bottom:0;">대기실</h1>
+    <p class="sub" style="margin:0;">방 코드를 카톡이나 문자로 공유하세요</p>
+    <div style="font-family:var(--font-display);font-weight:400;font-size:32px;letter-spacing:8px;color:var(--accent);" id="lobby-code"></div>
     <button class="btn" id="lobby-copy-btn">🔗 링크 복사</button>
     <div class="order-list" id="lobby-players" style="min-width:280px;"></div>
+    <p class="sub" id="lobby-avatar-hint" style="margin:4px 0 0;">내 캐릭터를 선택하세요</p>
+    <div class="avatar-grid" id="lobby-avatar-grid"></div>
     <button class="btn primary big hidden" id="lobby-start-btn">게임 시작 (부족 인원 AI 채움)</button>
-    <p class="sub hidden" id="lobby-wait-msg">호스트가 게임을 시작하길 기다리는 중...</p>
+    <p class="sub hidden" id="lobby-wait-msg">모두 캐릭터를 선택하면 호스트가 게임을 시작합니다</p>
     <button class="btn" id="lobby-leave-btn">← 나가기</button>
   </div>
 
@@ -231,7 +229,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <h1 style="font-size:20px;">플레이 인원 선택</h1>
     <p class="sub">부족한 인원은 AI가 대신 플레이합니다 · 인원수만큼 색상이 사용됩니다</p>
     <div class="count-row" id="count-row"></div>
-    <button class="btn primary big" id="count-next-btn" disabled>순서 정하기</button>
+    <button class="btn primary big" id="count-next-btn" disabled>다음</button>
+  </div>
+
+  <div class="screen hidden" id="screen-avatar">
+    <h1 style="font-size:20px;">캐릭터를 선택하세요</h1>
+    <div class="avatar-grid" id="avatar-grid"></div>
+    <button class="btn primary big" id="avatar-next-btn" disabled>순서 정하기</button>
   </div>
 
   <div class="screen hidden" id="screen-order">
@@ -250,7 +254,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
         <div class="brand-mark">스트레이트!</div>
         <div class="topbar-right">
           <div class="turn-timer" id="turn-timer"></div>
-          <button class="icon-btn" id="sound-toggle-btn" title="사운드 켜기/끄기">🔊</button>
+          <button class="icon-btn" id="settings-btn" title="설정">⚙️</button>
         </div>
       </div>
       <div class="opponents-row" id="opponents-row"></div>
@@ -299,7 +303,7 @@ const firebaseConfig = {
   messagingSenderId: "435687905535",
   appId: "1:435687905535:web:2dfc13e707ebdbbb7394ca"
 };
-var fbDb = null, fbDoc = null, fbSetDoc = null, fbUpdateDoc = null, fbGetDoc = null, fbOnSnapshot = null;
+var fbDb = null, fbDoc = null, fbSetDoc = null, fbUpdateDoc = null, fbGetDoc = null, fbOnSnapshot = null, fbRunTransaction = null;
 var fbReadyPromise = null;
 function ensureFirebase(){
   if(fbReadyPromise) return fbReadyPromise;
@@ -315,6 +319,7 @@ function ensureFirebase(){
     fbUpdateDoc = fsMod.updateDoc;
     fbGetDoc = fsMod.getDoc;
     fbOnSnapshot = fsMod.onSnapshot;
+    fbRunTransaction = fsMod.runTransaction;
   });
   return fbReadyPromise;
 }
@@ -360,7 +365,8 @@ function requestFS(){
 
 /* ---------------- sound ---------------- */
 var audioCtx = null;
-var soundOn = true;
+var sfxOn = true;
+var bgmOn = true;
 
 function unlockAudio(){
   if(!audioCtx){
@@ -370,7 +376,7 @@ function unlockAudio(){
 }
 
 function beep(freq, duration, type, gainVal, delay){
-  if(!soundOn || !audioCtx) return;
+  if(!sfxOn || !audioCtx) return;
   var t0 = audioCtx.currentTime + (delay||0);
   var osc = audioCtx.createOscillator();
   var gain = audioCtx.createGain();
@@ -388,7 +394,7 @@ function beep(freq, duration, type, gainVal, delay){
 function sfxSelect(){ beep(720, 0.06, "square", 0.08); }
 function sfxInvalid(){ beep(140, 0.16, "sawtooth", 0.1); }
 function sfxCapture(){ beep(520, 0.09, "triangle", 0.16); beep(780, 0.12, "triangle", 0.14, 0.06); }
-function sfxDraw(){ if(!soundOn || !audioCtx) return; var t0=audioCtx.currentTime; var osc=audioCtx.createOscillator(); var gain=audioCtx.createGain(); osc.type="triangle"; osc.frequency.setValueAtTime(340,t0); osc.frequency.exponentialRampToValueAtTime(180,t0+0.16); gain.gain.setValueAtTime(0.0001,t0); gain.gain.linearRampToValueAtTime(0.1,t0+0.02); gain.gain.exponentialRampToValueAtTime(0.0001,t0+0.18); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(t0); osc.stop(t0+0.2); }
+function sfxDraw(){ if(!sfxOn || !audioCtx) return; var t0=audioCtx.currentTime; var osc=audioCtx.createOscillator(); var gain=audioCtx.createGain(); osc.type="triangle"; osc.frequency.setValueAtTime(340,t0); osc.frequency.exponentialRampToValueAtTime(180,t0+0.16); gain.gain.setValueAtTime(0.0001,t0); gain.gain.linearRampToValueAtTime(0.1,t0+0.02); gain.gain.exponentialRampToValueAtTime(0.0001,t0+0.18); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(t0); osc.stop(t0+0.2); }
 function sfxJoker(){ beep(660,0.1,"sine",0.13); beep(880,0.1,"sine",0.13,0.09); beep(1100,0.14,"sine",0.13,0.18); }
 function sfxTurn(){ beep(500,0.08,"sine",0.1); beep(700,0.1,"sine",0.1,0.09); }
 function sfxTick(){ beep(900,0.05,"square",0.07); }
@@ -396,9 +402,27 @@ function sfxTimeout(){ beep(220,0.22,"sawtooth",0.14); beep(160,0.28,"sawtooth",
 function sfxWin(){ [523,659,784,1047].forEach(function(f,i){ beep(f,0.28,"triangle",0.16,i*0.14); }); }
 
 /* ---------------- background music ---------------- */
-var BGM_MELODY = [523,587,659,587, 523,494,523,659, 698,659,587,659, 523,494,440,494];
-var BGM_BASS   = [131,131,165,165, 131,131,147,147, 175,175,165,165, 131,131,110,110];
-var BGM_STEP_MS = 280;
+var BGM_TRACKS = [
+  {
+    name: "모험",
+    stepMs: 280, melodyType: "triangle", bassType: "sine",
+    melody: [523,587,659,587, 523,494,523,659, 698,659,587,659, 523,494,440,494],
+    bass:   [131,131,165,165, 131,131,147,147, 175,175,165,165, 131,131,110,110]
+  },
+  {
+    name: "느긋",
+    stepMs: 380, melodyType: "sine", bassType: "sine",
+    melody: [440,523,440,392, 349,392,440,392, 440,523,587,523, 440,392,349,330],
+    bass:   [110,110,87,87, 87,87,110,110, 110,110,98,98, 87,87,82,82]
+  },
+  {
+    name: "레트로",
+    stepMs: 190, melodyType: "square", bassType: "triangle",
+    melody: [659,784,880,784, 659,587,659,784, 880,988,880,784, 659,587,523,587],
+    bass:   [165,165,196,196, 165,165,147,147, 220,220,196,196, 165,165,131,131]
+  }
+];
+var bgmTrackIndex = 0;
 var bgmPlaying = false;
 var bgmTimer = null;
 var bgmStep = 0;
@@ -421,13 +445,14 @@ function bgmNote(freq, t0, duration, type, gainScale){
 
 function scheduleBgmStep(){
   if(!bgmPlaying) return;
-  if(soundOn && audioCtx){
+  var track = BGM_TRACKS[bgmTrackIndex];
+  if(bgmOn && audioCtx){
     var t0 = audioCtx.currentTime;
-    bgmNote(BGM_MELODY[bgmStep % BGM_MELODY.length], t0, 0.24, "triangle", 0.85);
-    if(bgmStep % 2 === 0) bgmNote(BGM_BASS[bgmStep % BGM_BASS.length], t0, 0.26, "sine", 1);
+    bgmNote(track.melody[bgmStep % track.melody.length], t0, track.stepMs/1000*0.85, track.melodyType, 0.85);
+    if(bgmStep % 2 === 0) bgmNote(track.bass[bgmStep % track.bass.length], t0, track.stepMs/1000*0.9, track.bassType, 1);
   }
   bgmStep++;
-  bgmTimer = setTimeout(scheduleBgmStep, BGM_STEP_MS);
+  bgmTimer = setTimeout(scheduleBgmStep, track.stepMs);
 }
 
 function startBgm(){
@@ -445,6 +470,16 @@ function startBgm(){
 function stopBgm(){
   bgmPlaying = false;
   if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer = null; }
+}
+
+function setBgmTrack(idx){
+  if(idx===bgmTrackIndex) return;
+  bgmTrackIndex = idx;
+  if(bgmPlaying){
+    if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer=null; }
+    bgmStep = 0;
+    scheduleBgmStep();
+  }
 }
 
 function shuffle(arr){
@@ -653,7 +688,7 @@ function maybeDriveAi(idx, delay){
 function createRoom(maxPlayers, cb){
   ensureFirebase().then(function(){
     var code = genRoomCode();
-    var me = { clientId: myClientId, name: chosenCharacter.name, avatar: avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] };
+    var me = { clientId: myClientId, name:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
     var roomData = {
       code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
@@ -686,7 +721,7 @@ function joinRoom(code, cb){
         return;
       }
       if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
-      var me = { clientId: myClientId, name: chosenCharacter.name, avatar: avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] };
+      var me = { clientId: myClientId, name:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
       var newPlayers = data.players.concat([me]);
       fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
         state.mpRoomCode = code;
@@ -698,8 +733,31 @@ function joinRoom(code, cb){
   }).catch(function(e){ cb("네트워크 연결에 실패했습니다: "+(e&&e.message?e.message:e)); });
 }
 
+function pickAvatar(ch, cb){
+  if(!state.mpRoomCode || !fbDb){ cb("연결되지 않았습니다."); return; }
+  var ref = fbDoc(fbDb,"rooms",state.mpRoomCode);
+  fbRunTransaction(fbDb, function(tx){
+    return tx.get(ref).then(function(snap){
+      if(!snap.exists()) throw new Error("방을 찾을 수 없습니다.");
+      var data = snap.data();
+      var players = (data.players || []).slice();
+      var mine = -1;
+      for(var i=0;i<players.length;i++){ if(players[i].clientId===myClientId){ mine=i; break; } }
+      if(mine===-1) throw new Error("참가 정보를 찾을 수 없습니다.");
+      if(players[mine].avatarPicked) return;
+      var taken = players.some(function(p,i){ return i!==mine && p.avatarPicked && p.name===ch.name; });
+      if(taken) throw new Error("이미 다른 플레이어가 선택한 캐릭터입니다.");
+      var updated = {}; for(var k in players[mine]) updated[k]=players[mine][k];
+      updated.name = ch.name; updated.avatar = avatarIconHTML(ch); updated.avatarPicked = true;
+      players[mine] = updated;
+      tx.update(ref, { players: players, updatedAt: Date.now() });
+    });
+  }).then(function(){ cb(null); }).catch(function(e){ cb(e && e.message ? e.message : String(e)); });
+}
+
 function startOnlineGame(){
   if(!iAmHost()) return;
+  if(!state.players.every(function(p){ return p.avatarPicked; })) return;
   var lobbyPlayers = state.players.slice();
   var maxPlayers = state.mpMaxPlayers;
   var usedNames = {};
@@ -765,12 +823,6 @@ $("start-btn").addEventListener("click", function(){
   sfxSelect();
   startBgm();
   requestFS();
-  switchScreen("avatar");
-});
-
-$("avatar-next-btn").addEventListener("click", function(){
-  sfxSelect();
-  requestFS();
   if(urlRoomCode){
     $("join-error").textContent = "참가하는 중...";
     switchScreen("join");
@@ -782,6 +834,11 @@ $("avatar-next-btn").addEventListener("click", function(){
     return;
   }
   switchScreen("mode");
+});
+
+$("avatar-next-btn").addEventListener("click", function(){
+  sfxSelect();
+  runOrderCutscene();
 });
 
 var countRow = $("count-row");
@@ -799,7 +856,7 @@ var countRow = $("count-row");
 
 $("count-next-btn").addEventListener("click", function(){
   sfxSelect();
-  runOrderCutscene();
+  switchScreen("avatar");
 });
 
 /* ---------------- mode / online screens ---------------- */
@@ -900,10 +957,11 @@ function renderLobby(data){
   $("lobby-code").textContent = state.mpRoomCode || data.code;
   var list = $("lobby-players");
   list.innerHTML = "";
-  data.players.forEach(function(p, i){
+  data.players.forEach(function(p){
     var row = el("div","order-row");
     row.style.opacity = "1";
-    row.innerHTML = "<span>"+p.avatar+" "+p.name+(p.clientId===data.hostClientId?" 👑":"")+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
+    var label = p.avatarPicked ? (p.avatar+" "+p.name) : "⏳ 캐릭터 선택 중...";
+    row.innerHTML = "<span>"+label+(p.clientId===data.hostClientId?" 👑":"")+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
     list.appendChild(row);
   });
   var slotsLeft = data.maxPlayers - data.players.length;
@@ -912,8 +970,42 @@ function renderLobby(data){
     fillRow.style.opacity = ".6";
     list.appendChild(fillRow);
   }
+
+  var me = null;
+  for(var i=0;i<data.players.length;i++){ if(data.players[i].clientId===myClientId){ me=data.players[i]; break; } }
+  var myPicked = !!(me && me.avatarPicked);
+  var takenNames = {};
+  data.players.forEach(function(p){ if(p.avatarPicked && p.clientId!==myClientId) takenNames[p.name]=true; });
+
+  var grid = $("lobby-avatar-grid");
+  grid.innerHTML = "";
+  CHARACTERS.forEach(function(ch){
+    var taken = !!takenNames[ch.name];
+    var mine = myPicked && me.name===ch.name;
+    var b = el("button","avatar-btn"+(mine?" selected":""));
+    b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+(taken?" (선택됨)":"")+"</span>";
+    if(taken || myPicked){
+      b.disabled = true;
+      b.style.opacity = mine ? "1" : (taken ? ".3" : ".5");
+      b.style.cursor = "default";
+    } else {
+      b.addEventListener("click", function(){
+        sfxSelect();
+        b.disabled = true;
+        pickAvatar(ch, function(err){
+          if(err){ alert(err); }
+        });
+      });
+    }
+    grid.appendChild(b);
+  });
+  grid.classList.toggle("hidden", myPicked);
+  $("lobby-avatar-hint").classList.toggle("hidden", myPicked);
+
   var isHost = data.hostClientId===myClientId;
+  var allPicked = data.players.length>0 && data.players.every(function(p){ return p.avatarPicked; });
   $("lobby-start-btn").classList.toggle("hidden", !isHost);
+  $("lobby-start-btn").disabled = !allPicked;
   $("lobby-wait-msg").classList.toggle("hidden", isHost);
 }
 
@@ -1425,13 +1517,12 @@ function renderOpponents(){
     if(i===state.myIndex) return;
     var card = el("div","opponent-card"+(currentPlayerIdx()===i?" active":""));
     card.setAttribute("data-player-idx", i);
-    var total = p.score.reduce(function(s,c){ return s+pointValue(c); },0);
 
     var headRow = el("div","opp-head-row");
     var head = el("div","opp-head");
     head.innerHTML = "<span>"+p.avatar+"</span>";
     var name = el("div","opp-name", p.name);
-    var totalEl = el("div","opp-total", total+"점 · "+p.hand.length+"장");
+    var totalEl = el("div","opp-total", p.hand.length+"장");
     headRow.appendChild(head);
     headRow.appendChild(name);
     headRow.appendChild(totalEl);
@@ -1506,23 +1597,20 @@ function renderScore(){
   area.innerHTML = "";
   var player = state.players[state.myIndex];
   var flow = el("div","score-flow");
-  var total = 0;
+  flow.id = "scoretotal-0";
   var jokers = player.score.filter(function(c){ return c.isJoker; });
   jokers.forEach(function(c){
-    total += pointValue(c);
     flow.appendChild(cardEl(c, { cls:"tiny" }));
   });
   state.colors.forEach(function(color){
     var coins = player.score.filter(function(c){ return !c.isJoker && c.color===color; }).sort(function(a,b){ return a.value-b.value; });
     coins.forEach(function(c){
-      total += pointValue(c);
       flow.appendChild(cardEl(c, { cls:"tiny" }));
     });
   });
   area.appendChild(flow);
-  var totalDiv = el("div","score-total", "누적 "+total+"점 · 승리조건: 스트레이트");
-  totalDiv.id = "scoretotal-0";
-  area.appendChild(totalDiv);
+  var labelDiv = el("div","score-total", "승리조건: 스트레이트");
+  area.appendChild(labelDiv);
 }
 
 /* ---------------- interaction handlers ---------------- */
@@ -1655,11 +1743,64 @@ document.addEventListener("click", function(e){
   }
 });
 
-$("sound-toggle-btn").addEventListener("click", function(){
+function openSettingsModal(){
+  closeModal();
+  var backdrop = el("div","modal-backdrop");
+  var box = el("div","modal-box");
+  box.innerHTML = "<h2>⚙️ 설정</h2>";
+
+  var sfxRow = el("div","settings-row");
+  sfxRow.innerHTML = "<span>🔊 효과음</span>";
+  var sfxBtn = el("button","btn"+(sfxOn?" primary":""), sfxOn?"켜짐":"꺼짐");
+  sfxBtn.addEventListener("click", function(){
+    sfxOn = !sfxOn;
+    sfxBtn.textContent = sfxOn?"켜짐":"꺼짐";
+    sfxBtn.classList.toggle("primary", sfxOn);
+    if(sfxOn) sfxSelect();
+  });
+  sfxRow.appendChild(sfxBtn);
+
+  var bgmRow = el("div","settings-row");
+  bgmRow.innerHTML = "<span>🎵 배경음악</span>";
+  var bgmBtn = el("button","btn"+(bgmOn?" primary":""), bgmOn?"켜짐":"꺼짐");
+  bgmBtn.addEventListener("click", function(){
+    bgmOn = !bgmOn;
+    bgmBtn.textContent = bgmOn?"켜짐":"꺼짐";
+    bgmBtn.classList.toggle("primary", bgmOn);
+  });
+  bgmRow.appendChild(bgmBtn);
+
+  var trackLabel = el("div","settings-row","<span>🎼 BGM 선택</span>");
+  var trackRow = el("div","settings-track-row");
+  BGM_TRACKS.forEach(function(track, i){
+    var tb = el("button","btn"+(i===bgmTrackIndex?" primary":""), track.name);
+    tb.addEventListener("click", function(){
+      setBgmTrack(i);
+      Array.prototype.forEach.call(trackRow.children, function(c){ c.classList.remove("primary"); });
+      tb.classList.add("primary");
+      sfxSelect();
+    });
+    trackRow.appendChild(tb);
+  });
+
+  var closeBtn = el("button","btn primary","닫기");
+  closeBtn.addEventListener("click", closeModal);
+  var actions = el("div","modal-actions");
+  actions.appendChild(closeBtn);
+
+  box.appendChild(sfxRow);
+  box.appendChild(bgmRow);
+  box.appendChild(trackLabel);
+  box.appendChild(trackRow);
+  box.appendChild(actions);
+  backdrop.appendChild(box);
+  backdrop.addEventListener("click", function(e){ if(e.target===backdrop) closeModal(); });
+  tooltipLayer.appendChild(backdrop);
+}
+
+$("settings-btn").addEventListener("click", function(){
   unlockAudio();
-  soundOn = !soundOn;
-  $("sound-toggle-btn").textContent = soundOn ? "🔊" : "🔇";
-  if(soundOn) sfxSelect();
+  openSettingsModal();
 });
 
 })();
