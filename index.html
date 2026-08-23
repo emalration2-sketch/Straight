@@ -123,16 +123,18 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .hand-coins{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:min-content;gap:5px;align-content:center;justify-items:center;overflow-y:auto;padding:2px;}
 
 .score-area{flex:1;background:rgba(255,255,255,.04);border-radius:12px;padding:5px;overflow:hidden;display:flex;flex-direction:column;gap:4px;min-width:0;}
-.hand-actions{display:flex;flex-direction:column;gap:4px;flex-shrink:0;}
-.hand-actions .btn{width:100%;font-size:11px;padding:6px 4px;border-radius:9px;line-height:1.2;}
-.btn.exchange-big{font-size:11px;font-weight:800;padding:7px 4px;border-radius:9px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
+.hand-actions{display:flex;flex-direction:row;gap:4px;flex-shrink:0;}
+.hand-actions .btn{flex:1;font-size:10px;padding:6px 3px;border-radius:9px;line-height:1.15;min-width:0;}
+.btn.exchange-big{flex:1.25;font-size:10px;font-weight:800;padding:6px 3px;border-radius:9px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
 .btn.exchange-big:active{transform:scale(.95);}
 .score-body{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;overflow:hidden;}
 .score-flow{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;gap:3px;overflow:hidden;min-height:0;}
 .score-total{font-size:11.5px;font-weight:800;flex-shrink:0;color:var(--accent);}
 
-.log-panel{width:100%;height:7vh;min-height:34px;overflow-y:auto;font-size:10.5px;background:rgba(0,0,0,.3);border-radius:8px;padding:3px 8px;line-height:1.35;flex-shrink:0;color:var(--muted);}
+.log-row{display:flex;gap:6px;width:100%;flex-shrink:0;}
+.log-panel{flex:1;min-width:0;height:7vh;min-height:34px;overflow-y:auto;font-size:10.5px;background:rgba(0,0,0,.3);border-radius:8px;padding:3px 8px;line-height:1.35;color:var(--muted);}
 .log-panel div:first-child{color:var(--text);}
+.log-emoji-btn{flex-shrink:0;width:38px;border-radius:8px;background:var(--panel2);border:1px solid rgba(255,255,255,.2);font-size:17px;color:var(--text);cursor:pointer;}
 
 /* ===== CARDS ===== */
 .card{
@@ -281,16 +283,18 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
           <div class="hand-coins" id="hand-coins"></div>
         </div>
         <div class="score-area" id="score-area">
+          <div class="score-body" id="score-body"></div>
           <div class="hand-actions">
             <button class="btn exchange-big" id="exchange-btn">🃏 2장 뽑고<br>턴 종료</button>
             <button class="btn" id="sort-hand-btn">↕ 정렬</button>
-            <button class="btn" id="emoji-btn" title="이모지 보내기">😀</button>
             <button class="btn hidden" id="cancel-action-btn">✖ 취소</button>
           </div>
-          <div class="score-body" id="score-body"></div>
         </div>
       </div>
-      <div class="log-panel" id="log-panel"></div>
+      <div class="log-row">
+        <div class="log-panel" id="log-panel"></div>
+        <button class="log-emoji-btn" id="emoji-btn" title="이모지 보내기">😀</button>
+      </div>
     </div>
   </div>
 
@@ -429,10 +433,10 @@ var BGM_TRACKS = [
     bass:   [110,110,87,87, 87,87,110,110, 110,110,98,98, 87,87,82,82]
   },
   {
-    name: "평온",
-    stepMs: 460, melodyType: "sine", bassType: "sine",
-    melody: [392,440,494,440, 392,349,330,349, 392,440,494,523, 494,440,392,349],
-    bass:   [98,98,110,110, 98,98,87,87, 98,98,110,110, 123,123,98,98]
+    name: "프렐류드",
+    stepMs: 240, melodyType: "triangle", bassType: "sine",
+    melody: [262,330,392,523, 330,392,523,330, 196,247,294,392, 247,294,392,247],
+    bass:   [131,131,131,131, 131,131,131,131, 98,98,98,98, 98,98,98,98]
   }
 ];
 var bgmTrackIndex = 0;
@@ -1597,7 +1601,7 @@ function renderInstruction(){
     case "eat-target": bar.textContent = "🎯 타겟이 될 바닥 카드를 선택하세요!"; break;
     case "joker-choice": bar.textContent = "🃏 조커로 무엇을 할지 선택하세요!"; break;
     case "joker-eat-target": bar.textContent = "🃏 조커로 가져올 바닥 카드를 선택하세요! (아무거나 가능)"; break;
-    default: bar.textContent = "✋ 행동을 선택하세요! 손패 카드를 클릭하거나, 가져올 수 없으면 [2장 뽑고 턴 종료]를 누르세요.";
+    default: bar.innerHTML = "✋ 행동을 선택하세요! 손패를 클릭하거나,<br>가져올 수 없으면 [2장 뽑고 턴 종료]를 누르세요.";
   }
 }
 
@@ -1700,8 +1704,6 @@ function renderScore(){
     });
   });
   area.appendChild(flow);
-  var labelDiv = el("div","score-total", "승리조건: 스트레이트");
-  area.appendChild(labelDiv);
 }
 
 /* ---------------- interaction handlers ---------------- */
