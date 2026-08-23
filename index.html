@@ -1657,9 +1657,9 @@ function onFloorTargetClick(fi){
 
   if(state.mode==="eat-target"){
     if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
-    doEat(0, handIdx, fi);
+    doEat(state.myIndex, handIdx, fi);
   } else if(state.mode==="joker-eat-target"){
-    doEat(0, handIdx, fi);
+    doEat(state.myIndex, handIdx, fi);
   }
 }
 
