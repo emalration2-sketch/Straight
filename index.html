@@ -73,10 +73,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 #screen-game{justify-content:flex-start;padding:calc(env(safe-area-inset-top) + 3px) calc(env(safe-area-inset-right) + 4px) calc(env(safe-area-inset-bottom) + 3px) calc(env(safe-area-inset-left) + 4px);gap:0;}
 .game-wrap{width:100%;max-width:1180px;height:100%;margin:0 auto;display:flex;flex-direction:column;gap:3px;min-height:0;}
 
-.topbar{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;position:relative;}
-.brand-mark{font-family:var(--font-display);font-size:14px;letter-spacing:.5px;color:var(--accent);}
-.rulebook-wrap{position:absolute;left:0;top:50%;transform:translateY(-50%);flex-shrink:0;}
-.topbar-right{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:5px;}
+.topbar{width:100%;display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.brand-mark{flex:1;min-width:0;text-align:center;font-family:var(--font-display);font-size:14px;letter-spacing:.5px;color:var(--accent);}
+.rulebook-wrap{position:relative;flex-shrink:0;}
+.topbar-right{display:flex;align-items:center;gap:5px;flex-shrink:0;}
 .icon-btn{background:var(--panel2);border:1px solid rgba(255,255,255,.2);color:var(--text);border-radius:50%;width:28px;height:28px;font-size:13px;flex-shrink:0;}
 .turn-timer{font-size:10.5px;font-weight:800;color:var(--muted);background:var(--panel2);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:3px 7px;min-width:30px;text-align:center;flex-shrink:0;}
 .turn-timer.warn{color:#ff6b6b;border-color:#ff6b6b;}
@@ -288,9 +288,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 <div id="tooltip-layer"></div>
 
 <script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-import { getFirestore, doc, setDoc, updateDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
-
+/* Firebase is loaded lazily (only when the player actually chooses online
+   multiplayer) so solo play never touches the network and works fully
+   offline once the page itself is loaded. */
 const firebaseConfig = {
   apiKey: "AIzaSyBO_HG0CtTRF3NmDUXN1aae8uCm5IFjpAQ",
   authDomain: "straight-game.firebaseapp.com",
@@ -299,8 +299,25 @@ const firebaseConfig = {
   messagingSenderId: "435687905535",
   appId: "1:435687905535:web:2dfc13e707ebdbbb7394ca"
 };
-const fbApp = initializeApp(firebaseConfig);
-const fbDb = getFirestore(fbApp);
+var fbDb = null, fbDoc = null, fbSetDoc = null, fbUpdateDoc = null, fbGetDoc = null, fbOnSnapshot = null;
+var fbReadyPromise = null;
+function ensureFirebase(){
+  if(fbReadyPromise) return fbReadyPromise;
+  fbReadyPromise = Promise.all([
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"),
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js")
+  ]).then(function(mods){
+    var appMod = mods[0], fsMod = mods[1];
+    var fbApp = appMod.initializeApp(firebaseConfig);
+    fbDb = fsMod.getFirestore(fbApp);
+    fbDoc = fsMod.doc;
+    fbSetDoc = fsMod.setDoc;
+    fbUpdateDoc = fsMod.updateDoc;
+    fbGetDoc = fsMod.getDoc;
+    fbOnSnapshot = fsMod.onSnapshot;
+  });
+  return fbReadyPromise;
+}
 
 (function(){
 "use strict";
@@ -513,7 +530,8 @@ var state = {
   mpMaxPlayers: 4,
   winnerIndex: null,
   winnerStraight: null,
-  ceremonyShown: false
+  ceremonyShown: false,
+  turnSeq: 0
 };
 
 var chosenCharacter = null;
@@ -546,14 +564,15 @@ function iAmHost(){ return !isMultiplayer() || state.myIndex===0; }
 var roomUnsub = null;
 
 function pushRoomState(){
-  if(!state.mpRoomCode) return;
-  updateDoc(doc(fbDb,"rooms",state.mpRoomCode), {
+  if(!state.mpRoomCode || !fbDb) return;
+  fbUpdateDoc(fbDoc(fbDb,"rooms",state.mpRoomCode), {
     players: state.players,
     floor: state.floor,
     centerDeck: state.centerDeck,
     colors: state.colors,
     turnOrder: state.turnOrder,
     currentTurnPos: state.currentTurnPos,
+    turnSeq: state.turnSeq,
     gameOver: state.gameOver,
     winnerIndex: state.winnerIndex,
     winnerStraight: state.winnerStraight,
@@ -565,7 +584,7 @@ function pushRoomState(){
 
 function subscribeRoom(code){
   if(roomUnsub){ roomUnsub(); roomUnsub=null; }
-  roomUnsub = onSnapshot(doc(fbDb,"rooms",code), function(snap){
+  roomUnsub = fbOnSnapshot(fbDoc(fbDb,"rooms",code), function(snap){
     if(!snap.exists()) return;
     var data = snap.data();
     if(data.phase==="lobby"){
@@ -588,6 +607,7 @@ function applyRemoteRoomState(data){
   state.colors = data.colors || [];
   state.turnOrder = data.turnOrder || [];
   state.currentTurnPos = data.currentTurnPos || 0;
+  state.turnSeq = data.turnSeq || 0;
   state.gameOver = !!data.gameOver;
   state.winnerIndex = data.winnerIndex;
   state.winnerStraight = data.winnerStraight;
@@ -623,54 +643,59 @@ function applyRemoteRoomState(data){
 
 var aiDriveGuard = {};
 function maybeDriveAi(idx, delay){
-  var key = state.currentTurnPos+"-"+idx;
+  var key = state.turnSeq+"-"+idx;
   if(aiDriveGuard[key]) return;
+  aiDriveGuard = {};
   aiDriveGuard[key] = true;
   setTimeout(function(){ aiTakeTurn(idx); }, delay===undefined?900:delay);
 }
 
 function createRoom(maxPlayers, cb){
-  var code = genRoomCode();
-  var me = { clientId: myClientId, name: chosenCharacter.name, avatar: avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] };
-  var roomData = {
-    code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
-    colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
-    gameOver: false, log: [], createdAt: Date.now(), updatedAt: Date.now()
-  };
-  setDoc(doc(fbDb,"rooms",code), roomData).then(function(){
-    state.mpRoomCode = code;
-    state.mpMaxPlayers = maxPlayers;
-    state.myIndex = 0;
-    subscribeRoom(code);
-    cb(null, code);
-  }).catch(function(e){ cb(e.message); });
-}
-
-function joinRoom(code, cb){
-  code = code.toUpperCase().trim();
-  var ref = doc(fbDb,"rooms",code);
-  getDoc(ref).then(function(snap){
-    if(!snap.exists()){ cb("방을 찾을 수 없습니다. 코드를 확인해주세요."); return; }
-    var data = snap.data();
-    if(data.phase!=="lobby"){ cb("이미 시작된 방입니다."); return; }
-    var already = data.players.some(function(p){ return p.clientId===myClientId; });
-    if(already){
-      state.mpRoomCode = code;
-      state.mpMaxPlayers = data.maxPlayers;
-      subscribeRoom(code);
-      cb(null, code);
-      return;
-    }
-    if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
+  ensureFirebase().then(function(){
+    var code = genRoomCode();
     var me = { clientId: myClientId, name: chosenCharacter.name, avatar: avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] };
-    var newPlayers = data.players.concat([me]);
-    updateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
+    var roomData = {
+      code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
+      colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
+      gameOver: false, log: [], createdAt: Date.now(), updatedAt: Date.now()
+    };
+    fbSetDoc(fbDoc(fbDb,"rooms",code), roomData).then(function(){
       state.mpRoomCode = code;
-      state.mpMaxPlayers = data.maxPlayers;
+      state.mpMaxPlayers = maxPlayers;
+      state.myIndex = 0;
       subscribeRoom(code);
       cb(null, code);
     }).catch(function(e){ cb(e.message); });
-  }).catch(function(e){ cb(e.message); });
+  }).catch(function(e){ cb("네트워크 연결에 실패했습니다: "+(e&&e.message?e.message:e)); });
+}
+
+function joinRoom(code, cb){
+  ensureFirebase().then(function(){
+    code = code.toUpperCase().trim();
+    var ref = fbDoc(fbDb,"rooms",code);
+    fbGetDoc(ref).then(function(snap){
+      if(!snap.exists()){ cb("방을 찾을 수 없습니다. 코드를 확인해주세요."); return; }
+      var data = snap.data();
+      if(data.phase!=="lobby"){ cb("이미 시작된 방입니다."); return; }
+      var already = data.players.some(function(p){ return p.clientId===myClientId; });
+      if(already){
+        state.mpRoomCode = code;
+        state.mpMaxPlayers = data.maxPlayers;
+        subscribeRoom(code);
+        cb(null, code);
+        return;
+      }
+      if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
+      var me = { clientId: myClientId, name: chosenCharacter.name, avatar: avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] };
+      var newPlayers = data.players.concat([me]);
+      fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
+        state.mpRoomCode = code;
+        state.mpMaxPlayers = data.maxPlayers;
+        subscribeRoom(code);
+        cb(null, code);
+      }).catch(function(e){ cb(e.message); });
+    }).catch(function(e){ cb(e.message); });
+  }).catch(function(e){ cb("네트워크 연결에 실패했습니다: "+(e&&e.message?e.message:e)); });
 }
 
 function startOnlineGame(){
@@ -704,6 +729,8 @@ function startOnlineGame(){
   state.currentTurnPos = 0;
   state.gameOver = false;
   state.ceremonyShown = false;
+  state.turnSeq = 0;
+  aiDriveGuard = {};
   state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
   var myIdx = -1;
   for(var i=0;i<lobbyPlayers.length;i++){ if(lobbyPlayers[i].clientId===myClientId){ myIdx=i; break; } }
@@ -953,6 +980,8 @@ function startGame(players, order){
   state.myIndex = 0;
   state.mpRoomCode = null;
   state.ceremonyShown = false;
+  state.turnSeq = 0;
+  aiDriveGuard = {};
   clearSelectionState();
 
   buildRulebookPanel();
@@ -996,6 +1025,7 @@ function endTurn(){
   clearSelectionState();
   clearTurnTimer();
   state.currentTurnPos = (state.currentTurnPos+1) % state.turnOrder.length;
+  state.turnSeq++;
   render();
   pushRoomState();
   if(state.gameOver) return;
