@@ -181,6 +181,51 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <button class="btn primary big" id="avatar-next-btn" disabled>다음</button>
   </div>
 
+  <div class="screen hidden" id="screen-mode">
+    <h1 style="font-size:20px;">플레이 방식 선택</h1>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
+      <button class="btn primary big" id="mode-solo-btn">🤖 혼자하기 (AI 상대)</button>
+      <button class="btn primary big" id="mode-online-btn">🌐 온라인 멀티플레이</button>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="screen-online-choice">
+    <h1 style="font-size:20px;">온라인 멀티플레이</h1>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
+      <button class="btn primary big" id="online-create-btn">➕ 방 만들기</button>
+      <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
+    </div>
+    <button class="btn" id="online-back-btn">← 뒤로</button>
+  </div>
+
+  <div class="screen hidden" id="screen-room-create">
+    <h1 style="font-size:20px;">최대 인원 선택</h1>
+    <p class="sub">방을 만들면 코드가 발급됩니다. 부족한 인원은 게임 시작 시 AI가 채웁니다.</p>
+    <div class="count-row" id="create-count-row"></div>
+    <button class="btn primary big" id="create-room-btn" disabled>방 만들기</button>
+    <button class="btn" id="create-back-btn">← 뒤로</button>
+  </div>
+
+  <div class="screen hidden" id="screen-join">
+    <h1 style="font-size:20px;">코드로 참가하기</h1>
+    <p class="sub">공유받은 5자리 방 코드를 입력하세요</p>
+    <input id="join-code-input" maxlength="5" placeholder="ABCDE" style="font-size:24px;letter-spacing:6px;text-align:center;text-transform:uppercase;width:200px;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:var(--panel2);color:var(--text);">
+    <p class="sub" id="join-error" style="color:#ff6b6b;"></p>
+    <button class="btn primary big" id="join-room-btn">참가하기</button>
+    <button class="btn" id="join-back-btn">← 뒤로</button>
+  </div>
+
+  <div class="screen hidden" id="screen-lobby">
+    <h1 style="font-size:20px;">대기실</h1>
+    <p class="sub">방 코드를 카톡이나 문자로 공유하세요</p>
+    <div style="font-family:var(--font-display);font-weight:400;font-size:44px;letter-spacing:10px;color:var(--accent);" id="lobby-code"></div>
+    <button class="btn" id="lobby-copy-btn">🔗 링크 복사</button>
+    <div class="order-list" id="lobby-players" style="min-width:280px;"></div>
+    <button class="btn primary big hidden" id="lobby-start-btn">게임 시작 (부족 인원 AI 채움)</button>
+    <p class="sub hidden" id="lobby-wait-msg">호스트가 게임을 시작하길 기다리는 중...</p>
+    <button class="btn" id="lobby-leave-btn">← 나가기</button>
+  </div>
+
   <div class="screen hidden" id="screen-count">
     <h1 style="font-size:20px;">플레이 인원 선택</h1>
     <p class="sub">부족한 인원은 AI가 대신 플레이합니다 · 인원수만큼 색상이 사용됩니다</p>
@@ -241,7 +286,21 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 </div>
 <div id="tooltip-layer"></div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
+import { getFirestore, doc, setDoc, updateDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBO_HG0CtTRF3NmDUXN1aae8uCm5IFjpAQ",
+  authDomain: "straight-game.firebaseapp.com",
+  projectId: "straight-game",
+  storageBucket: "straight-game.firebasestorage.app",
+  messagingSenderId: "435687905535",
+  appId: "1:435687905535:web:2dfc13e707ebdbbb7394ca"
+};
+const fbApp = initializeApp(firebaseConfig);
+const fbDb = getFirestore(fbApp);
+
 (function(){
 "use strict";
 
@@ -268,7 +327,7 @@ function $(id){ return document.getElementById(id); }
 function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 function switchScreen(name){
-  ["start","avatar","count","order","game","win"].forEach(function(s){
+  ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win"].forEach(function(s){
     $("screen-"+s).classList.toggle("hidden", s!==name);
   });
 }
@@ -395,11 +454,213 @@ var state = {
   animating: false,
   selectedHandIdx: null,
   mode: "idle",
-  log: []
+  log: [],
+  myIndex: 0,
+  mpRoomCode: null,
+  mpMaxPlayers: 4,
+  winnerIndex: null,
+  winnerStraight: null,
+  ceremonyShown: false
 };
 
 var chosenCharacter = null;
 var chosenCount = null;
+var urlRoomCode = (new URLSearchParams(location.search)).get("room");
+
+/* ---------------- multiplayer (Firebase) ---------------- */
+
+function getClientId(){
+  var id = null;
+  try{ id = localStorage.getItem("straightClientId"); }catch(e){}
+  if(!id){
+    id = "c" + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
+    try{ localStorage.setItem("straightClientId", id); }catch(e){}
+  }
+  return id;
+}
+var myClientId = getClientId();
+
+function genRoomCode(){
+  var chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  var s = "";
+  for(var i=0;i<5;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+function isMultiplayer(){ return !!state.mpRoomCode; }
+function iAmHost(){ return !isMultiplayer() || state.myIndex===0; }
+
+var roomUnsub = null;
+
+function pushRoomState(){
+  if(!state.mpRoomCode) return;
+  updateDoc(doc(fbDb,"rooms",state.mpRoomCode), {
+    players: state.players,
+    floor: state.floor,
+    centerDeck: state.centerDeck,
+    colors: state.colors,
+    turnOrder: state.turnOrder,
+    currentTurnPos: state.currentTurnPos,
+    gameOver: state.gameOver,
+    winnerIndex: state.winnerIndex,
+    winnerStraight: state.winnerStraight,
+    log: state.log,
+    phase: "playing",
+    updatedAt: Date.now()
+  }).catch(function(e){ console.error("동기화 실패", e); });
+}
+
+function subscribeRoom(code){
+  if(roomUnsub){ roomUnsub(); roomUnsub=null; }
+  roomUnsub = onSnapshot(doc(fbDb,"rooms",code), function(snap){
+    if(!snap.exists()) return;
+    var data = snap.data();
+    if(data.phase==="lobby"){
+      renderLobby(data);
+      return;
+    }
+    applyRemoteRoomState(data);
+  }, function(err){
+    console.error("room subscribe error", err);
+  });
+}
+
+function applyRemoteRoomState(data){
+  var wasOver = state.gameOver;
+  state.players = data.players || [];
+  state.floor = data.floor || [];
+  state.centerDeck = data.centerDeck || [];
+  state.colors = data.colors || [];
+  state.turnOrder = data.turnOrder || [];
+  state.currentTurnPos = data.currentTurnPos || 0;
+  state.gameOver = !!data.gameOver;
+  state.winnerIndex = data.winnerIndex;
+  state.winnerStraight = data.winnerStraight;
+  state.log = data.log || [];
+  var idx = -1;
+  for(var i=0;i<state.players.length;i++){ if(state.players[i].clientId===myClientId){ idx=i; break; } }
+  state.myIndex = idx>=0 ? idx : 0;
+
+  if($("screen-game").classList.contains("hidden")){
+    switchScreen("game");
+  }
+  render();
+
+  if(state.gameOver && !wasOver && !state.ceremonyShown){
+    state.ceremonyShown = true;
+    var winner = state.players[state.winnerIndex];
+    if(winner && state.winnerStraight){
+      playWinCeremony(state.winnerIndex, state.winnerStraight, function(){
+        showWinScreen(winner, state.winnerStraight);
+      });
+    }
+  }
+
+  if(!state.gameOver){
+    var curIdx = currentPlayerIdx();
+    if(state.players[curIdx] && state.players[curIdx].isAI){
+      if(iAmHost()) maybeDriveAi(curIdx);
+    } else if(curIdx===state.myIndex){
+      if(!turnTimerId) { sfxTurn(); startTurnTimer(); }
+    }
+  }
+}
+
+var aiDriveGuard = {};
+function maybeDriveAi(idx){
+  if(aiDriveGuard[state.currentTurnPos+"-"+idx]) return;
+  aiDriveGuard = {};
+  aiDriveGuard[state.currentTurnPos+"-"+idx] = true;
+  setTimeout(function(){ aiTakeTurn(idx); }, 900);
+}
+
+function createRoom(maxPlayers, cb){
+  var code = genRoomCode();
+  var me = { clientId: myClientId, name: chosenCharacter.name, avatar: avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] };
+  var roomData = {
+    code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
+    colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
+    gameOver: false, log: [], createdAt: Date.now(), updatedAt: Date.now()
+  };
+  setDoc(doc(fbDb,"rooms",code), roomData).then(function(){
+    state.mpRoomCode = code;
+    state.mpMaxPlayers = maxPlayers;
+    state.myIndex = 0;
+    subscribeRoom(code);
+    cb(null, code);
+  }).catch(function(e){ cb(e.message); });
+}
+
+function joinRoom(code, cb){
+  code = code.toUpperCase().trim();
+  var ref = doc(fbDb,"rooms",code);
+  getDoc(ref).then(function(snap){
+    if(!snap.exists()){ cb("방을 찾을 수 없습니다. 코드를 확인해주세요."); return; }
+    var data = snap.data();
+    if(data.phase!=="lobby"){ cb("이미 시작된 방입니다."); return; }
+    var already = data.players.some(function(p){ return p.clientId===myClientId; });
+    if(already){
+      state.mpRoomCode = code;
+      state.mpMaxPlayers = data.maxPlayers;
+      subscribeRoom(code);
+      cb(null, code);
+      return;
+    }
+    if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
+    var me = { clientId: myClientId, name: chosenCharacter.name, avatar: avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] };
+    var newPlayers = data.players.concat([me]);
+    updateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
+      state.mpRoomCode = code;
+      state.mpMaxPlayers = data.maxPlayers;
+      subscribeRoom(code);
+      cb(null, code);
+    }).catch(function(e){ cb(e.message); });
+  }).catch(function(e){ cb(e.message); });
+}
+
+function startOnlineGame(){
+  if(!iAmHost()) return;
+  var lobbyPlayers = state.players.slice();
+  var maxPlayers = state.mpMaxPlayers;
+  var usedNames = {};
+  lobbyPlayers.forEach(function(p){ usedNames[p.name]=true; });
+  while(lobbyPlayers.length < maxPlayers){
+    var ch;
+    do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(usedNames[ch.name]);
+    usedNames[ch.name]=true;
+    lobbyPlayers.push({ clientId:null, name:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
+  }
+
+  var colors = colorsForCount(lobbyPlayers.length);
+  var deck = shuffle(buildDeck(colors));
+  var floor = deck.splice(0,8);
+  lobbyPlayers.forEach(function(p){ p.hand = deck.splice(0,8); p.score = []; });
+
+  var draws = lobbyPlayers.map(function(){ return 1+Math.floor(Math.random()*10); });
+  var turnOrder = lobbyPlayers.map(function(p,i){ return {i:i, d:draws[i]}; })
+    .sort(function(a,b){ return b.d-a.d || a.i-b.i; })
+    .map(function(o){ return o.i; });
+
+  state.players = lobbyPlayers;
+  state.colors = colors;
+  state.floor = floor;
+  state.centerDeck = deck;
+  state.turnOrder = turnOrder;
+  state.currentTurnPos = 0;
+  state.gameOver = false;
+  state.ceremonyShown = false;
+  state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
+  var myIdx = -1;
+  for(var i=0;i<lobbyPlayers.length;i++){ if(lobbyPlayers[i].clientId===myClientId){ myIdx=i; break; } }
+  state.myIndex = myIdx>=0 ? myIdx : 0;
+
+  pushRoomState();
+}
+
+function leaveRoom(){
+  if(roomUnsub){ roomUnsub(); roomUnsub=null; }
+  state.mpRoomCode = null;
+}
 
 /* ---------------- avatar / count / start flow ---------------- */
 
@@ -427,7 +688,17 @@ $("start-btn").addEventListener("click", function(){
 $("avatar-next-btn").addEventListener("click", function(){
   sfxSelect();
   requestFS();
-  switchScreen("count");
+  if(urlRoomCode){
+    $("join-error").textContent = "참가하는 중...";
+    switchScreen("join");
+    $("join-code-input").value = urlRoomCode;
+    joinRoom(urlRoomCode, function(err){
+      if(err){ $("join-error").textContent = err; urlRoomCode=null; return; }
+      switchScreen("lobby");
+    });
+    return;
+  }
+  switchScreen("mode");
 });
 
 var countRow = $("count-row");
@@ -447,6 +718,121 @@ $("count-next-btn").addEventListener("click", function(){
   sfxSelect();
   runOrderCutscene();
 });
+
+/* ---------------- mode / online screens ---------------- */
+
+$("mode-solo-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("count");
+});
+$("mode-online-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("online-choice");
+});
+$("online-back-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("mode");
+});
+
+var chosenCreateCount = null;
+var createCountRow = $("create-count-row");
+[2,3,4].forEach(function(n){
+  var b = el("button","count-btn",n);
+  b.addEventListener("click", function(){
+    sfxSelect();
+    Array.prototype.forEach.call(createCountRow.children, function(c){ c.classList.remove("selected"); });
+    b.classList.add("selected");
+    chosenCreateCount = n;
+    $("create-room-btn").disabled = false;
+  });
+  createCountRow.appendChild(b);
+});
+
+$("online-create-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("room-create");
+});
+$("create-back-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("online-choice");
+});
+$("create-room-btn").addEventListener("click", function(){
+  sfxSelect();
+  requestFS();
+  $("create-room-btn").disabled = true;
+  createRoom(chosenCreateCount, function(err, code){
+    $("create-room-btn").disabled = false;
+    if(err){ alert("방 생성 실패: "+err); return; }
+    switchScreen("lobby");
+  });
+});
+
+$("online-join-btn").addEventListener("click", function(){
+  sfxSelect();
+  $("join-error").textContent = "";
+  $("join-code-input").value = "";
+  switchScreen("join");
+});
+$("join-back-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("online-choice");
+});
+$("join-room-btn").addEventListener("click", function(){
+  sfxSelect();
+  requestFS();
+  var code = $("join-code-input").value.trim();
+  if(code.length<5){ $("join-error").textContent = "5자리 코드를 입력하세요."; return; }
+  $("join-room-btn").disabled = true;
+  joinRoom(code, function(err, joinedCode){
+    $("join-room-btn").disabled = false;
+    if(err){ $("join-error").textContent = err; return; }
+    switchScreen("lobby");
+  });
+});
+
+$("lobby-copy-btn").addEventListener("click", function(){
+  sfxSelect();
+  var url = location.href.split("?")[0] + "?room=" + state.mpRoomCode;
+  var text = "스트레이트! 같이 하자 🎴 방 코드: " + state.mpRoomCode + "\n" + url;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(function(){
+      var btn = $("lobby-copy-btn");
+      var old = btn.textContent;
+      btn.textContent = "✅ 복사됨!";
+      setTimeout(function(){ btn.textContent = old; }, 1500);
+    }).catch(function(){});
+  }
+});
+
+$("lobby-start-btn").addEventListener("click", function(){
+  sfxSelect();
+  startOnlineGame();
+});
+$("lobby-leave-btn").addEventListener("click", function(){
+  leaveRoom();
+  switchScreen("online-choice");
+});
+
+function renderLobby(data){
+  $("lobby-code").textContent = state.mpRoomCode || data.code;
+  var list = $("lobby-players");
+  list.innerHTML = "";
+  data.players.forEach(function(p, i){
+    var row = el("div","order-row");
+    row.style.opacity = "1";
+    row.innerHTML = "<span>"+p.avatar+" "+p.name+(p.clientId===data.hostClientId?" 👑":"")+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
+    list.appendChild(row);
+  });
+  var slotsLeft = data.maxPlayers - data.players.length;
+  if(slotsLeft>0){
+    var fillRow = el("div","order-row",  "AI가 채울 자리 "+slotsLeft+"칸");
+    fillRow.style.opacity = ".6";
+    list.appendChild(fillRow);
+  }
+  var isHost = data.hostClientId===myClientId;
+  $("lobby-start-btn").classList.toggle("hidden", !isHost);
+  $("lobby-wait-msg").classList.toggle("hidden", isHost);
+}
 
 function runOrderCutscene(){
   switchScreen("order");
@@ -508,6 +894,9 @@ function startGame(players, order){
   state.gameOver = false;
   state.animating = false;
   state.log = [];
+  state.myIndex = 0;
+  state.mpRoomCode = null;
+  state.ceremonyShown = false;
   clearSelectionState();
 
   buildRulebookPanel();
@@ -537,7 +926,7 @@ function renderLog(){
 
 /* ---------------- turn helpers ---------------- */
 function isHumanTurn(){
-  return !state.gameOver && !state.animating && state.turnOrder[state.currentTurnPos] === 0;
+  return !state.gameOver && !state.animating && state.turnOrder[state.currentTurnPos] === state.myIndex;
 }
 function currentPlayerIdx(){ return state.turnOrder[state.currentTurnPos]; }
 
@@ -552,11 +941,12 @@ function endTurn(){
   clearTurnTimer();
   state.currentTurnPos = (state.currentTurnPos+1) % state.turnOrder.length;
   render();
+  pushRoomState();
   if(state.gameOver) return;
   var nextIdx = currentPlayerIdx();
   if(state.players[nextIdx].isAI){
-    setTimeout(function(){ aiTakeTurn(nextIdx); }, 850);
-  } else {
+    if(iAmHost()) setTimeout(function(){ aiTakeTurn(nextIdx); }, 850);
+  } else if(nextIdx===state.myIndex){
     sfxTurn();
     startTurnTimer();
   }
@@ -594,7 +984,7 @@ function startTurnTimer(){
     if(remaining>0 && remaining<=5) sfxTick();
     if(remaining<=0){
       clearTurnTimer();
-      var player = state.players[0];
+      var player = state.players[state.myIndex];
       pushLog(player.name+"의 시간이 초과되어 자동으로 2장을 뽑고 턴을 마칩니다.");
       sfxTimeout();
       drawTwoAndEndTurn();
@@ -608,8 +998,12 @@ function checkWin(playerIdx){
   var straight = findStraight(player.score, state.colors);
   if(straight){
     state.gameOver = true;
+    state.winnerIndex = playerIdx;
+    state.winnerStraight = straight;
+    state.ceremonyShown = true;
     clearTurnTimer();
     render();
+    pushRoomState();
     playWinCeremony(playerIdx, straight, function(){
       showWinScreen(player, straight);
     });
@@ -627,7 +1021,7 @@ function playWinCeremony(playerIdx, straight, cb){
   var missing = 5 - realCards.length;
   var jokersUsed = player.score.filter(function(c){ return c.isJoker; }).slice(0, missing);
   var targets = realCards.concat(jokersUsed);
-  var containerSel = playerIdx===0 ? "#score-area" : '.opponent-card[data-player-idx="'+playerIdx+'"] .opp-score-wrap';
+  var containerSel = playerIdx===state.myIndex ? "#score-area" : '.opponent-card[data-player-idx="'+playerIdx+'"] .opp-score-wrap';
   var container = document.querySelector(containerSel);
   if(container){
     targets.forEach(function(c){
@@ -770,7 +1164,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     playerIdx: playerIdx,
     handIdx: handIdx,
     floorIdx: floorIdx,
-    isHuman: playerIdx===0,
+    isHuman: playerIdx===state.myIndex,
     handCoin: handCoin,
     capturedCoin: capturedCoin
   }, function(){
@@ -788,7 +1182,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
 
 function drawTwoAndEndTurn(){
   if(state.animating || !isHumanTurn()) return;
-  var player = state.players[0];
+  var player = state.players[state.myIndex];
   var n = Math.min(2, state.centerDeck.length);
   clearSelectionState();
   if(n<=0){
@@ -811,7 +1205,7 @@ function drawTwoAndEndTurn(){
 
 function jokerRefresh(handIdx){
   if(state.animating) return;
-  var player = state.players[0];
+  var player = state.players[state.myIndex];
   var joker = player.hand.splice(handIdx,1)[0];
   state.centerDeck = shuffle(state.centerDeck.concat([joker]));
   var n = Math.min(5, state.centerDeck.length);
@@ -942,7 +1336,7 @@ function renderOpponents(){
   var row = $("opponents-row");
   row.innerHTML = "";
   state.players.forEach(function(p, i){
-    if(i===0) return;
+    if(i===state.myIndex) return;
     var card = el("div","opponent-card"+(currentPlayerIdx()===i?" active":""));
     card.setAttribute("data-player-idx", i);
     var total = p.score.reduce(function(s,c){ return s+pointValue(c); },0);
@@ -989,7 +1383,7 @@ function renderFloor(){
     if(canTarget){
       if(state.mode==="joker-eat-target"){ valid = true; }
       else {
-        var handCoin = state.players[0].hand[state.selectedHandIdx];
+        var handCoin = state.players[state.myIndex].hand[state.selectedHandIdx];
         valid = handCoin ? isValidEat(handCoin, fc) : false;
       }
       if(!valid) opts.cls = "disabled";
@@ -1006,7 +1400,7 @@ function renderFloor(){
 function renderHand(){
   var wrap = $("hand-coins");
   wrap.innerHTML = "";
-  var player = state.players[0];
+  var player = state.players[state.myIndex];
   player.hand.forEach(function(hc, hi){
     var cls = "";
     if((state.mode==="eat-target"||state.mode==="joker-choice"||state.mode==="joker-eat-target") && state.selectedHandIdx===hi) cls="selected";
@@ -1024,7 +1418,7 @@ function renderHand(){
 function renderScore(){
   var area = $("score-area");
   area.innerHTML = "";
-  var player = state.players[0];
+  var player = state.players[state.myIndex];
   var flow = el("div","score-flow");
   var total = 0;
   var jokers = player.score.filter(function(c){ return c.isJoker; });
@@ -1049,7 +1443,7 @@ function renderScore(){
 
 function onHandClick(hi){
   if(state.animating || !isHumanTurn()) return;
-  var player = state.players[0];
+  var player = state.players[state.myIndex];
   var coin = player.hand[hi];
 
   if(state.mode==="idle"){
@@ -1083,7 +1477,7 @@ function onFloorTargetClick(fi){
   if(state.animating || !isHumanTurn()) return;
   var handIdx = state.selectedHandIdx;
   if(handIdx===null || handIdx===undefined) return;
-  var player = state.players[0];
+  var player = state.players[state.myIndex];
   var handCoin = player.hand[handIdx];
   var floorCoin = state.floor[fi];
 
@@ -1101,7 +1495,7 @@ function handSortKey(c){
 }
 function sortHand(){
   if(state.animating || !isHumanTurn()) return;
-  state.players[0].hand.sort(function(a,b){ return handSortKey(a)-handSortKey(b); });
+  state.players[state.myIndex].hand.sort(function(a,b){ return handSortKey(a)-handSortKey(b); });
   render();
 }
 
@@ -1162,6 +1556,7 @@ function buildRulebookPanel(){
     "</ul>";
 }
 
+buildRulebookPanel();
 var rulebookBtn = $("rulebook-btn");
 var rulebookPanel = $("rulebook-panel");
 rulebookBtn.addEventListener("click", function(e){
