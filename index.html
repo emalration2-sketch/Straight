@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>스트레이트! · Pixel Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pink:#EC4899;
+  --blue:#1D3557;
+  --yellow:#F4A261;
+  --green:#2A9D8F;
+  --bg:#120f1c;
+  --panel:#1e1a30;
+  --panel2:#2b2447;
+  --text:#f6f3fb;
+  --muted:#a79fc4;
+  --accent:#ffd76b;
+  --font-display:'Black Han Sans','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --card-w: clamp(30px, 6.4vh, 58px);
+  --card-h: calc(var(--card-w) * 1.4);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{
+  margin:0;padding:0;width:100vw;height:100vh;
+  overflow:hidden;position:fixed;touch-action:none;
+  background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+#app{position:fixed;inset:0;}
+.screen{
+  position:absolute;inset:0;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;gap:14px;
+  padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 16px);
+}
+.hidden{display:none !important;}
+h1{font-size:clamp(22px,5vw,40px);margin:0;letter-spacing:1px;}
+h1 span{color:var(--pink);}
+p.sub{color:var(--muted);font-size:13px;margin:0;}
+.title-block{display:flex;flex-direction:column;align-items:center;gap:6px;}
+.title-main{font-family:var(--font-display);font-weight:400;font-size:clamp(30px,7vw,54px);letter-spacing:1px;color:#fff;line-height:1;}
+.title-main span{color:var(--pink);}
+.title-sub{font-family:var(--font-display);font-weight:400;font-size:clamp(13px,3vw,20px);letter-spacing:1px;color:var(--muted);}
+.title-by{font-size:12px;color:var(--muted);letter-spacing:.5px;margin-top:2px;}
+.btn{
+  background:var(--panel2);color:var(--text);border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;
+}
+.btn:active{transform:scale(.96);}
+.btn.primary{background:linear-gradient(135deg,var(--pink),#ff8fb8);border:none;color:#1a0510;}
+.btn.big{padding:14px 34px;font-size:16px;}
+.btn:disabled{opacity:.4;}
+
+/* avatar select */
+.avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:560px;}
+.avatar-btn{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:28px;background:var(--panel);border-radius:14px;padding:10px 6px;border:2px solid transparent;cursor:pointer;}
+.avatar-btn .nm{font-size:10.5px;color:var(--muted);white-space:nowrap;}
+.avatar-btn.selected{border-color:gold;box-shadow:0 0 12px 2px rgba(255,215,0,.6);}
+
+/* count select */
+.count-row{display:flex;gap:10px;}
+.count-btn{width:56px;height:56px;border-radius:50%;font-size:20px;font-weight:800;background:var(--panel2);border:2px solid transparent;color:var(--text);}
+.count-btn.selected{border-color:var(--pink);}
+
+/* order cutscene */
+.order-list{display:flex;flex-direction:column;gap:6px;min-width:240px;}
+.order-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border-radius:10px;padding:6px 12px;font-size:14px;opacity:0;animation:riseIn .4s forwards;}
+@keyframes riseIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ===== GAME SCREEN ===== */
+#screen-game{justify-content:flex-start;padding:calc(env(safe-area-inset-top) + 3px) calc(env(safe-area-inset-right) + 4px) calc(env(safe-area-inset-bottom) + 3px) calc(env(safe-area-inset-left) + 4px);gap:0;}
+.game-wrap{width:100%;max-width:1180px;height:100%;margin:0 auto;display:flex;flex-direction:column;gap:3px;min-height:0;}
+
+.topbar{width:100%;display:flex;align-items:center;justify-content:center;gap:6px;flex-shrink:0;position:relative;}
+.brand-mark{font-family:var(--font-display);font-size:14px;letter-spacing:.5px;color:var(--accent);}
+.rulebook-wrap{position:absolute;left:0;top:50%;transform:translateY(-50%);flex-shrink:0;}
+.topbar-right{position:absolute;right:0;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:5px;}
+.icon-btn{background:var(--panel2);border:1px solid rgba(255,255,255,.2);color:var(--text);border-radius:50%;width:28px;height:28px;font-size:13px;flex-shrink:0;}
+.turn-timer{font-size:10.5px;font-weight:800;color:var(--muted);background:var(--panel2);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:3px 7px;min-width:30px;text-align:center;flex-shrink:0;}
+.turn-timer.warn{color:#ff6b6b;border-color:#ff6b6b;}
+.rulebook-panel{display:none;position:fixed;top:44px;left:8px;z-index:99999;width:min(320px,80vw);max-height:calc(100vh - 60px);overflow-y:auto;background:var(--panel);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px;box-shadow:0 12px 32px rgba(0,0,0,.5);text-align:left;}
+.rulebook-wrap:hover .rulebook-panel{display:block;}
+.rulebook-panel.force-open{display:block;}
+.rulebook-panel h2{margin:0 0 8px;font-size:15px;color:var(--pink);}
+.rulebook-panel ul{margin:0;padding-left:16px;font-size:11.5px;line-height:1.55;}
+.rulebook-panel li{margin-bottom:5px;}
+
+.opponents-row{width:100%;height:19vh;min-height:76px;display:flex;gap:5px;justify-content:center;flex-shrink:0;padding:1px;}
+.opponent-card{flex:1 1 0;display:flex;flex-direction:column;background:var(--panel);border:2px solid transparent;border-radius:10px;padding:3px 5px;min-width:0;max-width:280px;overflow:hidden;}
+.opponent-card.active{border-color:var(--accent);}
+.opp-head-row{display:flex;align-items:center;gap:4px;flex-shrink:0;line-height:1.2;}
+.opp-head{display:flex;align-items:center;font-size:13px;line-height:1;flex-shrink:0;}
+.opp-head svg{width:1.1em;height:1.1em;vertical-align:-0.15em;}
+.opp-name{font-size:10px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:1;}
+.opp-total{font-size:9px;color:var(--muted);font-weight:700;white-space:nowrap;margin-left:auto;flex-shrink:0;}
+.opp-hand-stack{display:flex;height:15px;align-items:center;flex-shrink:0;margin:2px 0;}
+.opp-hand-stack .card.opp-back{width:11px;}
+.opp-hand-stack .card.opp-back:not(:first-child){margin-left:-6px;}
+.opp-score-wrap{display:flex;gap:2px;flex-wrap:wrap;align-content:flex-start;width:100%;flex:1;min-height:0;overflow:hidden;justify-content:flex-start;}
+
+.instruction-bar{width:100%;text-align:center;font-size:11px;font-weight:700;color:var(--accent);background:rgba(255,215,107,.08);border:1px solid rgba(255,215,107,.22);border-radius:8px;padding:3px 10px;flex-shrink:0;}
+
+.board-row{width:100%;flex:1;display:flex;align-items:center;justify-content:center;gap:14px;min-height:0;padding:2px 0;}
+.deck-stack{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
+.deck-visual{position:relative;width:var(--card-w);height:var(--card-h);}
+.deck-visual .layer{position:absolute;inset:0;border-radius:10px;background:linear-gradient(135deg,#332c58,#1c1730);border:2px solid rgba(255,255,255,.22);}
+.deck-visual .layer:nth-child(1){transform:translate(5px,5px);}
+.deck-visual .layer:nth-child(2){transform:translate(2.5px,2.5px);}
+.deck-visual .layer:nth-child(3){display:flex;align-items:center;justify-content:center;font-size:20px;}
+.deck-label{font-size:10px;color:var(--muted);font-weight:700;white-space:nowrap;}
+
+.floor-board{display:grid;grid-template-columns:repeat(4, var(--card-w));grid-template-rows:repeat(2, var(--card-h));gap:7px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);border-radius:16px;padding:9px;flex-shrink:0;}
+.floor-slot{display:flex;align-items:center;justify-content:center;position:relative;}
+.floor-slot.impact .card{animation:impactPulse .22s ease;}
+@keyframes impactPulse{0%{transform:scale(1);}50%{transform:scale(1.22);}100%{transform:scale(1);}}
+.floor-slot.impact::after{content:"";position:absolute;inset:-6px;border-radius:16px;background:var(--accent);opacity:0;animation:impactRing .22s ease;pointer-events:none;}
+@keyframes impactRing{0%{opacity:.55;}100%{opacity:0;}}
+
+.bottom-area{width:100%;height:29vh;min-height:132px;display:flex;gap:5px;flex-shrink:0;}
+.hand-area{flex:1.5;display:flex;flex-direction:column;min-width:0;background:rgba(255,255,255,.03);border-radius:12px;padding:5px;}
+.hand-coins{flex:1;display:flex;gap:4px;flex-wrap:wrap;align-content:center;justify-content:center;overflow:hidden;}
+.hand-actions{display:flex;gap:8px;justify-content:center;align-items:center;padding:3px 0 1px;flex-wrap:wrap;}
+.btn.exchange-big{font-size:13.5px;font-weight:800;padding:10px 20px;border-radius:14px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
+.btn.exchange-big:active{transform:scale(.95);}
+
+.score-area{flex:1;background:rgba(255,255,255,.04);border-radius:12px;padding:5px;overflow:hidden;display:flex;flex-direction:column;gap:2px;min-width:0;}
+.score-flow{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;gap:3px;overflow:hidden;min-height:0;}
+.score-total{font-size:11.5px;font-weight:800;flex-shrink:0;color:var(--accent);}
+
+.log-panel{width:100%;height:7vh;min-height:34px;overflow-y:auto;font-size:10.5px;background:rgba(0,0,0,.3);border-radius:8px;padding:3px 8px;line-height:1.35;flex-shrink:0;color:var(--muted);}
+.log-panel div:first-child{color:var(--text);}
+
+/* ===== CARDS ===== */
+.card{
+  width:var(--card-w);height:var(--card-h);border-radius:11px;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:calc(var(--card-w) * 0.34);
+  color:#fff;border:2px solid rgba(255,255,255,.55);box-shadow:0 3px 6px rgba(0,0,0,.45);
+  cursor:pointer;transition:transform .15s;user-select:none;flex-shrink:0;position:relative;
+}
+.card.tiny{width:calc(var(--card-w)*0.55);height:calc(var(--card-h)*0.55);font-size:calc(var(--card-w)*0.26);border-width:1.5px;border-radius:6px;}
+.card.mini-back{width:calc(var(--card-w)*0.6);height:calc(var(--card-h)*0.6);border-radius:6px;}
+.card.opp{width:15px;height:21px;font-size:8.5px;border-width:1px;border-radius:4px;cursor:default;flex-shrink:0;}
+.card.opp-back{width:11px;height:16px;border-radius:3px;border-width:1px;cursor:default;flex-shrink:0;}
+.card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
+.card.joker{background:linear-gradient(135deg,#ffffff,#e4e2ef);color:#2a2440;border-color:rgba(42,36,64,.35);}
+.card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
+.card.back{background:repeating-linear-gradient(45deg,#2a2f52,#2a2f52 6px,#333a66 6px,#333a66 12px);border:2px solid rgba(255,255,255,.28);}
+@keyframes wildPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.85;}}
+.card.disabled{opacity:.45;filter:grayscale(.75) brightness(.55);cursor:default;pointer-events:none;}
+.card.flying{pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.55);}
+.card.win-highlight{animation:winGlow .6s ease-in-out infinite;z-index:5;}
+@keyframes winGlow{0%,100%{box-shadow:0 0 0 2px var(--accent);transform:scale(1);}50%{box-shadow:0 0 14px 5px var(--accent);transform:scale(1.18);}}
+
+/* tooltip / modal layer */
+#tooltip-layer{position:fixed;inset:0;z-index:99999;pointer-events:none;}
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:20px;}
+.modal-box{background:var(--panel);border-radius:16px;padding:18px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.6);}
+.modal-box h2{margin:0 0 8px;font-size:17px;color:var(--pink);}
+.modal-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
+
+.win-emoji{font-size:60px;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div class="screen" id="screen-start">
+    <div class="title-block">
+      <div class="title-main">스트레이트<span>!</span></div>
+      <div class="title-sub">(STRAIGHT!)</div>
+      <div class="title-by">by. PixelRooM</div>
+    </div>
+    <button class="btn primary big" id="start-btn">게임 시작</button>
+  </div>
+
+  <div class="screen hidden" id="screen-avatar">
+    <h1 style="font-size:20px;">캐릭터를 선택하세요</h1>
+    <div class="avatar-grid" id="avatar-grid"></div>
+    <button class="btn primary big" id="avatar-next-btn" disabled>다음</button>
+  </div>
+
+  <div class="screen hidden" id="screen-count">
+    <h1 style="font-size:20px;">플레이 인원 선택</h1>
+    <p class="sub">부족한 인원은 AI가 대신 플레이합니다 · 인원수만큼 색상이 사용됩니다</p>
+    <div class="count-row" id="count-row"></div>
+    <button class="btn primary big" id="count-next-btn" disabled>순서 정하기</button>
+  </div>
+
+  <div class="screen hidden" id="screen-order">
+    <h1 style="font-size:20px;">선공 결정 중...</h1>
+    <div class="order-list" id="order-list"></div>
+    <button class="btn primary big hidden" id="order-start-btn">게임 시작!</button>
+  </div>
+
+  <div class="screen hidden" id="screen-game">
+    <div class="game-wrap">
+      <div class="topbar">
+        <div class="rulebook-wrap" id="rulebook-wrap">
+          <button class="icon-btn" id="rulebook-btn" title="규칙 보기">📖</button>
+          <div class="rulebook-panel" id="rulebook-panel"></div>
+        </div>
+        <div class="brand-mark">스트레이트!</div>
+        <div class="topbar-right">
+          <div class="turn-timer" id="turn-timer"></div>
+          <button class="icon-btn" id="sound-toggle-btn" title="사운드 켜기/끄기">🔊</button>
+        </div>
+      </div>
+      <div class="opponents-row" id="opponents-row"></div>
+      <div class="instruction-bar" id="instruction-bar"></div>
+      <div class="board-row">
+        <div class="deck-stack">
+          <div class="deck-visual" id="deck-visual"><div class="layer"></div><div class="layer"></div><div class="layer">🂠</div></div>
+          <div class="deck-label">중앙덱 <span id="deck-count">0</span></div>
+        </div>
+        <div class="floor-board" id="floor-board"></div>
+      </div>
+      <div class="bottom-area">
+        <div class="hand-area">
+          <div class="hand-coins" id="hand-coins"></div>
+          <div class="hand-actions">
+            <button class="btn exchange-big" id="exchange-btn">🃏 2장 뽑고 턴 종료</button>
+            <button class="btn" id="sort-hand-btn">↕ 정렬</button>
+            <button class="btn hidden" id="cancel-action-btn">✖ 취소</button>
+          </div>
+        </div>
+        <div class="score-area" id="score-area"></div>
+      </div>
+      <div class="log-panel" id="log-panel"></div>
+    </div>
+  </div>
+
+  <div class="screen hidden" id="screen-win">
+    <div class="win-emoji">🏆</div>
+    <h1 id="win-title" style="font-size:24px;"></h1>
+    <p class="sub" id="win-reason"></p>
+    <button class="btn primary big" id="restart-btn">다시하기</button>
+  </div>
+
+</div>
+<div id="tooltip-layer"></div>
+
+<script>
+(function(){
+"use strict";
+
+var COLORS = { PINK:"#EC4899", BLUE:"#1D3557", YELLOW:"#F4A261", GREEN:"#2A9D8F" };
+var COLOR_NAMES = { PINK:"핑크", BLUE:"블루", YELLOW:"옐로우", GREEN:"그린" };
+var ALL_COLORS = ["PINK","BLUE","YELLOW","GREEN"];
+
+var CHARACTERS = [
+  { emoji:"🦡", name:"허니뱅" },
+  { emoji:"🐈‍⬛", name:"고양이 예언자" },
+  { emoji:"🦁", name:"바코드 라이언" },
+  { emoji:"🐳", name:"메가블록" },
+  { emoji:"🐧", name:"카이저 핑" },
+  { emoji:"🐕", name:"매드독" },
+  { emoji:"🦘", name:"크러셔 루" },
+  { emoji:"🐉", name:"스파크 렉스" }
+];
+
+function avatarIconHTML(ch){ return (ch && ch.avatarIcon) ? ch.avatarIcon : (ch ? ch.emoji : ""); }
+
+var tooltipLayer = document.getElementById("tooltip-layer");
+
+function $(id){ return document.getElementById(id); }
+function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
+
+function switchScreen(name){
+  ["start","avatar","count","order","game","win"].forEach(function(s){
+    $("screen-"+s).classList.toggle("hidden", s!==name);
+  });
+}
+
+function requestFS(){
+  try{
+    var el2 = document.documentElement;
+    if(el2.requestFullscreen) el2.requestFullscreen().catch(function(){});
+    else if(el2.webkitRequestFullscreen) el2.webkitRequestFullscreen();
+  }catch(e){}
+}
+
+/* ---------------- sound ---------------- */
+var audioCtx = null;
+var soundOn = true;
+
+function unlockAudio(){
+  if(!audioCtx){
+    try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
+  }
+  if(audioCtx && audioCtx.state==="suspended"){ audioCtx.resume(); }
+}
+
+function beep(freq, duration, type, gainVal, delay){
+  if(!soundOn || !audioCtx) return;
+  var t0 = audioCtx.currentTime + (delay||0);
+  var osc = audioCtx.createOscillator();
+  var gain = audioCtx.createGain();
+  osc.type = type||"sine";
+  osc.frequency.setValueAtTime(freq, t0);
+  gain.gain.setValueAtTime(0.0001, t0);
+  gain.gain.linearRampToValueAtTime(gainVal||0.14, t0+0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t0+duration);
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  osc.start(t0);
+  osc.stop(t0+duration+0.03);
+}
+
+function sfxSelect(){ beep(720, 0.06, "square", 0.08); }
+function sfxInvalid(){ beep(140, 0.16, "sawtooth", 0.1); }
+function sfxCapture(){ beep(520, 0.09, "triangle", 0.16); beep(780, 0.12, "triangle", 0.14, 0.06); }
+function sfxDraw(){ if(!soundOn || !audioCtx) return; var t0=audioCtx.currentTime; var osc=audioCtx.createOscillator(); var gain=audioCtx.createGain(); osc.type="triangle"; osc.frequency.setValueAtTime(340,t0); osc.frequency.exponentialRampToValueAtTime(180,t0+0.16); gain.gain.setValueAtTime(0.0001,t0); gain.gain.linearRampToValueAtTime(0.1,t0+0.02); gain.gain.exponentialRampToValueAtTime(0.0001,t0+0.18); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(t0); osc.stop(t0+0.2); }
+function sfxJoker(){ beep(660,0.1,"sine",0.13); beep(880,0.1,"sine",0.13,0.09); beep(1100,0.14,"sine",0.13,0.18); }
+function sfxTurn(){ beep(500,0.08,"sine",0.1); beep(700,0.1,"sine",0.1,0.09); }
+function sfxTick(){ beep(900,0.05,"square",0.07); }
+function sfxTimeout(){ beep(220,0.22,"sawtooth",0.14); beep(160,0.28,"sawtooth",0.12,0.12); }
+function sfxWin(){ [523,659,784,1047].forEach(function(f,i){ beep(f,0.28,"triangle",0.16,i*0.14); }); }
+
+function shuffle(arr){
+  for(var i=arr.length-1;i>0;i--){
+    var j=Math.floor(Math.random()*(i+1));
+    var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
+  }
+  return arr;
+}
+
+function colorsForCount(n){ return ALL_COLORS.slice(0, n); }
+
+function buildDeck(colors){
+  var deck=[]; var id=0;
+  colors.forEach(function(c){
+    for(var v=1; v<=10; v++){
+      for(var s=0; s<2; s++){
+        deck.push({ id:id++, color:c, value:v, isJoker:false });
+      }
+    }
+  });
+  for(var i=0;i<2;i++) deck.push({ id:id++, isJoker:true, color:null, value:null });
+  return deck;
+}
+
+function coinLabel(coin){
+  if(coin.isJoker) return "조커";
+  var v = coin.value===1 ? "A" : coin.value;
+  return COLOR_NAMES[coin.color] + " " + v;
+}
+
+function pointValue(coin){ if(coin.isJoker) return 10; return coin.value===1 ? 1 : coin.value; }
+
+/* eat validity rules:
+   - joker in hand is always wild
+   - floor joker can only be captured by a hand 10 or A
+   - same NUMBER beats regardless of color
+   - otherwise same color required
+   - floor A(1) can only be captured by a hand 10 (same color)
+   - hand A(1) can capture a floor 10 (same color)
+   - otherwise same color & hand value >= floor value
+*/
+function isValidEat(hand, floor){
+  if(hand.isJoker) return true;
+  if(floor.isJoker) return hand.value === 10 || hand.value === 1;
+  if(hand.value === floor.value) return true;
+  if(hand.color !== floor.color) return false;
+  if(floor.value === 1) return hand.value === 10;
+  if(hand.value === 1 && floor.value === 10) return true;
+  return hand.value >= floor.value;
+}
+
+function findStraight(score, colors){
+  var jokerCount = score.filter(function(c){ return c.isJoker; }).length;
+  for(var ci=0; ci<colors.length; ci++){
+    var color = colors[ci];
+    var vals = {};
+    score.forEach(function(c){ if(!c.isJoker && c.color===color) vals[c.value]=true; });
+    for(var start=1; start<=6; start++){
+      var missing=0;
+      for(var k=0;k<5;k++){ if(!vals[start+k]) missing++; }
+      if(missing<=jokerCount) return { color:color, start:start };
+    }
+  }
+  return null;
+}
+
+/* ---------------- state ---------------- */
+var state = {
+  players: [],
+  floor: [],
+  centerDeck: [],
+  colors: [],
+  turnOrder: [],
+  currentTurnPos: 0,
+  gameOver: false,
+  animating: false,
+  selectedHandIdx: null,
+  mode: "idle",
+  log: []
+};
+
+var chosenCharacter = null;
+var chosenCount = null;
+
+/* ---------------- avatar / count / start flow ---------------- */
+
+var avatarGrid = $("avatar-grid");
+CHARACTERS.forEach(function(ch){
+  var b = el("button","avatar-btn");
+  b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+"</span>";
+  b.addEventListener("click", function(){
+    sfxSelect();
+    Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
+    b.classList.add("selected");
+    chosenCharacter = ch;
+    $("avatar-next-btn").disabled = false;
+  });
+  avatarGrid.appendChild(b);
+});
+
+$("start-btn").addEventListener("click", function(){
+  unlockAudio();
+  sfxSelect();
+  requestFS();
+  switchScreen("avatar");
+});
+
+$("avatar-next-btn").addEventListener("click", function(){
+  sfxSelect();
+  requestFS();
+  switchScreen("count");
+});
+
+var countRow = $("count-row");
+[2,3,4].forEach(function(n){
+  var b = el("button","count-btn",n);
+  b.addEventListener("click", function(){
+    sfxSelect();
+    Array.prototype.forEach.call(countRow.children, function(c){ c.classList.remove("selected"); });
+    b.classList.add("selected");
+    chosenCount = n;
+    $("count-next-btn").disabled = false;
+  });
+  countRow.appendChild(b);
+});
+
+$("count-next-btn").addEventListener("click", function(){
+  sfxSelect();
+  runOrderCutscene();
+});
+
+function runOrderCutscene(){
+  switchScreen("order");
+  var orderList = $("order-list");
+  orderList.innerHTML = "";
+  $("order-start-btn").classList.add("hidden");
+
+  var players = [];
+  players.push({ idx:0, name:chosenCharacter.name+" (나)", avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] });
+  var used = {}; used[chosenCharacter.name]=true;
+  for(var i=1;i<chosenCount;i++){
+    var ch;
+    do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(used[ch.name]);
+    used[ch.name]=true;
+    players.push({ idx:i, name:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
+  }
+
+  var draws = players.map(function(){ return 1+Math.floor(Math.random()*10); });
+
+  players.forEach(function(p, i){
+    setTimeout(function(){
+      var row = el("div","order-row");
+      row.innerHTML = "<span>"+p.avatar+" "+p.name+"</span><span>🎲 "+draws[i]+"</span>";
+      orderList.appendChild(row);
+      if(i===players.length-1){
+        setTimeout(function(){ finalizeOrder(players, draws); }, 500);
+      }
+    }, i*350);
+  });
+}
+
+function finalizeOrder(players, draws){
+  var order = players.map(function(p,i){ return {i:i, d:draws[i]}; })
+    .sort(function(a,b){ return b.d-a.d || a.i-b.i; })
+    .map(function(o){ return o.i; });
+
+  var summary = el("div","order-row");
+  summary.style.background = "rgba(236,73,153,.18)";
+  summary.innerHTML = "<b>선공: "+players[order[0]].avatar+" "+players[order[0]].name+"</b>";
+  $("order-list").appendChild(summary);
+
+  $("order-start-btn").classList.remove("hidden");
+  $("order-start-btn").onclick = function(){
+    sfxSelect();
+    startGame(players, order);
+  };
+}
+
+function startGame(players, order){
+  var colors = colorsForCount(players.length);
+  var deck = shuffle(buildDeck(colors));
+  state.players = players;
+  state.colors = colors;
+  state.turnOrder = order;
+  state.currentTurnPos = 0;
+  state.floor = deck.splice(0,8);
+  players.forEach(function(p){ p.hand = deck.splice(0,8); p.score = []; });
+  state.centerDeck = deck;
+  state.gameOver = false;
+  state.animating = false;
+  state.log = [];
+  clearSelectionState();
+
+  buildRulebookPanel();
+  switchScreen("game");
+  pushLog("게임을 시작합니다! 선공은 "+players[order[0]].name+" 입니다.");
+  render();
+
+  var firstIdx = order[0];
+  if(players[firstIdx].isAI){
+    setTimeout(function(){ aiTakeTurn(firstIdx); }, 900);
+  } else {
+    startTurnTimer();
+  }
+}
+
+/* ---------------- log ---------------- */
+function pushLog(msg){
+  state.log.unshift(msg);
+  if(state.log.length>30) state.log.pop();
+  renderLog();
+}
+function renderLog(){
+  var panel = $("log-panel");
+  panel.innerHTML = "";
+  state.log.forEach(function(m){ panel.appendChild(el("div",null,m)); });
+}
+
+/* ---------------- turn helpers ---------------- */
+function isHumanTurn(){
+  return !state.gameOver && !state.animating && state.turnOrder[state.currentTurnPos] === 0;
+}
+function currentPlayerIdx(){ return state.turnOrder[state.currentTurnPos]; }
+
+function clearSelectionState(){
+  state.selectedHandIdx = null;
+  state.mode = "idle";
+  closeModal();
+}
+
+function endTurn(){
+  clearSelectionState();
+  clearTurnTimer();
+  state.currentTurnPos = (state.currentTurnPos+1) % state.turnOrder.length;
+  render();
+  if(state.gameOver) return;
+  var nextIdx = currentPlayerIdx();
+  if(state.players[nextIdx].isAI){
+    setTimeout(function(){ aiTakeTurn(nextIdx); }, 850);
+  } else {
+    sfxTurn();
+    startTurnTimer();
+  }
+}
+
+/* ---------------- turn timer ---------------- */
+var turnTimerId = null;
+
+function renderTurnTimer(remaining){
+  var el2 = $("turn-timer");
+  if(!el2) return;
+  if(remaining===null || remaining===undefined){
+    el2.textContent = "";
+    el2.classList.remove("warn");
+    return;
+  }
+  el2.textContent = remaining+"s";
+  el2.classList.toggle("warn", remaining<=10);
+}
+
+function clearTurnTimer(){
+  if(turnTimerId){ clearInterval(turnTimerId); turnTimerId=null; }
+  renderTurnTimer(null);
+}
+
+function startTurnTimer(){
+  clearTurnTimer();
+  if(state.gameOver || !isHumanTurn()) return;
+  var remaining = 60;
+  renderTurnTimer(remaining);
+  turnTimerId = setInterval(function(){
+    if(state.animating) return;
+    remaining--;
+    renderTurnTimer(remaining);
+    if(remaining>0 && remaining<=5) sfxTick();
+    if(remaining<=0){
+      clearTurnTimer();
+      var player = state.players[0];
+      pushLog(player.name+"의 시간이 초과되어 자동으로 2장을 뽑고 턴을 마칩니다.");
+      sfxTimeout();
+      drawTwoAndEndTurn();
+    }
+  }, 1000);
+}
+
+/* ---------------- win check ---------------- */
+function checkWin(playerIdx){
+  var player = state.players[playerIdx];
+  var straight = findStraight(player.score, state.colors);
+  if(straight){
+    state.gameOver = true;
+    clearTurnTimer();
+    render();
+    playWinCeremony(playerIdx, straight, function(){
+      showWinScreen(player, straight);
+    });
+    return true;
+  }
+  return false;
+}
+
+function playWinCeremony(playerIdx, straight, cb){
+  sfxWin();
+  var player = state.players[playerIdx];
+  var realCards = player.score.filter(function(c){
+    return !c.isJoker && c.color===straight.color && c.value>=straight.start && c.value<=straight.start+4;
+  });
+  var missing = 5 - realCards.length;
+  var jokersUsed = player.score.filter(function(c){ return c.isJoker; }).slice(0, missing);
+  var targets = realCards.concat(jokersUsed);
+  var containerSel = playerIdx===0 ? "#score-area" : '.opponent-card[data-player-idx="'+playerIdx+'"] .opp-score-wrap';
+  var container = document.querySelector(containerSel);
+  if(container){
+    targets.forEach(function(c){
+      var el2 = container.querySelector('[data-cid="'+c.id+'"]');
+      if(el2) el2.classList.add("win-highlight");
+    });
+  }
+  pushLog("🎉 "+player.name+"가 "+COLOR_NAMES[straight.color]+" 스트레이트를 완성했습니다!");
+  setTimeout(cb, 1700);
+}
+
+function showWinScreen(player, straight){
+  var reason = COLOR_NAMES[straight.color]+" 스트레이트 ("+straight.start+"~"+(straight.start+4)+") 완성!";
+  $("win-title").innerHTML = player.avatar+" "+player.name+" 승리!";
+  $("win-reason").textContent = "🎉 스트레이트! · "+reason;
+  switchScreen("win");
+}
+
+$("restart-btn").addEventListener("click", function(){ location.reload(); });
+
+/* ---------------- animation ---------------- */
+
+function animateFly(fromRect, toRect, coinData, duration, cb){
+  var clone = cardEl(coinData, { cls:"card flying" });
+  clone.style.position = "fixed";
+  clone.style.left = fromRect.left+"px";
+  clone.style.top = fromRect.top+"px";
+  clone.style.width = fromRect.width+"px";
+  clone.style.height = fromRect.height+"px";
+  clone.style.margin = "0";
+  clone.style.zIndex = "99998";
+  clone.style.transition = "transform "+duration+"ms cubic-bezier(.22,.8,.32,1), opacity "+duration+"ms ease";
+  document.body.appendChild(clone);
+  var dx = toRect.left + (toRect.width-fromRect.width)/2 - fromRect.left;
+  var dy = toRect.top + (toRect.height-fromRect.height)/2 - fromRect.top;
+  var scale = Math.max(0.4, Math.min(1, toRect.width>0 ? toRect.width/fromRect.width : 1));
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){
+      clone.style.transform = "translate("+dx+"px,"+dy+"px) scale("+scale+")";
+      clone.style.opacity = "0.85";
+    });
+  });
+  setTimeout(function(){
+    clone.remove();
+    if(cb) cb();
+  }, duration+20);
+}
+
+function animateDrawFromDeck(count, destEl, cb, isJokerDraw){
+  var deckEl = $("deck-visual");
+  if(!deckEl || !destEl || count<=0){ cb(); return; }
+  if(isJokerDraw) sfxJoker(); else sfxDraw();
+  var deckRect = deckEl.getBoundingClientRect();
+  var remaining = count;
+  for(var i=0;i<count;i++){
+    (function(){
+      setTimeout(function(){
+        var destRect = destEl.getBoundingClientRect();
+        var clone = cardEl(null, { cls:"card flying", faceDown:true });
+        clone.style.position = "fixed";
+        clone.style.left = deckRect.left+"px";
+        clone.style.top = deckRect.top+"px";
+        clone.style.width = deckRect.width+"px";
+        clone.style.height = deckRect.height+"px";
+        clone.style.margin = "0";
+        clone.style.zIndex = "99998";
+        clone.style.transition = "transform 320ms cubic-bezier(.22,.8,.32,1), opacity 320ms ease";
+        document.body.appendChild(clone);
+        var scale = Math.max(0.25, Math.min(1, (destRect.height*0.55)/deckRect.height));
+        var dx = destRect.left + destRect.width/2 - deckRect.left - deckRect.width/2;
+        var dy = destRect.top + destRect.height/2 - deckRect.top - deckRect.height/2;
+        requestAnimationFrame(function(){
+          requestAnimationFrame(function(){
+            clone.style.transform = "translate("+dx+"px,"+dy+"px) scale("+scale+")";
+            clone.style.opacity = "0.7";
+          });
+        });
+        setTimeout(function(){
+          clone.remove();
+          remaining--;
+          if(remaining<=0) cb();
+        }, 340);
+      }, i*90);
+    })();
+  }
+}
+
+function playCaptureAnimation(opts, onComplete){
+  var floorSlotEl = document.querySelectorAll("#floor-board .floor-slot")[opts.floorIdx];
+  var floorCardEl = floorSlotEl ? floorSlotEl.querySelector(".card") : null;
+  if(!floorSlotEl || !floorCardEl){ onComplete(); return; }
+  var floorRect = floorCardEl.getBoundingClientRect();
+
+  function stageB(){
+    floorCardEl.style.visibility = "hidden";
+    var destEl;
+    if(opts.isHuman){ destEl = $("score-area"); }
+    else { destEl = document.querySelector('.opponent-card[data-player-idx="'+opts.playerIdx+'"]'); }
+    var destRect = destEl ? destEl.getBoundingClientRect() : floorRect;
+    animateFly(floorRect, destRect, opts.capturedCoin, 380, onComplete);
+  }
+
+  if(opts.isHuman){
+    var handEls = document.querySelectorAll("#hand-coins .card");
+    var handCardEl = handEls[opts.handIdx];
+    if(!handCardEl){ stageB(); return; }
+    var handRect = handCardEl.getBoundingClientRect();
+    handCardEl.style.visibility = "hidden";
+    animateFly(handRect, floorRect, opts.handCoin, 300, function(){
+      floorSlotEl.classList.add("impact");
+      sfxCapture();
+      setTimeout(function(){
+        floorSlotEl.classList.remove("impact");
+        stageB();
+      }, 220);
+    });
+  } else {
+    floorSlotEl.classList.add("impact");
+    sfxCapture();
+    setTimeout(function(){
+      floorSlotEl.classList.remove("impact");
+      stageB();
+    }, 220);
+  }
+}
+
+/* ---------------- eat / exchange execution ---------------- */
+
+function doEat(playerIdx, handIdx, floorIdx){
+  var floorCoin = state.floor[floorIdx];
+  finishEat(playerIdx, handIdx, floorIdx, floorCoin);
+}
+
+function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
+  var player = state.players[playerIdx];
+  var handCoin = player.hand[handIdx];
+  state.animating = true;
+
+  playCaptureAnimation({
+    playerIdx: playerIdx,
+    handIdx: handIdx,
+    floorIdx: floorIdx,
+    isHuman: playerIdx===0,
+    handCoin: handCoin,
+    capturedCoin: capturedCoin
+  }, function(){
+    player.score.push(capturedCoin);
+    player.hand.splice(handIdx,1);
+    state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, color:handCoin.color, value:handCoin.value };
+    pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
+    state.animating = false;
+    clearSelectionState();
+    render();
+    if(checkWin(playerIdx)) return;
+    endTurn();
+  });
+}
+
+function drawTwoAndEndTurn(){
+  if(state.animating || !isHumanTurn()) return;
+  var player = state.players[0];
+  var n = Math.min(2, state.centerDeck.length);
+  clearSelectionState();
+  if(n<=0){
+    pushLog(player.name+"가 턴을 넘겼습니다. (중앙 덱 소진)");
+    render();
+    endTurn();
+    return;
+  }
+  state.animating = true;
+  render();
+  animateDrawFromDeck(n, $("hand-coins"), function(){
+    var drawn = state.centerDeck.splice(0, n);
+    player.hand = player.hand.concat(drawn);
+    pushLog(player.name+"가 중앙 덱에서 "+n+"장을 뽑고 턴을 마쳤습니다.");
+    state.animating = false;
+    render();
+    endTurn();
+  });
+}
+
+function jokerRefresh(handIdx){
+  if(state.animating) return;
+  var player = state.players[0];
+  var joker = player.hand.splice(handIdx,1)[0];
+  state.centerDeck = shuffle(state.centerDeck.concat([joker]));
+  var n = Math.min(5, state.centerDeck.length);
+  clearSelectionState();
+  state.animating = true;
+  render();
+  animateDrawFromDeck(n, $("hand-coins"), function(){
+    var drawn = state.centerDeck.splice(0, n);
+    player.hand = player.hand.concat(drawn);
+    pushLog(player.name+"가 조커를 사용해 손패 "+n+"장을 새로 보충했습니다!");
+    state.animating = false;
+    render();
+    endTurn();
+  }, true);
+}
+
+/* ---------------- AI ---------------- */
+
+function aiTakeTurn(playerIdx){
+  if(state.gameOver) return;
+  var player = state.players[playerIdx];
+
+  var best = null;
+  player.hand.forEach(function(h, hi){
+    state.floor.forEach(function(f, fi){
+      if(isValidEat(h,f)){
+        var val = f.isJoker ? 10 : pointValue(f);
+        if(!best || val>best.val) best = { hi:hi, fi:fi, val:val };
+      }
+    });
+  });
+
+  if(best){
+    doEat(playerIdx, best.hi, best.fi);
+    return;
+  }
+
+  var destEl = document.querySelector('.opponent-card[data-player-idx="'+playerIdx+'"]');
+  var jokerIdx = -1;
+  player.hand.forEach(function(c,i){ if(c.isJoker) jokerIdx=i; });
+
+  if(jokerIdx!==-1 && player.hand.length>=6){
+    var joker = player.hand.splice(jokerIdx,1)[0];
+    state.centerDeck = shuffle(state.centerDeck.concat([joker]));
+    var n5 = Math.min(5, state.centerDeck.length);
+    state.animating = true;
+    render();
+    animateDrawFromDeck(n5, destEl, function(){
+      var drawn5 = state.centerDeck.splice(0, n5);
+      player.hand = player.hand.concat(drawn5);
+      pushLog(player.name+"가 조커를 사용해 손패 "+n5+"장을 새로 보충했습니다!");
+      state.animating = false;
+      render();
+      endTurn();
+    }, true);
+    return;
+  }
+
+  var n2 = Math.min(2, state.centerDeck.length);
+  if(n2<=0){
+    pushLog(player.name+"가 턴을 넘겼습니다. (중앙 덱 소진)");
+    render();
+    endTurn();
+    return;
+  }
+  state.animating = true;
+  render();
+  animateDrawFromDeck(n2, destEl, function(){
+    var drawn = state.centerDeck.splice(0, n2);
+    player.hand = player.hand.concat(drawn);
+    pushLog(player.name+"가 중앙 덱에서 "+n2+"장을 뽑고 턴을 마쳤습니다.");
+    state.animating = false;
+    render();
+    endTurn();
+  });
+}
+
+/* ---------------- rendering ---------------- */
+
+function cardEl(coin, opts){
+  opts = opts||{};
+  var d = el("div", "card"+(opts.cls?(" "+opts.cls):""));
+  if(opts.id) d.id = opts.id;
+  if(opts.faceDown){
+    d.classList.add("back");
+    return d;
+  }
+  if(coin && coin.id!==undefined) d.dataset.cid = coin.id;
+  if(coin.isJoker){
+    d.classList.add("joker");
+    if(opts.wild) d.classList.add("wildfloor");
+    d.textContent = "★";
+  } else {
+    d.style.background = COLORS[coin.color];
+    d.textContent = coin.value===1 ? "A" : coin.value;
+  }
+  return d;
+}
+
+function render(){
+  $("deck-count").textContent = state.centerDeck.length;
+  renderOpponents();
+  renderFloor();
+  renderHand();
+  renderScore();
+  renderLog();
+  renderInstruction();
+}
+
+function renderInstruction(){
+  var bar = $("instruction-bar");
+  if(state.gameOver){ bar.textContent = "게임이 종료되었습니다!"; return; }
+  if(!isHumanTurn()){
+    if(state.animating){ bar.textContent = "카드가 이동 중입니다..."; return; }
+    var cur = state.players[currentPlayerIdx()];
+    bar.innerHTML = (cur ? cur.avatar+" "+cur.name : "상대") + "의 턴입니다...";
+    return;
+  }
+  switch(state.mode){
+    case "eat-target": bar.textContent = "🎯 타겟이 될 바닥 카드를 선택하세요!"; break;
+    case "joker-choice": bar.textContent = "🃏 조커로 무엇을 할지 선택하세요!"; break;
+    case "joker-eat-target": bar.textContent = "🃏 조커로 가져올 바닥 카드를 선택하세요! (아무거나 가능)"; break;
+    default: bar.textContent = "✋ 행동을 선택하세요! 손패 카드를 클릭하거나, 가져올 수 없으면 [2장 뽑고 턴 종료]를 누르세요.";
+  }
+}
+
+function renderOpponents(){
+  var row = $("opponents-row");
+  row.innerHTML = "";
+  state.players.forEach(function(p, i){
+    if(i===0) return;
+    var card = el("div","opponent-card"+(currentPlayerIdx()===i?" active":""));
+    card.setAttribute("data-player-idx", i);
+    var total = p.score.reduce(function(s,c){ return s+pointValue(c); },0);
+
+    var headRow = el("div","opp-head-row");
+    var head = el("div","opp-head");
+    head.innerHTML = "<span>"+p.avatar+"</span>";
+    var name = el("div","opp-name", p.name);
+    var totalEl = el("div","opp-total", total+"점 · "+p.hand.length+"장");
+    headRow.appendChild(head);
+    headRow.appendChild(name);
+    headRow.appendChild(totalEl);
+
+    var handStack = el("div","opp-hand-stack");
+    var backCount = Math.min(p.hand.length, 8);
+    for(var k=0;k<backCount;k++){
+      handStack.appendChild(cardEl(null, { cls:"opp-back", faceDown:true }));
+    }
+
+    var scoreWrap = el("div","opp-score-wrap");
+    p.score.filter(function(c){ return c.isJoker; }).forEach(function(c){
+      scoreWrap.appendChild(cardEl(c, { cls:"opp" }));
+    });
+    state.colors.forEach(function(color){
+      var coins = p.score.filter(function(c){ return !c.isJoker && c.color===color; }).sort(function(a,b){ return a.value-b.value; });
+      coins.forEach(function(c){ scoreWrap.appendChild(cardEl(c, { cls:"opp" })); });
+    });
+
+    card.appendChild(headRow);
+    card.appendChild(handStack);
+    card.appendChild(scoreWrap);
+    row.appendChild(card);
+  });
+}
+
+function renderFloor(){
+  var area = $("floor-board");
+  area.innerHTML = "";
+  state.floor.forEach(function(fc, fi){
+    var slot = el("div","floor-slot");
+    var opts = { wild: fc.isJoker };
+    var canTarget = isHumanTurn() && (state.mode==="eat-target" || state.mode==="joker-eat-target");
+    var valid = false;
+    if(canTarget){
+      if(state.mode==="joker-eat-target"){ valid = true; }
+      else {
+        var handCoin = state.players[0].hand[state.selectedHandIdx];
+        valid = handCoin ? isValidEat(handCoin, fc) : false;
+      }
+      if(!valid) opts.cls = "disabled";
+    }
+    var d = cardEl(fc, opts);
+    if(canTarget && valid){
+      d.addEventListener("click", function(){ onFloorTargetClick(fi); });
+    }
+    slot.appendChild(d);
+    area.appendChild(slot);
+  });
+}
+
+function renderHand(){
+  var wrap = $("hand-coins");
+  wrap.innerHTML = "";
+  var player = state.players[0];
+  player.hand.forEach(function(hc, hi){
+    var cls = "";
+    if((state.mode==="eat-target"||state.mode==="joker-choice"||state.mode==="joker-eat-target") && state.selectedHandIdx===hi) cls="selected";
+    if(!isHumanTurn()) cls += " disabled";
+    var d = cardEl(hc, { cls:cls.trim() });
+    d.addEventListener("click", function(){ onHandClick(hi); });
+    wrap.appendChild(d);
+  });
+
+  $("exchange-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
+  $("sort-hand-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
+  $("cancel-action-btn").classList.toggle("hidden", state.mode==="idle" || state.animating);
+}
+
+function renderScore(){
+  var area = $("score-area");
+  area.innerHTML = "";
+  var player = state.players[0];
+  var flow = el("div","score-flow");
+  var total = 0;
+  var jokers = player.score.filter(function(c){ return c.isJoker; });
+  jokers.forEach(function(c){
+    total += pointValue(c);
+    flow.appendChild(cardEl(c, { cls:"tiny" }));
+  });
+  state.colors.forEach(function(color){
+    var coins = player.score.filter(function(c){ return !c.isJoker && c.color===color; }).sort(function(a,b){ return a.value-b.value; });
+    coins.forEach(function(c){
+      total += pointValue(c);
+      flow.appendChild(cardEl(c, { cls:"tiny" }));
+    });
+  });
+  area.appendChild(flow);
+  var totalDiv = el("div","score-total", "누적 "+total+"점 · 승리조건: 스트레이트");
+  totalDiv.id = "scoretotal-0";
+  area.appendChild(totalDiv);
+}
+
+/* ---------------- interaction handlers ---------------- */
+
+function onHandClick(hi){
+  if(state.animating || !isHumanTurn()) return;
+  var player = state.players[0];
+  var coin = player.hand[hi];
+
+  if(state.mode==="idle"){
+    sfxSelect();
+    if(coin.isJoker){
+      state.selectedHandIdx = hi;
+      state.mode = "joker-choice";
+      render();
+      openJokerChoiceModal(hi);
+    } else {
+      state.selectedHandIdx = hi;
+      state.mode = "eat-target";
+      render();
+    }
+    return;
+  }
+
+  if(state.mode==="eat-target"){
+    if(hi===state.selectedHandIdx){
+      clearSelectionState();
+      render();
+    } else if(!coin.isJoker){
+      sfxSelect();
+      state.selectedHandIdx = hi;
+      render();
+    }
+  }
+}
+
+function onFloorTargetClick(fi){
+  if(state.animating || !isHumanTurn()) return;
+  var handIdx = state.selectedHandIdx;
+  if(handIdx===null || handIdx===undefined) return;
+  var player = state.players[0];
+  var handCoin = player.hand[handIdx];
+  var floorCoin = state.floor[fi];
+
+  if(state.mode==="eat-target"){
+    if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
+    doEat(0, handIdx, fi);
+  } else if(state.mode==="joker-eat-target"){
+    doEat(0, handIdx, fi);
+  }
+}
+
+function handSortKey(c){
+  if(c.isJoker) return -1000;
+  return state.colors.indexOf(c.color)*100 + c.value;
+}
+function sortHand(){
+  if(state.animating || !isHumanTurn()) return;
+  state.players[0].hand.sort(function(a,b){ return handSortKey(a)-handSortKey(b); });
+  render();
+}
+
+$("exchange-btn").addEventListener("click", function(){ drawTwoAndEndTurn(); });
+$("sort-hand-btn").addEventListener("click", function(){ sortHand(); });
+$("cancel-action-btn").addEventListener("click", function(){ if(state.animating) return; clearSelectionState(); render(); });
+
+/* ---------------- modals ---------------- */
+
+function closeModal(){ tooltipLayer.innerHTML = ""; }
+
+function openJokerChoiceModal(handIdx){
+  closeModal();
+  var backdrop = el("div","modal-backdrop");
+  var box = el("div","modal-box");
+  box.innerHTML = "<h2>조커 사용</h2><p style=\"font-size:13px;color:var(--muted)\">조커로 무엇을 할까요?</p>";
+  var actions = el("div","modal-actions");
+
+  var eatBtn = el("button","btn primary","🃏 바닥패 가져오기 (만능)");
+  eatBtn.addEventListener("click", function(){
+    state.mode = "joker-eat-target";
+    closeModal();
+    render();
+  });
+  var refreshBtn = el("button","btn","🔄 리프레시 (덱 반납 + 5장 보충)");
+  refreshBtn.addEventListener("click", function(){
+    closeModal();
+    jokerRefresh(handIdx);
+  });
+  var cancelBtn = el("button","btn","✖ 취소");
+  cancelBtn.addEventListener("click", function(){
+    clearSelectionState();
+    closeModal();
+    render();
+  });
+
+  actions.appendChild(eatBtn);
+  actions.appendChild(refreshBtn);
+  actions.appendChild(cancelBtn);
+  box.appendChild(actions);
+  backdrop.appendChild(box);
+  tooltipLayer.appendChild(backdrop);
+}
+
+function buildRulebookPanel(){
+  var panel = $("rulebook-panel");
+  panel.innerHTML =
+    "<h2>📖 게임 규칙 요약</h2>"+
+    "<ul>"+
+    "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
+    "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
+    "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 10으로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 10을 가져올 수 있습니다.</li>"+
+    "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 10 또는 A로만 가져올 수 있습니다.</li>"+
+    "<li><b>손패 조커</b>: 바닥 카드를 아무거나 가져오거나(만능), 중앙 덱에 반납하고 5장을 새로 받는 리프레시가 가능합니다. 획득한 조커는 점수 슬롯에서 색상·숫자 상관없이 자동으로 10점 + 스트레이트 빈칸을 채워줍니다.</li>"+
+    "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
+    "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
+    "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
+    "</ul>";
+}
+
+var rulebookBtn = $("rulebook-btn");
+var rulebookPanel = $("rulebook-panel");
+rulebookBtn.addEventListener("click", function(e){
+  e.stopPropagation();
+  rulebookPanel.classList.toggle("force-open");
+});
+document.addEventListener("click", function(e){
+  if(!rulebookPanel.contains(e.target) && e.target!==rulebookBtn){
+    rulebookPanel.classList.remove("force-open");
+  }
+});
+
+$("sound-toggle-btn").addEventListener("click", function(){
+  unlockAudio();
+  soundOn = !soundOn;
+  $("sound-toggle-btn").textContent = soundOn ? "🔊" : "🔇";
+  if(soundOn) sfxSelect();
+});
+
+})();
+</script>
+</body>
+</html>
