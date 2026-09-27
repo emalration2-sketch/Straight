@@ -157,11 +157,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.c-BLUE{background:linear-gradient(155deg,#3a5f8f,#1D3557 55%,#0f1f35);}
 .card.c-YELLOW{background:linear-gradient(155deg,#ffc38a,#F4A261 55%,#c97a3d);}
 .card.c-GREEN{background:linear-gradient(155deg,#4fc4b5,#2A9D8F 55%,#1c6d63);}
-.card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;}
-.card-suit{position:absolute;top:3px;left:5px;font-size:.32em;opacity:.6;line-height:1;color:rgba(255,255,255,.9);text-shadow:0 1px 1px rgba(0,0,0,.3);}
+.card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
+.card-art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.9em;opacity:.4;transform:rotate(-8deg) scale(1.2);filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));pointer-events:none;}
+.card-badge{position:absolute;top:5%;left:5%;width:42%;aspect-ratio:1;border-radius:50%;background:rgba(20,15,35,.55);border:2px solid rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1em;color:#fff;line-height:1;box-shadow:0 2px 4px rgba(0,0,0,.45);}
 .card-num{position:relative;}
-.card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
-.card.back::after{content:"◆";color:var(--accent);font-size:.5em;text-shadow:0 0 6px rgba(255,215,107,.7);opacity:.9;}
+.card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
+.card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 0 8px rgba(255,215,107,.8),0 0 16px rgba(255,215,107,.4);opacity:.95;}
 @keyframes wildPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.85;}}
 .card.disabled{opacity:.45;filter:grayscale(.75) brightness(.55);cursor:default;pointer-events:none;}
 .card.flying{pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.55);}
@@ -361,7 +362,12 @@ function ensureFirebase(){
 
 var COLORS = { PINK:"#EC4899", BLUE:"#1D3557", YELLOW:"#F4A261", GREEN:"#2A9D8F" };
 var COLOR_NAMES = { PINK:"핑크", BLUE:"블루", YELLOW:"옐로우", GREEN:"그린" };
-var SUIT_ICON = { PINK:"●", BLUE:"■", YELLOW:"★", GREEN:"▲" };
+var SUIT_EMOJI_SETS = {
+  PINK: ["🌸","🌺","💗"],
+  BLUE: ["🌊","💧","🐟"],
+  YELLOW: ["⚡","🌟","🔥"],
+  GREEN: ["🍀","🌿","🐸"]
+};
 var ALL_COLORS = ["PINK","BLUE","YELLOW","GREEN"];
 
 var CHARACTERS = [
@@ -1668,12 +1674,16 @@ function cardEl(coin, opts){
   } else {
     d.classList.add("c-"+coin.color);
     var clsStr = opts.cls || "";
-    if(clsStr.indexOf("tiny")===-1 && clsStr.indexOf("opp")===-1){
-      var suit = el("span","card-suit", SUIT_ICON[coin.color]);
-      d.appendChild(suit);
+    var isSmall = clsStr.indexOf("tiny")!==-1 || clsStr.indexOf("opp")!==-1;
+    if(isSmall){
+      var numSpan = el("span","card-num", coin.value===1 ? "A" : coin.value);
+      d.appendChild(numSpan);
+    } else {
+      var emojiSet = SUIT_EMOJI_SETS[coin.color];
+      var artEmoji = emojiSet[(coin.id||0) % emojiSet.length];
+      d.appendChild(el("span","card-art", artEmoji));
+      d.appendChild(el("span","card-badge", coin.value===1 ? "A" : coin.value));
     }
-    var numSpan = el("span","card-num", coin.value===1 ? "A" : coin.value);
-    d.appendChild(numSpan);
   }
   return d;
 }
