@@ -153,7 +153,15 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
 .card.joker{background:linear-gradient(135deg,#ffffff,#e4e2ef);color:#2a2440;border-color:rgba(42,36,64,.35);}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
-.card.back{background:repeating-linear-gradient(45deg,#2a2f52,#2a2f52 6px,#333a66 6px,#333a66 12px);border:2px solid rgba(255,255,255,.28);}
+.card.c-PINK{background:linear-gradient(155deg,#ff8fc6,#EC4899 55%,#b62f74);}
+.card.c-BLUE{background:linear-gradient(155deg,#3a5f8f,#1D3557 55%,#0f1f35);}
+.card.c-YELLOW{background:linear-gradient(155deg,#ffc38a,#F4A261 55%,#c97a3d);}
+.card.c-GREEN{background:linear-gradient(155deg,#4fc4b5,#2A9D8F 55%,#1c6d63);}
+.card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;}
+.card-suit{position:absolute;top:3px;left:5px;font-size:.32em;opacity:.6;line-height:1;color:rgba(255,255,255,.9);text-shadow:0 1px 1px rgba(0,0,0,.3);}
+.card-num{position:relative;}
+.card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
+.card.back::after{content:"◆";color:var(--accent);font-size:.5em;text-shadow:0 0 6px rgba(255,215,107,.7);opacity:.9;}
 @keyframes wildPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.85;}}
 .card.disabled{opacity:.45;filter:grayscale(.75) brightness(.55);cursor:default;pointer-events:none;}
 .card.flying{pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.55);}
@@ -175,6 +183,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .emoji-opt:active{transform:scale(.9);background:rgba(255,255,255,.08);}
 
 .win-emoji{font-size:60px;}
+.win-emoji.bounce-in{animation:trophyBounce .7s cubic-bezier(.34,1.56,.64,1);}
+@keyframes trophyBounce{0%{transform:scale(0) rotate(-20deg);opacity:0;}60%{transform:scale(1.15) rotate(8deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
+.confetti-piece{position:fixed;top:-20px;opacity:.95;pointer-events:none;z-index:99997;animation:confettiFall linear forwards;}
+@keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(112vh) rotate(720deg);opacity:.25;}}
 </style>
 </head>
 <body>
@@ -349,6 +361,7 @@ function ensureFirebase(){
 
 var COLORS = { PINK:"#EC4899", BLUE:"#1D3557", YELLOW:"#F4A261", GREEN:"#2A9D8F" };
 var COLOR_NAMES = { PINK:"핑크", BLUE:"블루", YELLOW:"옐로우", GREEN:"그린" };
+var SUIT_ICON = { PINK:"●", BLUE:"■", YELLOW:"★", GREEN:"▲" };
 var ALL_COLORS = ["PINK","BLUE","YELLOW","GREEN"];
 
 var CHARACTERS = [
@@ -420,6 +433,7 @@ function sfxTurn(){ beep(500,0.08,"sine",0.1); beep(700,0.1,"sine",0.1,0.09); }
 function sfxTick(){ beep(900,0.05,"square",0.07); }
 function sfxTimeout(){ beep(220,0.22,"sawtooth",0.14); beep(160,0.28,"sawtooth",0.12,0.12); }
 function sfxWin(){ [523,659,784,1047].forEach(function(f,i){ beep(f,0.28,"triangle",0.16,i*0.14); }); }
+function sfxReveal(){ beep(880, 0.09, "sine", 0.12); }
 
 /* ---------------- background music ---------------- */
 var BGM_TRACKS = [
@@ -490,6 +504,15 @@ function startBgm(){
 function stopBgm(){
   bgmPlaying = false;
   if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer = null; }
+}
+
+function duckBgm(duration){
+  if(!bgmMasterGain || !audioCtx) return;
+  var t0 = audioCtx.currentTime;
+  bgmMasterGain.gain.cancelScheduledValues(t0);
+  bgmMasterGain.gain.setValueAtTime(bgmMasterGain.gain.value, t0);
+  bgmMasterGain.gain.linearRampToValueAtTime(0.25, t0+0.15);
+  bgmMasterGain.gain.linearRampToValueAtTime(1, t0+duration);
 }
 
 function setBgmTrack(idx){
@@ -1310,24 +1333,50 @@ function checkWin(playerIdx){
 
 function playWinCeremony(playerIdx, straight, cb){
   state.ceremonyPlaying = true;
-  sfxWin();
   var player = state.players[playerIdx];
   var realCards = player.score.filter(function(c){
     return !c.isJoker && c.color===straight.color && c.value>=straight.start && c.value<=straight.start+4;
-  });
+  }).sort(function(a,b){ return a.value-b.value; });
   var missing = 5 - realCards.length;
   var jokersUsed = player.score.filter(function(c){ return c.isJoker; }).slice(0, missing);
   var targets = realCards.concat(jokersUsed);
   var containerSel = playerIdx===state.myIndex ? "#score-body" : '.opponent-card[data-player-idx="'+playerIdx+'"] .opp-score-wrap';
   var container = document.querySelector(containerSel);
-  if(container){
-    targets.forEach(function(c){
-      var el2 = container.querySelector('[data-cid="'+c.id+'"]');
-      if(el2) el2.classList.add("win-highlight");
-    });
+  targets.forEach(function(c, i){
+    setTimeout(function(){
+      if(container){
+        var el2 = container.querySelector('[data-cid="'+c.id+'"]');
+        if(el2) el2.classList.add("win-highlight");
+      }
+      sfxReveal();
+    }, i*150);
+  });
+  var fanfareDelay = targets.length*150 + 150;
+  setTimeout(function(){
+    duckBgm(2.2);
+    sfxWin();
+    pushLog("🎉 "+player.name+"가 "+COLOR_NAMES[straight.color]+" 스트레이트를 완성했습니다!");
+  }, fanfareDelay);
+  var totalDelay = fanfareDelay + 1500;
+  setTimeout(function(){ state.ceremonyPlaying = false; cb(); }, totalDelay);
+}
+
+function spawnConfetti(){
+  var colors = ["#EC4899","#1D3557","#F4A261","#2A9D8F","#ffd76b","#ffffff"];
+  for(var i=0;i<36;i++){
+    var p = document.createElement("div");
+    p.className = "confetti-piece";
+    var w = 6+Math.random()*5;
+    p.style.left = (Math.random()*100)+"vw";
+    p.style.width = w+"px";
+    p.style.height = (w*1.6)+"px";
+    p.style.background = colors[Math.floor(Math.random()*colors.length)];
+    p.style.borderRadius = Math.random()<0.5 ? "50%" : "2px";
+    p.style.animationDuration = (2.2+Math.random()*1.6)+"s";
+    p.style.animationDelay = (Math.random()*0.6)+"s";
+    document.body.appendChild(p);
+    (function(el2){ setTimeout(function(){ el2.remove(); }, 4600); })(p);
   }
-  pushLog("🎉 "+player.name+"가 "+COLOR_NAMES[straight.color]+" 스트레이트를 완성했습니다!");
-  setTimeout(function(){ state.ceremonyPlaying = false; cb(); }, 1700);
 }
 
 function showWinScreen(player, straight){
@@ -1335,6 +1384,14 @@ function showWinScreen(player, straight){
   $("win-title").innerHTML = player.avatar+" "+player.name+" 승리!";
   $("win-reason").textContent = "🎉 스트레이트! · "+reason;
   switchScreen("win");
+  var emojiEl = document.querySelector(".win-emoji");
+  if(emojiEl){
+    emojiEl.textContent = "🏆";
+    emojiEl.classList.remove("bounce-in");
+    void emojiEl.offsetWidth;
+    emojiEl.classList.add("bounce-in");
+  }
+  spawnConfetti();
 }
 
 $("restart-btn").addEventListener("click", function(){ location.reload(); });
@@ -1592,8 +1649,14 @@ function cardEl(coin, opts){
     if(opts.wild) d.classList.add("wildfloor");
     d.textContent = "★";
   } else {
-    d.style.background = COLORS[coin.color];
-    d.textContent = coin.value===1 ? "A" : coin.value;
+    d.classList.add("c-"+coin.color);
+    var clsStr = opts.cls || "";
+    if(clsStr.indexOf("tiny")===-1 && clsStr.indexOf("opp")===-1){
+      var suit = el("span","card-suit", SUIT_ICON[coin.color]);
+      d.appendChild(suit);
+    }
+    var numSpan = el("span","card-num", coin.value===1 ? "A" : coin.value);
+    d.appendChild(numSpan);
   }
   return d;
 }
