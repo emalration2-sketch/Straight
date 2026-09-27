@@ -153,10 +153,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
 .card.joker{background:linear-gradient(135deg,#ffffff,#e4e2ef);color:#2a2440;border-color:rgba(42,36,64,.35);}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
-.card.c-PINK{background:linear-gradient(155deg,#ff8fc6,#EC4899 55%,#b62f74);}
-.card.c-BLUE{background:linear-gradient(155deg,#3a5f8f,#1D3557 55%,#0f1f35);}
-.card.c-YELLOW{background:linear-gradient(155deg,#ffc38a,#F4A261 55%,#c97a3d);}
-.card.c-GREEN{background:linear-gradient(155deg,#4fc4b5,#2A9D8F 55%,#1c6d63);}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.9em;opacity:.4;transform:rotate(-8deg) scale(1.2);filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));pointer-events:none;}
 .card-badge{position:absolute;top:5%;left:5%;width:42%;aspect-ratio:1;border-radius:50%;background:rgba(20,15,35,.55);border:2px solid rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1em;color:#fff;line-height:1;box-shadow:0 2px 4px rgba(0,0,0,.45);}
@@ -177,6 +173,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .modal-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 2px;border-bottom:1px solid rgba(255,255,255,.08);font-size:13px;min-width:220px;}
 .settings-track-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:8px 0 2px;}
+.theme-list{display:flex;flex-direction:column;gap:6px;padding:6px 0 2px;}
+.theme-swatch-btn{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:var(--panel2);border:2px solid transparent;color:var(--text);font-size:12.5px;cursor:pointer;}
+.theme-swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
+.theme-dots{display:flex;gap:3px;flex-shrink:0;}
+.theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(255,255,255,.4);flex-shrink:0;}
+.theme-name{flex:1;text-align:left;}
 .nickname-input{background:var(--panel2);border:1px solid rgba(255,255,255,.2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;width:120px;text-align:right;}
 
 .emoji-picker-panel{position:fixed;z-index:99999;display:flex;gap:4px;background:var(--panel);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:7px;box-shadow:0 12px 32px rgba(0,0,0,.5);pointer-events:auto;}
@@ -360,15 +362,51 @@ function ensureFirebase(){
 (function(){
 "use strict";
 
-var COLORS = { PINK:"#EC4899", BLUE:"#1D3557", YELLOW:"#F4A261", GREEN:"#2A9D8F" };
 var COLOR_NAMES = { PINK:"핑크", BLUE:"블루", YELLOW:"옐로우", GREEN:"그린" };
-var SUIT_EMOJI_SETS = {
-  PINK: ["🌸","🌺","💗"],
-  BLUE: ["🌊","💧","🐟"],
-  YELLOW: ["⚡","🌟","🔥"],
-  GREEN: ["🍀","🌿","🐸"]
+var SUIT_ART = {
+  PINK:  {1:"🌸",2:"🌺",3:"🌹",4:"💐",5:"🌷",6:"💗",7:"💕",8:"🌼",9:"🥀",10:"💮"},
+  BLUE:  {1:"💧",2:"🌊",3:"🐟",4:"🐠",5:"🐳",6:"🐬",7:"🦈",8:"🦑",9:"🐙",10:"❄️"},
+  YELLOW:{1:"⭐",2:"🌟",3:"✨",4:"⚡",5:"🔥",6:"☀️",7:"🌞",8:"💡",9:"🌻",10:"🏵️"},
+  GREEN: {1:"🍀",2:"🌿",3:"🌱",4:"🌳",5:"🌲",6:"🐸",7:"🦎",8:"🐢",9:"🦋",10:"🌵"}
 };
 var ALL_COLORS = ["PINK","BLUE","YELLOW","GREEN"];
+
+function shadeColor(hex, percent){
+  var num = parseInt(hex.slice(1),16);
+  var r = (num>>16)&255, g=(num>>8)&255, b=num&255;
+  var t = percent<0 ? 0 : 255;
+  var p = Math.abs(percent)/100;
+  r = Math.round((t-r)*p)+r;
+  g = Math.round((t-g)*p)+g;
+  b = Math.round((t-b)*p)+b;
+  return "#"+(0x1000000+(r<<16)+(g<<8)+b).toString(16).slice(1);
+}
+
+var CARD_THEMES = [
+  { id:"ocean", name:"오션", colors:{ PINK:"#E0556E", BLUE:"#1D5A8A", YELLOW:"#E3A63C", GREEN:"#1C7A6F" } },
+  { id:"mono", name:"모노 슬레이트", colors:{ PINK:"#C6506A", BLUE:"#565C64", YELLOW:"#DE9A34", GREEN:"#6B8F71" } },
+  { id:"midnight", name:"미드나잇", colors:{ PINK:"#E0475F", BLUE:"#35528F", YELLOW:"#DE9A34", GREEN:"#2E7D6B" } },
+  { id:"galaxy", name:"아쿠아마린 갤럭시", colors:{ PINK:"#FF6B85", BLUE:"#33D6C0", YELLOW:"#E3A63C", GREEN:"#4CE0A0" } },
+  { id:"sunrise", name:"코랄 선라이즈", colors:{ PINK:"#B23A32", BLUE:"#4A90C4", YELLOW:"#E89A3C", GREEN:"#7A8F4A" } }
+];
+var cardThemeIndex = 0;
+try{
+  var savedTheme = localStorage.getItem("straightCardTheme");
+  if(savedTheme!==null){
+    var idx = CARD_THEMES.findIndex(function(t){ return t.id===savedTheme; });
+    if(idx>=0) cardThemeIndex = idx;
+  }
+}catch(e){}
+var COLORS = {};
+Object.assign(COLORS, CARD_THEMES[cardThemeIndex].colors);
+
+function setCardTheme(idx){
+  if(idx<0 || idx>=CARD_THEMES.length) return;
+  cardThemeIndex = idx;
+  Object.assign(COLORS, CARD_THEMES[idx].colors);
+  try{ localStorage.setItem("straightCardTheme", CARD_THEMES[idx].id); }catch(e){}
+  if(typeof render==="function" && !$("screen-game").classList.contains("hidden")) render();
+}
 
 var CHARACTERS = [
   { emoji:"🦡", name:"허니뱅" },
@@ -1672,15 +1710,15 @@ function cardEl(coin, opts){
     if(opts.wild) d.classList.add("wildfloor");
     d.textContent = "★";
   } else {
-    d.classList.add("c-"+coin.color);
+    var base = COLORS[coin.color];
+    d.style.background = "linear-gradient(155deg,"+shadeColor(base,35)+","+base+" 55%,"+shadeColor(base,-35)+")";
     var clsStr = opts.cls || "";
     var isSmall = clsStr.indexOf("tiny")!==-1 || clsStr.indexOf("opp")!==-1;
     if(isSmall){
       var numSpan = el("span","card-num", coin.value===1 ? "A" : coin.value);
       d.appendChild(numSpan);
     } else {
-      var emojiSet = SUIT_EMOJI_SETS[coin.color];
-      var artEmoji = emojiSet[(coin.id||0) % emojiSet.length];
+      var artEmoji = SUIT_ART[coin.color][coin.value];
       d.appendChild(el("span","card-art", artEmoji));
       d.appendChild(el("span","card-badge", coin.value===1 ? "A" : coin.value));
     }
@@ -2042,6 +2080,27 @@ function openSettingsModal(){
     trackRow.appendChild(tb);
   });
 
+  var cardThemeLabel = el("div","settings-row","<span>🃏 카드 테마</span>");
+  var cardThemeRow = el("div","theme-list");
+  CARD_THEMES.forEach(function(theme, i){
+    var tb = el("button","theme-swatch-btn"+(i===cardThemeIndex?" primary":""));
+    var dots = el("span","theme-dots");
+    ["PINK","BLUE","YELLOW","GREEN"].forEach(function(c){
+      var dot = el("span","theme-dot");
+      dot.style.background = theme.colors[c];
+      dots.appendChild(dot);
+    });
+    tb.appendChild(dots);
+    tb.appendChild(el("span","theme-name", theme.name));
+    tb.addEventListener("click", function(){
+      setCardTheme(i);
+      Array.prototype.forEach.call(cardThemeRow.children, function(c){ c.classList.remove("primary"); });
+      tb.classList.add("primary");
+      sfxSelect();
+    });
+    cardThemeRow.appendChild(tb);
+  });
+
   var nickRow = el("div","settings-row");
   nickRow.innerHTML = "<span>✏️ 닉네임</span>";
   var nickInput = document.createElement("input");
@@ -2063,6 +2122,8 @@ function openSettingsModal(){
   box.appendChild(bgmRow);
   box.appendChild(trackLabel);
   box.appendChild(trackRow);
+  box.appendChild(cardThemeLabel);
+  box.appendChild(cardThemeRow);
   box.appendChild(nickRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
