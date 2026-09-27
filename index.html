@@ -179,6 +179,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .theme-swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
 .theme-dots{display:flex;gap:3px;flex-shrink:0;}
 .theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(var(--line-rgb),.4);flex-shrink:0;}
+.art-preview{font-size:16px;line-height:1;letter-spacing:1px;flex-shrink:0;}
 .theme-name{flex:1;text-align:left;}
 .nickname-input{background:var(--panel2);border:1px solid rgba(var(--line-rgb),.2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;width:120px;text-align:right;}
 
@@ -364,12 +365,45 @@ function ensureFirebase(){
 "use strict";
 
 var COLOR_NAMES = { PINK:"핑크", BLUE:"블루", YELLOW:"옐로우", GREEN:"그린" };
-var SUIT_ART = {
-  PINK:  {1:"🌸",2:"🌺",3:"🌹",4:"💐",5:"🌷",6:"💗",7:"💕",8:"🌼",9:"🥀",10:"💮"},
-  BLUE:  {1:"💧",2:"🌊",3:"🐟",4:"🐠",5:"🐳",6:"🐬",7:"🦈",8:"🦑",9:"🐙",10:"❄️"},
-  YELLOW:{1:"⭐",2:"🌟",3:"✨",4:"⚡",5:"🔥",6:"☀️",7:"🌞",8:"💡",9:"🌻",10:"🏵️"},
-  GREEN: {1:"🍀",2:"🌿",3:"🌱",4:"🌳",5:"🌲",6:"🐸",7:"🦎",8:"🐢",9:"🦋",10:"🌵"}
-};
+var CARD_ART_PRESETS = [
+  { id:"bloom", name:"블룸",
+    art:{
+      PINK:  {1:"🌸",2:"🌺",3:"🌹",4:"💐",5:"🌷",6:"💗",7:"💕",8:"🌼",9:"🥀",10:"💮"},
+      BLUE:  {1:"💧",2:"🌊",3:"🐟",4:"🐠",5:"🐳",6:"🐬",7:"🦈",8:"🦑",9:"🐙",10:"❄️"},
+      YELLOW:{1:"⭐",2:"🌟",3:"✨",4:"⚡",5:"🔥",6:"☀️",7:"🌞",8:"💡",9:"🌻",10:"🏵️"},
+      GREEN: {1:"🍀",2:"🌿",3:"🌱",4:"🌳",5:"🌲",6:"🐸",7:"🦎",8:"🐢",9:"🦋",10:"🌵"}
+    } },
+  { id:"zoo", name:"동물원",
+    art:{
+      PINK:  {1:"🐰",2:"🐱",3:"🦊",4:"🐻",5:"🐼",6:"🐨",7:"🐷",8:"🐹",9:"🦔",10:"🐿️"},
+      BLUE:  {1:"🐳",2:"🐬",3:"🐟",4:"🐠",5:"🦈",6:"🐙",7:"🦑",8:"🦞",9:"🦀",10:"🐧"},
+      YELLOW:{1:"🐥",2:"🐤",3:"🦁",4:"🐝",5:"🐆",6:"🦒",7:"🐯",8:"🦓",9:"🦢",10:"🦉"},
+      GREEN: {1:"🐸",2:"🐢",3:"🦎",4:"🦗",5:"🐛",6:"🦋",7:"🐜",8:"🕷️",9:"🐌",10:"🦕"}
+    } },
+  { id:"space", name:"우주",
+    art:{
+      PINK:  {1:"🌙",2:"🪐",3:"💫",4:"🌠",5:"☄️",6:"🛸",7:"👽",8:"🚀",9:"🌌",10:"🔮"},
+      BLUE:  {1:"🌍",2:"🌎",3:"🌏",4:"🛰️",5:"❄️",6:"💠",7:"🔷",8:"🌀",9:"⚛️",10:"🧊"},
+      YELLOW:{1:"☀️",2:"⭐",3:"🌟",4:"✨",5:"⚡",6:"🔥",7:"🌞",8:"💥",9:"🎇",10:"🎆"},
+      GREEN: {1:"🧬",2:"🦠",3:"🔬",4:"🧪",5:"⚗️",6:"👾",7:"🌱",8:"🍃",9:"🌿",10:"🌾"}
+    } }
+];
+var artPresetIndex = 0;
+try{
+  var savedArt = localStorage.getItem("straightArtPreset");
+  if(savedArt!==null){
+    var artIdx = CARD_ART_PRESETS.findIndex(function(p){ return p.id===savedArt; });
+    if(artIdx>=0) artPresetIndex = artIdx;
+  }
+}catch(e){}
+
+function setArtPreset(idx){
+  if(idx<0 || idx>=CARD_ART_PRESETS.length) return;
+  artPresetIndex = idx;
+  try{ localStorage.setItem("straightArtPreset", CARD_ART_PRESETS[idx].id); }catch(e){}
+  if(typeof render==="function" && !$("screen-game").classList.contains("hidden")) render();
+}
+
 var ALL_COLORS = ["PINK","BLUE","YELLOW","GREEN"];
 
 function shadeColor(hex, percent){
@@ -384,21 +418,15 @@ function shadeColor(hex, percent){
 }
 
 var CARD_THEMES = [
-  { id:"ocean", name:"오션", isDark:false, bg:"#F1F6F4", panel:"#FFFFFF", panel2:"#E1EDE9",
-    text:"#16302D", muted:"#47635E", lineRgb:"22,48,45",
-    colors:{ PINK:"#E0556E", BLUE:"#1D5A8A", YELLOW:"#E3A63C", GREEN:"#1C7A6F" } },
-  { id:"mono", name:"모노 슬레이트", isDark:false, bg:"#F4F3F1", panel:"#FFFFFF", panel2:"#E9E7E3",
-    text:"#1E2124", muted:"#55585C", lineRgb:"30,33,36",
-    colors:{ PINK:"#C6506A", BLUE:"#565C64", YELLOW:"#DE9A34", GREEN:"#6B8F71" } },
   { id:"midnight", name:"미드나잇", isDark:false, bg:"#F2F4F9", panel:"#FFFFFF", panel2:"#E6EAF4",
     text:"#1B2340", muted:"#4A5178", lineRgb:"27,35,64",
     colors:{ PINK:"#E0475F", BLUE:"#35528F", YELLOW:"#DE9A34", GREEN:"#2E7D6B" } },
   { id:"galaxy", name:"아쿠아마린 갤럭시", isDark:true, bg:"#0C1524", panel:"#131E30", panel2:"#182335",
     text:"#EAF2F4", muted:"#9FB2BE", lineRgb:"255,255,255",
     colors:{ PINK:"#FF6B85", BLUE:"#33D6C0", YELLOW:"#E3A63C", GREEN:"#4CE0A0" } },
-  { id:"sunrise", name:"코랄 선라이즈", isDark:false, bg:"#FEF3EC", panel:"#FFFFFF", panel2:"#FBE3D5",
-    text:"#43202F", muted:"#8A5560", lineRgb:"67,32,47",
-    colors:{ PINK:"#E8663E", BLUE:"#4A90C4", YELLOW:"#E89A3C", GREEN:"#7A8F4A" } }
+  { id:"amethyst", name:"자수정 나이트", isDark:true, bg:"#1A0F2E", panel:"#241640", panel2:"#2E1D52",
+    text:"#F0E8FF", muted:"#B39DDB", lineRgb:"255,255,255",
+    colors:{ PINK:"#FF4FA3", BLUE:"#4FC3F7", YELLOW:"#FFD54F", GREEN:"#69F0AE" } }
 ];
 var cardThemeIndex = 0;
 try{
@@ -1745,7 +1773,7 @@ function cardEl(coin, opts){
       var numSpan = el("span","card-num", coin.value===1 ? "A" : coin.value);
       d.appendChild(numSpan);
     } else {
-      var artEmoji = SUIT_ART[coin.color][coin.value];
+      var artEmoji = CARD_ART_PRESETS[artPresetIndex].art[coin.color][coin.value];
       d.appendChild(el("span","card-art", artEmoji));
       d.appendChild(el("span","card-badge", coin.value===1 ? "A" : coin.value));
     }
@@ -2128,6 +2156,22 @@ function openSettingsModal(){
     cardThemeRow.appendChild(tb);
   });
 
+  var artLabel = el("div","settings-row","<span>🎨 카드 그림</span>");
+  var artRow = el("div","theme-list");
+  CARD_ART_PRESETS.forEach(function(preset, i){
+    var pb = el("button","theme-swatch-btn"+(i===artPresetIndex?" primary":""));
+    var preview = el("span","art-preview", preset.art.PINK[1]+preset.art.BLUE[1]+preset.art.YELLOW[1]+preset.art.GREEN[1]);
+    pb.appendChild(preview);
+    pb.appendChild(el("span","theme-name", preset.name));
+    pb.addEventListener("click", function(){
+      setArtPreset(i);
+      Array.prototype.forEach.call(artRow.children, function(c){ c.classList.remove("primary"); });
+      pb.classList.add("primary");
+      sfxSelect();
+    });
+    artRow.appendChild(pb);
+  });
+
   var nickRow = el("div","settings-row");
   nickRow.innerHTML = "<span>✏️ 닉네임</span>";
   var nickInput = document.createElement("input");
@@ -2151,6 +2195,8 @@ function openSettingsModal(){
   box.appendChild(trackRow);
   box.appendChild(cardThemeLabel);
   box.appendChild(cardThemeRow);
+  box.appendChild(artLabel);
+  box.appendChild(artRow);
   box.appendChild(nickRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
