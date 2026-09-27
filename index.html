@@ -558,7 +558,7 @@ function pointValue(coin){ if(coin.isJoker) return 10; return coin.value===1 ? 1
 
 /* eat validity rules:
    - joker in hand is always wild
-   - floor joker can only be captured by a hand 10 or A
+   - floor joker can only be captured by a hand A
    - same NUMBER beats regardless of color
    - otherwise same color required
    - floor A(1) can only be captured by a hand 10 (same color)
@@ -567,7 +567,7 @@ function pointValue(coin){ if(coin.isJoker) return 10; return coin.value===1 ? 1
 */
 function isValidEat(hand, floor){
   if(hand.isJoker) return true;
-  if(floor.isJoker) return hand.value === 10 || hand.value === 1;
+  if(floor.isJoker) return hand.value === 1;
   if(hand.value === floor.value) return true;
   if(hand.color !== floor.color) return false;
   if(floor.value === 1) return hand.value === 10;
@@ -611,7 +611,8 @@ var state = {
   ceremonyShown: false,
   ceremonyPlaying: false,
   isDraw: false,
-  turnSeq: 0
+  turnSeq: 0,
+  noProgressStreak: 0
 };
 
 var chosenCharacter = null;
@@ -655,6 +656,7 @@ function pushRoomState(){
     turnOrder: state.turnOrder,
     currentTurnPos: state.currentTurnPos,
     turnSeq: state.turnSeq,
+    noProgressStreak: state.noProgressStreak,
     gameOver: state.gameOver,
     winnerIndex: state.winnerIndex,
     winnerStraight: state.winnerStraight,
@@ -709,6 +711,7 @@ function applyRemoteRoomState(data){
   state.turnOrder = data.turnOrder || [];
   state.currentTurnPos = data.currentTurnPos || 0;
   state.turnSeq = data.turnSeq || 0;
+  state.noProgressStreak = data.noProgressStreak || 0;
   state.gameOver = !!data.gameOver;
   state.winnerIndex = data.winnerIndex;
   state.winnerStraight = data.winnerStraight;
@@ -906,6 +909,7 @@ function startOnlineGame(){
   state.ceremonyPlaying = false;
   state.isDraw = false;
   state.turnSeq = 0;
+  state.noProgressStreak = 0;
   aiDriveGuard = {};
   state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
   var myIdx = -1;
@@ -1193,6 +1197,7 @@ function startGame(players, order){
   state.ceremonyPlaying = false;
   state.isDraw = false;
   state.turnSeq = 0;
+  state.noProgressStreak = 0;
   aiDriveGuard = {};
   clearSelectionState();
 
@@ -1302,6 +1307,17 @@ function declareDraw(){
   render();
   pushRoomState();
   setTimeout(showDrawScreen, 1000);
+}
+
+function passWithEmptyDeck(player){
+  pushLog(player.name+"가 뽑을 카드가 없어 턴을 넘겼습니다.");
+  state.noProgressStreak++;
+  if(state.noProgressStreak >= state.turnOrder.length){
+    declareDraw();
+    return;
+  }
+  render();
+  endTurn();
 }
 
 function showDrawScreen(){
@@ -1526,6 +1542,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     player.hand.splice(handIdx,1);
     state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, color:handCoin.color, value:handCoin.value };
     pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
+    state.noProgressStreak = 0;
     state.animating = false;
     clearSelectionState();
     render();
@@ -1540,7 +1557,7 @@ function drawTwoAndEndTurn(){
   var n = Math.min(2, state.centerDeck.length);
   clearSelectionState();
   if(n<=0){
-    declareDraw();
+    passWithEmptyDeck(player);
     return;
   }
   state.animating = true;
@@ -1618,7 +1635,7 @@ function aiTakeTurn(playerIdx){
 
   var n2 = Math.min(2, state.centerDeck.length);
   if(n2<=0){
-    declareDraw();
+    passWithEmptyDeck(player);
     return;
   }
   state.animating = true;
@@ -1954,7 +1971,7 @@ function buildRulebookPanel(){
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
     "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 10으로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 10을 가져올 수 있습니다.</li>"+
-    "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 10 또는 A로만 가져올 수 있습니다.</li>"+
+    "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
     "<li><b>손패 조커</b>: 바닥 카드를 아무거나 가져오거나(만능), 중앙 덱에 반납하고 5장을 새로 받는 리프레시가 가능합니다. 획득한 조커는 점수 슬롯에서 색상·숫자 상관없이 자동으로 10점 + 스트레이트 빈칸을 채워줍니다.</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
