@@ -78,6 +78,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .rulebook-wrap{position:relative;flex-shrink:0;}
 .topbar-right{display:flex;align-items:center;gap:5px;flex-shrink:0;}
 .icon-btn{background:var(--panel2);border:1px solid rgba(255,255,255,.2);color:var(--text);border-radius:50%;width:28px;height:28px;font-size:13px;flex-shrink:0;}
+.icon-btn.spinning{animation:spin360 .5s linear;}
+@keyframes spin360{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 .turn-timer{font-size:10.5px;font-weight:800;color:var(--muted);background:var(--panel2);border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:3px 7px;min-width:30px;text-align:center;flex-shrink:0;}
 .turn-timer.warn{color:#ff6b6b;border-color:#ff6b6b;}
 .rulebook-panel{display:none;position:fixed;top:44px;left:8px;z-index:99999;width:min(320px,80vw);max-height:calc(100vh - 60px);overflow-y:auto;background:var(--panel);border:1px solid rgba(255,255,255,.15);border-radius:14px;padding:14px;box-shadow:0 12px 32px rgba(0,0,0,.5);text-align:left;}
@@ -266,6 +268,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
         <div class="brand-mark">스트레이트!</div>
         <div class="topbar-right">
           <div class="turn-timer" id="turn-timer"></div>
+          <button class="icon-btn hidden" id="sync-btn" title="서버와 재동기화">🔄</button>
           <button class="icon-btn" id="settings-btn" title="설정">⚙️</button>
         </div>
       </div>
@@ -639,22 +642,39 @@ function pushRoomState(){
   }).catch(function(e){ console.error("동기화 실패", e); });
 }
 
+function handleRoomSnapshot(data){
+  if(data.phase==="lobby"){
+    state.players = data.players || [];
+    state.mpMaxPlayers = data.maxPlayers;
+    renderLobby(data);
+    return;
+  }
+  applyRemoteRoomState(data);
+}
+
 function subscribeRoom(code){
   if(roomUnsub){ roomUnsub(); roomUnsub=null; }
   roomUnsub = fbOnSnapshot(fbDoc(fbDb,"rooms",code), function(snap){
     if(!snap.exists()) return;
-    var data = snap.data();
-    if(data.phase==="lobby"){
-      state.players = data.players || [];
-      state.mpMaxPlayers = data.maxPlayers;
-      renderLobby(data);
-      return;
-    }
-    applyRemoteRoomState(data);
+    handleRoomSnapshot(snap.data());
   }, function(err){
     console.error("room subscribe error", err);
   });
 }
+
+function forceResync(){
+  if(!isMultiplayer() || !state.mpRoomCode || !fbDb) return;
+  fbGetDoc(fbDoc(fbDb,"rooms",state.mpRoomCode)).then(function(snap){
+    if(!snap.exists()) return;
+    handleRoomSnapshot(snap.data());
+  }).catch(function(e){ console.error("재동기화 실패", e); });
+}
+
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState==="visible") forceResync();
+});
+window.addEventListener("online", forceResync);
+window.addEventListener("focus", forceResync);
 
 function applyRemoteRoomState(data){
   if(state.ceremonyPlaying) return;
@@ -1586,6 +1606,7 @@ function render(){
   renderScore();
   renderLog();
   renderInstruction();
+  $("sync-btn").classList.toggle("hidden", !isMultiplayer());
 }
 
 function renderInstruction(){
@@ -1966,6 +1987,14 @@ $("settings-btn").addEventListener("click", function(){
 $("start-settings-btn").addEventListener("click", function(){
   unlockAudio();
   openSettingsModal();
+});
+
+$("sync-btn").addEventListener("click", function(){
+  sfxSelect();
+  var btn = $("sync-btn");
+  btn.classList.add("spinning");
+  forceResync();
+  setTimeout(function(){ btn.classList.remove("spinning"); }, 500);
 });
 
 })();
