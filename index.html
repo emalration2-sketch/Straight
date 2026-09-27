@@ -270,7 +270,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
         </div>
       </div>
       <div class="opponents-row" id="opponents-row"></div>
-      <div id="debug-readout" style="width:100%;text-align:center;font-size:9px;color:#ff9a3d;background:rgba(255,154,61,.1);border:1px solid rgba(255,154,61,.3);border-radius:6px;padding:2px 4px;word-break:break-all;"></div>
       <div class="instruction-bar" id="instruction-bar"></div>
       <div class="board-row">
         <div class="deck-stack">
@@ -1587,19 +1586,6 @@ function render(){
   renderScore();
   renderLog();
   renderInstruction();
-  renderDebugReadout();
-}
-
-function renderDebugReadout(){
-  var el2 = $("debug-readout");
-  if(!el2) return;
-  if(!isMultiplayer()){ el2.textContent = ""; return; }
-  var players = state.players.map(function(p,i){
-    return i+":"+(p.clientId?p.clientId.slice(-5):"AI")+(p.clientId===myClientId?"★":"");
-  }).join(" / ");
-  el2.textContent = "[진단] room="+state.mpRoomCode+" me="+myClientId.slice(-5)+" myIndex="+state.myIndex+
-    " host="+iAmHost()+" turnOrder=["+state.turnOrder.join(",")+"] pos="+state.currentTurnPos+
-    " curIdx="+currentPlayerIdx()+" myTurn="+isHumanTurn()+" seq="+state.turnSeq+" | "+players;
 }
 
 function renderInstruction(){
