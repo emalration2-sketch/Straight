@@ -383,11 +383,16 @@ function shadeColor(hex, percent){
 }
 
 var CARD_THEMES = [
-  { id:"ocean", name:"오션", colors:{ PINK:"#E0556E", BLUE:"#1D5A8A", YELLOW:"#E3A63C", GREEN:"#1C7A6F" } },
-  { id:"mono", name:"모노 슬레이트", colors:{ PINK:"#C6506A", BLUE:"#565C64", YELLOW:"#DE9A34", GREEN:"#6B8F71" } },
-  { id:"midnight", name:"미드나잇", colors:{ PINK:"#E0475F", BLUE:"#35528F", YELLOW:"#DE9A34", GREEN:"#2E7D6B" } },
-  { id:"galaxy", name:"아쿠아마린 갤럭시", colors:{ PINK:"#FF6B85", BLUE:"#33D6C0", YELLOW:"#E3A63C", GREEN:"#4CE0A0" } },
-  { id:"sunrise", name:"코랄 선라이즈", colors:{ PINK:"#B23A32", BLUE:"#4A90C4", YELLOW:"#E89A3C", GREEN:"#7A8F4A" } }
+  { id:"ocean", name:"오션", bg:"#0D1A17", panel:"#15291F", panel2:"#1C3A2C",
+    colors:{ PINK:"#E0556E", BLUE:"#1D5A8A", YELLOW:"#E3A63C", GREEN:"#1C7A6F" } },
+  { id:"mono", name:"모노 슬레이트", bg:"#16181B", panel:"#202327", panel2:"#2B2F34",
+    colors:{ PINK:"#C6506A", BLUE:"#565C64", YELLOW:"#DE9A34", GREEN:"#6B8F71" } },
+  { id:"midnight", name:"미드나잇", bg:"#0D1226", panel:"#161D3A", panel2:"#202A52",
+    colors:{ PINK:"#E0475F", BLUE:"#35528F", YELLOW:"#DE9A34", GREEN:"#2E7D6B" } },
+  { id:"galaxy", name:"아쿠아마린 갤럭시", bg:"#0C1524", panel:"#131E30", panel2:"#182335",
+    colors:{ PINK:"#FF6B85", BLUE:"#33D6C0", YELLOW:"#E3A63C", GREEN:"#4CE0A0" } },
+  { id:"sunrise", name:"코랄 선라이즈", bg:"#2A1219", panel:"#3A1B24", panel2:"#4A232E",
+    colors:{ PINK:"#B23A32", BLUE:"#4A90C4", YELLOW:"#E89A3C", GREEN:"#7A8F4A" } }
 ];
 var cardThemeIndex = 0;
 try{
@@ -400,11 +405,23 @@ try{
 var COLORS = {};
 Object.assign(COLORS, CARD_THEMES[cardThemeIndex].colors);
 
+function applyCardThemeVars(theme){
+  var rootStyle = document.documentElement.style;
+  rootStyle.setProperty("--pink", theme.colors.PINK);
+  rootStyle.setProperty("--accent", theme.colors.YELLOW);
+  rootStyle.setProperty("--bg", theme.bg);
+  rootStyle.setProperty("--panel", theme.panel);
+  rootStyle.setProperty("--panel2", theme.panel2);
+}
+applyCardThemeVars(CARD_THEMES[cardThemeIndex]);
+
 function setCardTheme(idx){
   if(idx<0 || idx>=CARD_THEMES.length) return;
   cardThemeIndex = idx;
-  Object.assign(COLORS, CARD_THEMES[idx].colors);
-  try{ localStorage.setItem("straightCardTheme", CARD_THEMES[idx].id); }catch(e){}
+  var theme = CARD_THEMES[idx];
+  Object.assign(COLORS, theme.colors);
+  applyCardThemeVars(theme);
+  try{ localStorage.setItem("straightCardTheme", theme.id); }catch(e){}
   if(typeof render==="function" && !$("screen-game").classList.contains("hidden")) render();
 }
 
