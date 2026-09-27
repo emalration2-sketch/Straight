@@ -78,7 +78,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .brand-mark{flex:1;min-width:0;text-align:center;font-family:var(--font-display);font-size:14px;letter-spacing:.5px;color:var(--accent);}
 .rulebook-wrap{position:relative;flex-shrink:0;}
 .topbar-right{display:flex;align-items:center;gap:5px;flex-shrink:0;}
-.icon-btn{background:var(--panel2);border:1px solid rgba(var(--line-rgb),.2);color:var(--text);border-radius:50%;width:28px;height:28px;font-size:13px;flex-shrink:0;}
+.icon-btn{background:transparent;border:none;color:var(--text);width:32px;height:32px;font-size:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;padding:0;}
 .icon-btn.spinning{animation:spin360 .5s linear;}
 @keyframes spin360{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
 .turn-timer{font-size:10.5px;font-weight:800;color:var(--muted);background:var(--panel2);border:1px solid rgba(var(--line-rgb),.2);border-radius:10px;padding:3px 7px;min-width:30px;text-align:center;flex-shrink:0;}
@@ -155,9 +155,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.joker{background:linear-gradient(135deg,#ffffff,#e4e2ef);color:#2a2440;border-color:rgba(42,36,64,.35);}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
-.card-art{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:1.9em;opacity:.4;transform:rotate(-8deg) scale(1.2);filter:drop-shadow(0 2px 3px rgba(0,0,0,.35));pointer-events:none;}
-.card-badge{position:absolute;top:5%;left:5%;width:42%;aspect-ratio:1;border-radius:50%;background:rgba(20,15,35,.55);border:2px solid rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1em;color:#fff;line-height:1;box-shadow:0 2px 4px rgba(0,0,0,.45);}
-.card-num{position:relative;}
+.card-num{position:relative;z-index:2;}
+.pattern-stripe::after,.pattern-dot::after,.pattern-zigzag::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
+.pattern-dot::after{background:radial-gradient(rgba(0,0,0,.14) 1.2px,transparent 1.3px);background-size:8px 8px;}
+.pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
+.pattern-preview{width:26px;height:26px;border-radius:6px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
 .card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
 .card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 0 8px rgba(255,215,107,.8),0 0 16px rgba(255,215,107,.4);opacity:.95;}
 @keyframes wildPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.85;}}
@@ -179,7 +182,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .theme-swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
 .theme-dots{display:flex;gap:3px;flex-shrink:0;}
 .theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(var(--line-rgb),.4);flex-shrink:0;}
-.art-preview{font-size:16px;line-height:1;letter-spacing:1px;flex-shrink:0;}
 .theme-name{flex:1;text-align:left;}
 .nickname-input{background:var(--panel2);border:1px solid rgba(var(--line-rgb),.2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;width:120px;text-align:right;}
 
@@ -215,6 +217,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
       <button class="btn primary big" id="mode-solo-btn">🤖 혼자하기 (AI 상대)</button>
       <button class="btn primary big" id="mode-online-btn">🌐 온라인 멀티플레이</button>
     </div>
+    <button class="btn" id="mode-back-btn">← 뒤로</button>
   </div>
 
   <div class="screen hidden" id="screen-online-choice">
@@ -261,12 +264,14 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <p class="sub">부족한 인원은 AI가 대신 플레이합니다 · 인원수만큼 색상이 사용됩니다</p>
     <div class="count-row" id="count-row"></div>
     <button class="btn primary big" id="count-next-btn" disabled>다음</button>
+    <button class="btn" id="count-back-btn">← 뒤로</button>
   </div>
 
   <div class="screen hidden" id="screen-avatar">
     <h1 style="font-size:20px;">캐릭터를 선택하세요</h1>
     <div class="avatar-grid" id="avatar-grid"></div>
     <button class="btn primary big" id="avatar-next-btn" disabled>순서 정하기</button>
+    <button class="btn" id="avatar-back-btn">← 뒤로</button>
   </div>
 
   <div class="screen hidden" id="screen-order">
@@ -365,42 +370,34 @@ function ensureFirebase(){
 "use strict";
 
 var COLOR_NAMES = { PINK:"핑크", BLUE:"블루", YELLOW:"옐로우", GREEN:"그린" };
-var CARD_ART_PRESETS = [
-  { id:"bloom", name:"블룸",
-    art:{
-      PINK:  {1:"🌸",2:"🌺",3:"🌹",4:"💐",5:"🌷",6:"💗",7:"💕",8:"🌼",9:"🥀",10:"💮"},
-      BLUE:  {1:"💧",2:"🌊",3:"🐟",4:"🐠",5:"🐳",6:"🐬",7:"🦈",8:"🦑",9:"🐙",10:"❄️"},
-      YELLOW:{1:"⭐",2:"🌟",3:"✨",4:"⚡",5:"🔥",6:"☀️",7:"🌞",8:"💡",9:"🌻",10:"🏵️"},
-      GREEN: {1:"🍀",2:"🌿",3:"🌱",4:"🌳",5:"🌲",6:"🐸",7:"🦎",8:"🐢",9:"🦋",10:"🌵"}
-    } },
-  { id:"zoo", name:"동물원",
-    art:{
-      PINK:  {1:"🐰",2:"🐱",3:"🦊",4:"🐻",5:"🐼",6:"🐨",7:"🐷",8:"🐹",9:"🦔",10:"🐿️"},
-      BLUE:  {1:"🐳",2:"🐬",3:"🐟",4:"🐠",5:"🦈",6:"🐙",7:"🦑",8:"🦞",9:"🦀",10:"🐧"},
-      YELLOW:{1:"🐥",2:"🐤",3:"🦁",4:"🐝",5:"🐆",6:"🦒",7:"🐯",8:"🦓",9:"🦢",10:"🦉"},
-      GREEN: {1:"🐸",2:"🐢",3:"🦎",4:"🦗",5:"🐛",6:"🦋",7:"🐜",8:"🕷️",9:"🐌",10:"🦕"}
-    } },
-  { id:"space", name:"우주",
-    art:{
-      PINK:  {1:"🌙",2:"🪐",3:"💫",4:"🌠",5:"☄️",6:"🛸",7:"👽",8:"🚀",9:"🌌",10:"🔮"},
-      BLUE:  {1:"🌍",2:"🌎",3:"🌏",4:"🛰️",5:"❄️",6:"💠",7:"🔷",8:"🌀",9:"⚛️",10:"🧊"},
-      YELLOW:{1:"☀️",2:"⭐",3:"🌟",4:"✨",5:"⚡",6:"🔥",7:"🌞",8:"💥",9:"🎇",10:"🎆"},
-      GREEN: {1:"🧬",2:"🦠",3:"🔬",4:"🧪",5:"⚗️",6:"👾",7:"🌱",8:"🍃",9:"🌿",10:"🌾"}
-    } }
+var CARD_BACK_PRESETS = [
+  { id:"stripe", name:"스트라이프", cls:"pattern-stripe" },
+  { id:"dot", name:"도트", cls:"pattern-dot" },
+  { id:"zigzag", name:"지그재그", cls:"pattern-zigzag" }
 ];
-var artPresetIndex = 0;
+var backPresetIndex = 0;
 try{
-  var savedArt = localStorage.getItem("straightArtPreset");
-  if(savedArt!==null){
-    var artIdx = CARD_ART_PRESETS.findIndex(function(p){ return p.id===savedArt; });
-    if(artIdx>=0) artPresetIndex = artIdx;
+  var savedBack = localStorage.getItem("straightArtPreset");
+  if(savedBack!==null){
+    var backIdx = CARD_BACK_PRESETS.findIndex(function(p){ return p.id===savedBack; });
+    if(backIdx>=0) backPresetIndex = backIdx;
   }
 }catch(e){}
 
-function setArtPreset(idx){
-  if(idx<0 || idx>=CARD_ART_PRESETS.length) return;
-  artPresetIndex = idx;
-  try{ localStorage.setItem("straightArtPreset", CARD_ART_PRESETS[idx].id); }catch(e){}
+function applyBackPresetToDeckVisual(){
+  var preset = CARD_BACK_PRESETS[backPresetIndex];
+  var layers = document.querySelectorAll(".deck-visual .layer");
+  Array.prototype.forEach.call(layers, function(layer){
+    CARD_BACK_PRESETS.forEach(function(p){ layer.classList.remove(p.cls); });
+    layer.classList.add(preset.cls);
+  });
+}
+
+function setBackPreset(idx){
+  if(idx<0 || idx>=CARD_BACK_PRESETS.length) return;
+  backPresetIndex = idx;
+  try{ localStorage.setItem("straightArtPreset", CARD_BACK_PRESETS[idx].id); }catch(e){}
+  applyBackPresetToDeckVisual();
   if(typeof render==="function" && !$("screen-game").classList.contains("hidden")) render();
 }
 
@@ -418,13 +415,13 @@ function shadeColor(hex, percent){
 }
 
 var CARD_THEMES = [
-  { id:"midnight", name:"미드나잇", isDark:false, bg:"#F2F4F9", panel:"#FFFFFF", panel2:"#E6EAF4",
+  { id:"midnight", name:"모닝스카이", isDark:false, bg:"#F2F4F9", panel:"#FFFFFF", panel2:"#E6EAF4",
     text:"#1B2340", muted:"#4A5178", lineRgb:"27,35,64",
     colors:{ PINK:"#E0475F", BLUE:"#35528F", YELLOW:"#DE9A34", GREEN:"#2E7D6B" } },
-  { id:"galaxy", name:"아쿠아마린 갤럭시", isDark:true, bg:"#0C1524", panel:"#131E30", panel2:"#182335",
+  { id:"galaxy", name:"아쿠아마린", isDark:true, bg:"#0C1524", panel:"#131E30", panel2:"#182335",
     text:"#EAF2F4", muted:"#9FB2BE", lineRgb:"255,255,255",
     colors:{ PINK:"#FF6B85", BLUE:"#33D6C0", YELLOW:"#E3A63C", GREEN:"#4CE0A0" } },
-  { id:"amethyst", name:"자수정 나이트", isDark:true, bg:"#1A0F2E", panel:"#241640", panel2:"#2E1D52",
+  { id:"amethyst", name:"자수정", isDark:true, bg:"#1A0F2E", panel:"#241640", panel2:"#2E1D52",
     text:"#F0E8FF", muted:"#B39DDB", lineRgb:"255,255,255",
     colors:{ PINK:"#FF4FA3", BLUE:"#4FC3F7", YELLOW:"#FFD54F", GREEN:"#69F0AE" } }
 ];
@@ -452,6 +449,7 @@ function applyCardThemeVars(theme){
   document.documentElement.classList.toggle("theme-light", !theme.isDark);
 }
 applyCardThemeVars(CARD_THEMES[cardThemeIndex]);
+applyBackPresetToDeckVisual();
 
 function setCardTheme(idx){
   if(idx<0 || idx>=CARD_THEMES.length) return;
@@ -1093,6 +1091,18 @@ $("mode-online-btn").addEventListener("click", function(){
 $("online-back-btn").addEventListener("click", function(){
   sfxSelect();
   switchScreen("mode");
+});
+$("mode-back-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("start");
+});
+$("count-back-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("mode");
+});
+$("avatar-back-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("count");
 });
 
 var chosenCreateCount = null;
@@ -1769,14 +1779,8 @@ function cardEl(coin, opts){
     d.style.background = "linear-gradient(155deg,"+shadeColor(base,35)+","+base+" 55%,"+shadeColor(base,-35)+")";
     var clsStr = opts.cls || "";
     var isSmall = clsStr.indexOf("tiny")!==-1 || clsStr.indexOf("opp")!==-1;
-    if(isSmall){
-      var numSpan = el("span","card-num", coin.value===1 ? "A" : coin.value);
-      d.appendChild(numSpan);
-    } else {
-      var artEmoji = CARD_ART_PRESETS[artPresetIndex].art[coin.color][coin.value];
-      d.appendChild(el("span","card-art", artEmoji));
-      d.appendChild(el("span","card-badge", coin.value===1 ? "A" : coin.value));
-    }
+    if(!isSmall) d.classList.add(CARD_BACK_PRESETS[backPresetIndex].cls);
+    d.appendChild(el("span","card-num", coin.value===1 ? "A" : coin.value));
   }
   return d;
 }
@@ -2156,15 +2160,15 @@ function openSettingsModal(){
     cardThemeRow.appendChild(tb);
   });
 
-  var artLabel = el("div","settings-row","<span>🎨 카드 그림</span>");
+  var artLabel = el("div","settings-row","<span>🎨 카드 뒷면</span>");
   var artRow = el("div","theme-list");
-  CARD_ART_PRESETS.forEach(function(preset, i){
-    var pb = el("button","theme-swatch-btn"+(i===artPresetIndex?" primary":""));
-    var preview = el("span","art-preview", preset.art.PINK[1]+preset.art.BLUE[1]+preset.art.YELLOW[1]+preset.art.GREEN[1]);
+  CARD_BACK_PRESETS.forEach(function(preset, i){
+    var pb = el("button","theme-swatch-btn"+(i===backPresetIndex?" primary":""));
+    var preview = el("span","pattern-preview "+preset.cls);
     pb.appendChild(preview);
     pb.appendChild(el("span","theme-name", preset.name));
     pb.addEventListener("click", function(){
-      setArtPreset(i);
+      setBackPreset(i);
       Array.prototype.forEach.call(artRow.children, function(c){ c.classList.remove("primary"); });
       pb.classList.add("primary");
       sfxSelect();
@@ -2184,6 +2188,21 @@ function openSettingsModal(){
   nickInput.addEventListener("blur", function(){ applyNickname(nickInput.value); });
   nickRow.appendChild(nickInput);
 
+  var quitRow = null;
+  if(!$("screen-game").classList.contains("hidden")){
+    quitRow = el("div","settings-row");
+    quitRow.style.justifyContent = "center";
+    quitRow.style.borderBottom = "none";
+    var quitBtn = el("button","btn","🏳️ 항복하고 메인으로");
+    quitBtn.style.width = "100%";
+    quitBtn.addEventListener("click", function(){
+      if(!confirm("게임을 포기하고 메인 화면으로 나가시겠습니까?")) return;
+      if(isMultiplayer()) leaveRoom();
+      location.reload();
+    });
+    quitRow.appendChild(quitBtn);
+  }
+
   var closeBtn = el("button","btn primary","닫기");
   closeBtn.addEventListener("click", function(){ applyNickname(nickInput.value); closeModal(); });
   var actions = el("div","modal-actions");
@@ -2198,6 +2217,7 @@ function openSettingsModal(){
   box.appendChild(artLabel);
   box.appendChild(artRow);
   box.appendChild(nickRow);
+  if(quitRow) box.appendChild(quitRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
   backdrop.addEventListener("click", function(e){ if(e.target===backdrop) closeModal(); });
