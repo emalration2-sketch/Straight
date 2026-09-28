@@ -1037,6 +1037,7 @@ function startOnlineGame(){
   state.isDraw = false;
   state.turnSeq = 0;
   state.noProgressStreak = 0;
+  state.bonusCaptureFor = null;
   aiDriveGuard = {};
   state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
   var myIdx = -1;
@@ -1354,6 +1355,7 @@ function startGame(players, order){
   state.isDraw = false;
   state.turnSeq = 0;
   state.noProgressStreak = 0;
+  state.bonusCaptureFor = null;
   aiDriveGuard = {};
   clearSelectionState();
 
@@ -1774,6 +1776,7 @@ function jokerRefresh(handIdx){
     state.animating = false;
     render();
     player.captureStreak = 0;
+    state.bonusCaptureFor = null;
     endTurn();
   }, true);
 }
@@ -1935,7 +1938,7 @@ function renderInstruction(){
     bar.innerHTML = (cur ? cur.avatar+" "+cur.name : "상대") + "의 턴입니다...";
     return;
   }
-  if(state.bonusCaptureFor === state.myIndex){
+  if(state.bonusCaptureFor === state.myIndex && state.mode==="idle"){
     bar.innerHTML = "🔥 콤보! 보너스 캡처 기회입니다. 손패를 클릭하거나 [2장 뽑고 턴 종료]로 넘어가세요.";
     return;
   }
@@ -2089,12 +2092,15 @@ function onFloorTargetClick(fi){
   var player = state.players[state.myIndex];
   var handCoin = player.hand[handIdx];
   var floorCoin = state.floor[fi];
+  var isBonus = state.bonusCaptureFor===state.myIndex;
 
   if(state.mode==="eat-target"){
     if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
-    doEat(state.myIndex, handIdx, fi);
+    state.bonusCaptureFor = null;
+    doEat(state.myIndex, handIdx, fi, isBonus);
   } else if(state.mode==="joker-eat-target"){
-    doEat(state.myIndex, handIdx, fi);
+    state.bonusCaptureFor = null;
+    doEat(state.myIndex, handIdx, fi, isBonus);
   }
 }
 
