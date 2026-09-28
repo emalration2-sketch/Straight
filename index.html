@@ -647,13 +647,14 @@ function colorsForCount(n){ return ALL_COLORS.slice(0, n); }
 function buildDeck(colors){
   var deck=[]; var id=0;
   colors.forEach(function(c){
-    for(var v=1; v<=10; v++){
+    for(var v=1; v<=13; v++){
       for(var s=0; s<2; s++){
-        deck.push({ id:id++, color:c, value:v, isJoker:false });
+        deck.push({ id:id++, color:c, value:v, isJoker:false, isPrism:false });
       }
     }
   });
-  for(var i=0;i<2;i++) deck.push({ id:id++, isJoker:true, color:null, value:null });
+  for(var i=0;i<2;i++) deck.push({ id:id++, isJoker:true, color:null, value:null, isPrism:false });
+  for(var p=0;p<2;p++) deck.push({ id:id++, isJoker:false, isPrism:true, color:null, value:7 });
   return deck;
 }
 
