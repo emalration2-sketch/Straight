@@ -986,6 +986,295 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 ---
 
+## Part 4: 조커 재설계 (세션 중 사용자 추가 요청)
+
+플랜 실행 도중 사용자가 대화로 확정한 새 요구사항. 기존 조커는 "손패에서
+바닥 카드 아무거나 캡처(와일드)" + "덱에 반납하고 5장 새로 뽑기(리프레시)"
+두 기능을 겸해서 너무 강력하고, 캡처에 쓴 조커가 바닥에 노출돼 상대에게
+뺏길 위험 때문에 다들 아끼기만 하고 안 쓰는 문제가 있었다. 새 규칙:
+
+- 조커의 "바닥 카드 아무거나 캡처" 기능 삭제.
+- 조커의 "반납 후 5장 리프레시" 기능 삭제.
+- 대신 자기 턴이기만 하면 **턴을 소모하지 않는 자유 행동**으로 손패의
+  조커를 내 점수덱에 바로 내려놓을 수 있음(캡처/드로우 전이든 후든 상관
+  없음 — 실제로는 드로우가 턴을 끝내버리므로 "내 턴이 끝나기 전까지 아무
+  때나"가 정확한 표현). 내려놓은 조커는 점수덱에서 기존과 동일하게
+  `findStraight`의 `jokerCount`에 와일드로 기여한다(이 부분은 코드 변경
+  불필요, 이미 그렇게 동작).
+- 바닥에 조커가 있는 경우(초기 딜에서 드물게 발생 가능)는 기존처럼 손패
+  A로만 캡처 가능 — 이 규칙은 그대로 유지.
+
+**순서 주의:** 이 파트는 Task 8과 같은 함수(`onFloorTargetClick`,
+`renderInstruction`) 일부를 건드린다. Task 8(및 그 수정 라운드)이 완전히
+끝난 뒤에 Task 9를 시작해야 충돌이 없다.
+
+### Task 9: 조커 캡처/리프레시 제거, 점수덱 즉시 편입(자유 행동) 추가
+
+**Files:**
+- Modify: `index.html` 근처 690-698 (`isValidEat` 및 그 위 주석)
+- Modify: `index.html` 근처 1761-1779 (`jokerRefresh` 전체 삭제, `bankJoker`
+  신설)
+- Modify: `index.html` 근처 `openJokerChoiceModal` (조커 클릭 시 뜨는 모달)
+- Modify: `index.html` 근처 `onFloorTargetClick` — `joker-eat-target`
+  분기 제거 (Task 8 수정 라운드가 이미 이 함수에 `isBonus` 관련 줄을
+  추가했을 것이므로, 전체 교체가 아니라 해당 분기만 targeted로 제거할 것)
+- Modify: `index.html` 근처 `renderInstruction` — `joker-eat-target` case
+  제거, `joker-choice` case 문구 교체 (Task 8 수정 라운드가 이미 콤보 보너스
+  분기를 추가했을 것이므로, 전체 교체가 아니라 해당 case들만 targeted로
+  수정할 것)
+- Modify: `index.html` 근처 `aiTakeTurn` (전체 교체 — Task 8은 이 함수의
+  draw 콜백 두 곳에만 `captureStreak = 0`을 추가했는데, 그중 하나(조커
+  리필용 n5 콜백)가 이번에 통째로 삭제되는 블록 안에 있었음. 남는 draw
+  콜백의 `captureStreak = 0`은 아래 교체 코드에 그대로 포함되어 있음)
+- Modify: `index.html` 근처 `buildRulebookPanel` — "손패 조커" 항목 교체,
+  겸사겸사 "바닥의 A는 같은 색 10으로만" 오탈자(Task 2에서 A 기준이 10→K로
+  바뀌었는데 룰북 문구가 그때 갱신 안 됐음)를 "K"로 수정
+
+**Interfaces:**
+- Consumes: `isValidEat`, `checkWin`, `clearSelectionState`, `findValidCaptures`,
+  `chooseAiCapture` (모두 기존/이전 태스크 함수, 시그니처 변경 없음).
+- Produces: `bankJoker(handIdx)` — human 전용, 턴을 끝내지 않음.
+
+- [ ] **Step 1: `isValidEat`의 hand-joker 처리를 node -e로 검증**
+
+```bash
+node -e "
+function isValidEat(hand, floor){
+  if(hand.isJoker) return false;
+  if(floor.isJoker) return hand.value === 1;
+  if(hand.value === floor.value) return true;
+  if(!hand.isPrism && !floor.isPrism && hand.color !== floor.color) return false;
+  if(floor.value === 1) return hand.value === 13;
+  if(hand.value === 1 && floor.value === 13) return true;
+  return hand.value >= floor.value;
+}
+function c(color,value,extra){ return Object.assign({color:color,value:value,isJoker:false,isPrism:false}, extra||{}); }
+var J = {isJoker:true, isPrism:false, color:null, value:null};
+
+console.assert(isValidEat(J, c('P',5))===false, '1: hand joker can no longer capture a normal card');
+console.assert(isValidEat(J, J)===false, '2: hand joker vs floor joker must not accidentally match via the same-value shortcut (both values are null)');
+console.assert(isValidEat(c('P',1), J)===true, '3: floor joker still only capturable by hand A (unchanged)');
+console.assert(isValidEat(c('P',5), J)===false, '4: floor joker still rejects non-A hand (unchanged)');
+console.assert(isValidEat(c('P',7), c('B',7))===true, '5: same value any color unaffected');
+console.assert(isValidEat(c('P',9), c('P',5))===true, '6: same color hand>=floor unaffected');
+console.log('all isValidEat joker-removal assertions passed');
+"
+```
+Expected: `all isValidEat joker-removal assertions passed`. Assertion 2 is
+the one worth double-checking by hand — a naive `if(hand.isJoker) return
+true;` -> `false` swap alone is not enough by itself if some other branch
+could still let a hand joker slip through; trace that no other branch
+returns true for a hand joker before reaching the final `return hand.value
+>= floor.value` (which is `undefined >= undefined` -> `false` anyway, so
+it's actually safe, but the assertion documents this explicitly).
+
+- [ ] **Step 2: `isValidEat` 반영 (주석 1줄 + 로직 1줄만 변경)**
+
+```js
+/* eat validity rules:
+   - joker in hand can no longer capture anything (see bankJoker for the joker's real use)
+   - floor joker can only be captured by a hand A
+   - same NUMBER beats regardless of color
+   - prism cards (rank 7, color:null) skip the color check entirely
+   - otherwise same color required
+   - floor A(1) can only be captured by a hand K(13) (same color)
+   - hand A(1) can capture a floor K(13) (same color)
+   - otherwise same color & hand value >= floor value
+*/
+function isValidEat(hand, floor){
+  if(hand.isJoker) return false;
+  if(floor.isJoker) return hand.value === 1;
+  if(hand.value === floor.value) return true;
+  if(!hand.isPrism && !floor.isPrism && hand.color !== floor.color) return false;
+  if(floor.value === 1) return hand.value === 13;
+  if(hand.value === 1 && floor.value === 13) return true;
+  return hand.value >= floor.value;
+}
+```
+
+- [ ] **Step 3: `jokerRefresh` 삭제, `bankJoker` 신설**
+
+이 함수 전체를 삭제:
+```js
+function jokerRefresh(handIdx){
+  if(state.animating) return;
+  var player = state.players[state.myIndex];
+  var joker = player.hand.splice(handIdx,1)[0];
+  state.centerDeck = shuffle(state.centerDeck.concat([joker]));
+  var n = Math.min(5, state.centerDeck.length);
+  clearSelectionState();
+  state.animating = true;
+  render();
+  animateDrawFromDeck(n, $("hand-coins"), function(){
+    var drawn = state.centerDeck.splice(0, n);
+    player.hand = player.hand.concat(drawn);
+    pushLog(player.name+"가 조커를 사용해 손패 "+n+"장을 새로 보충했습니다!");
+    state.animating = false;
+    render();
+    player.captureStreak = 0;
+    endTurn();
+  }, true);
+}
+```
+그 자리에 다음을 추가:
+```js
+function bankJoker(handIdx){
+  if(state.animating || !isHumanTurn()) return;
+  var player = state.players[state.myIndex];
+  var joker = player.hand.splice(handIdx,1)[0];
+  player.score.push(joker);
+  pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
+  clearSelectionState();
+  render();
+  checkWin(state.myIndex);
+}
+```
+턴을 끝내지 않는다는 점이 핵심 — `endTurn()`을 호출하지 않는다.
+
+- [ ] **Step 4: `openJokerChoiceModal`을 단일 선택지로 교체**
+
+기존 함수(2개 버튼: "바닥패 가져오기"/"리프레시")를 찾아서 전체를 다음으로
+교체:
+```js
+function openJokerChoiceModal(handIdx){
+  closeModal();
+  var backdrop = el("div","modal-backdrop");
+  var box = el("div","modal-box");
+  box.innerHTML = "<h2>조커 사용</h2><p style=\"font-size:13px;color:var(--muted)\">조커를 내 점수덱에 내려놓을까요? 턴을 소모하지 않습니다.</p>";
+  var actions = el("div","modal-actions");
+
+  var bankBtn = el("button","btn primary","✨ 점수덱에 내려놓기");
+  bankBtn.addEventListener("click", function(){
+    closeModal();
+    bankJoker(handIdx);
+  });
+  var cancelBtn = el("button","btn","✖ 취소");
+  cancelBtn.addEventListener("click", function(){
+    clearSelectionState();
+    closeModal();
+    render();
+  });
+
+  actions.appendChild(bankBtn);
+  actions.appendChild(cancelBtn);
+  box.appendChild(actions);
+  backdrop.appendChild(box);
+  tooltipLayer.appendChild(backdrop);
+}
+```
+`onHandClick`은 손패의 조커를 클릭하면 이미 `state.mode = "joker-choice"`
+설정 후 `openJokerChoiceModal(hi)`를 호출하고 있으므로 그쪽은 변경 불필요.
+
+- [ ] **Step 5: `onFloorTargetClick`에서 `joker-eat-target` 분기 제거**
+
+Task 8의 수정 라운드가 이미 이 함수 앞부분에 `isBonus` 계산과
+`state.bonusCaptureFor = null;`을 추가해놨을 것이다. 그 부분은 그대로 두고,
+`else if(state.mode==="joker-eat-target"){ ... }` 블록만(그 안의 `doEat(...)`
+호출 포함) 찾아서 삭제한다. 삭제 후 `if(state.mode==="eat-target"){...}`
+블록만 남고 그 뒤에 바로 함수가 끝나야 한다.
+
+- [ ] **Step 6: `renderInstruction`에서 조커 관련 case 정리**
+
+`case "joker-eat-target": bar.textContent = ...; break;` 줄을 통째로 삭제.
+`case "joker-choice": bar.textContent = "🃏 조커로 무엇을 할지 선택하세요!"; break;`
+줄을 다음으로 교체:
+```js
+    case "joker-choice": bar.textContent = "🃏 조커를 점수덱에 내려놓을까요?"; break;
+```
+Task 8이 추가한 콤보 보너스 힌트 분기(`state.bonusCaptureFor === state.myIndex`
+관련)는 그대로 둔다 — 이 스텝은 `switch` 블록 안의 두 case만 건드린다.
+
+- [ ] **Step 7: `aiTakeTurn` 전체 교체**
+
+```js
+function aiTakeTurn(playerIdx){
+  if(state.gameOver) return;
+  var player = state.players[playerIdx];
+
+  var jokerIdx = -1;
+  player.hand.forEach(function(c,i){ if(c.isJoker) jokerIdx=i; });
+  if(jokerIdx!==-1){
+    var joker = player.hand.splice(jokerIdx,1)[0];
+    player.score.push(joker);
+    pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
+    if(checkWin(playerIdx)) return;
+  }
+
+  var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
+  var options = findValidCaptures(player.hand, state.floor);
+  var best = chooseAiCapture(options, state.aiDifficulty || "normal", player, opponents);
+
+  if(best){
+    doEat(playerIdx, best.hi, best.fi);
+    return;
+  }
+
+  var destEl = document.querySelector('.opponent-card[data-player-idx="'+playerIdx+'"]');
+
+  var n2 = Math.min(2, state.centerDeck.length);
+  if(n2<=0){
+    passWithEmptyDeck(player);
+    return;
+  }
+  state.animating = true;
+  render();
+  animateDrawFromDeck(n2, destEl, function(){
+    var drawn = state.centerDeck.splice(0, n2);
+    player.hand = player.hand.concat(drawn);
+    pushLog(player.name+"가 중앙 덱에서 "+n2+"장을 뽑고 턴을 마쳤습니다.");
+    state.animating = false;
+    render();
+    player.captureStreak = 0;
+    endTurn();
+  });
+}
+```
+AI는 자기 턴이 시작될 때마다 손패에 조커가 있으면 무조건 먼저 점수덱에
+내려놓고(공짜 행동이라 항상 이득이므로), 그다음에 평소처럼 캡처/드로우를
+판단한다.
+
+- [ ] **Step 8: `buildRulebookPanel` 텍스트 갱신**
+
+`<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 10으로만 가져올 수 있습니다. 손패의
+A는 같은 색 바닥 10을 가져올 수 있습니다.</li>` 줄을 다음으로 교체(Task 2에서
+바뀐 규칙이 룰북에 반영 안 돼 있던 오탈자 수정):
+```html
+    "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 K로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 K를 가져올 수 있습니다.</li>"+
+```
+`<li><b>손패 조커</b>: 바닥 카드를 아무거나 가져오거나(만능), 중앙 덱에
+반납하고 5장을 새로 받는 리프레시가 가능합니다. 획득한 조커는 점수 슬롯에서
+색상·숫자 상관없이 자동으로 10점 + 스트레이트 빈칸을 채워줍니다.</li>` 줄을
+다음으로 교체:
+```html
+    "<li><b>손패 조커</b>: 캡처에는 쓸 수 없습니다. 대신 내 턴이 끝나기 전까지 언제든 점수덱에 내려놓을 수 있고(턴을 소모하지 않음), 내려놓은 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
+```
+
+- [ ] **Step 9: 브라우저에서 전체 흐름 검증**
+
+워크트리 대상 임시 서버(`npx --yes serve -l <port> .`, 기존 태스크들과
+동일한 우회 방법)로 확인:
+1. 손패의 조커를 클릭하면 모달이 뜨고 "✨ 점수덱에 내려놓기"만 있는지
+   (리프레시/만능캡처 버튼 없음)
+2. 내려놓기를 누르면 턴이 끝나지 않고(같은 플레이어 턴 유지), 조커가
+   점수덱에 들어갔는지(점수 영역에 표시)
+3. 내려놓은 뒤 정상적으로 캡처나 드로우를 이어서 할 수 있는지
+4. 조커로는 더 이상 바닥 카드를 캡처할 수 없는지(조커 선택 후 바닥 카드를
+   눌러도 아무 일도 안 일어나야 함 — 애초에 모달에 그 옵션 자체가 없음)
+5. AI 턴에서 AI가 조커를 갖고 있으면 자동으로 점수덱에 내려놓는 로그가
+   뜨는지
+6. 콘솔 에러 없는지 (`read_console_messages` `onlyErrors:true`)
+
+- [ ] **Step 10: Commit**
+
+```bash
+git add index.html
+git commit -m "Rework jokers: remove wildcard capture and deck-refresh, add a free bank-to-score action
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+```
+
+---
+
 ## Self-Review Notes (작성자 자체 점검, 참고용)
 
 - **스펙 커버리지**: 1절(랭크 개편) -> Task 1-4, 2절(프리즘카드) -> Task
