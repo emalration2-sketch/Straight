@@ -691,10 +691,14 @@ function findStraight(score, colors){
   for(var ci=0; ci<colors.length; ci++){
     var color = colors[ci];
     var vals = {};
-    score.forEach(function(c){ if(!c.isJoker && c.color===color) vals[c.value]=true; });
-    for(var start=1; start<=6; start++){
+    score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) vals[c.value]=true; });
+    for(var start=1; start<=10; start++){
       var missing=0;
-      for(var k=0;k<5;k++){ if(!vals[start+k]) missing++; }
+      for(var k=0;k<5;k++){
+        var rank = start+k;
+        var lookup = rank>13 ? rank-13 : rank;
+        if(!vals[lookup]) missing++;
+      }
       if(missing<=jokerCount) return { color:color, start:start };
     }
   }
