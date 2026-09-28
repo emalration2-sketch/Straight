@@ -678,7 +678,7 @@ function rankLabel(v){
 }
 
 /* eat validity rules:
-   - joker in hand is always wild
+   - joker in hand can no longer capture anything (see bankJoker for the joker's real use)
    - floor joker can only be captured by a hand A
    - same NUMBER beats regardless of color
    - prism cards (rank 7, color:null) skip the color check entirely
@@ -688,7 +688,7 @@ function rankLabel(v){
    - otherwise same color & hand value >= floor value
 */
 function isValidEat(hand, floor){
-  if(hand.isJoker) return true;
+  if(hand.isJoker) return false;
   if(floor.isJoker) return hand.value === 1;
   if(hand.value === floor.value) return true;
   if(!hand.isPrism && !floor.isPrism && hand.color !== floor.color) return false;
@@ -1760,25 +1760,15 @@ function drawTwoAndEndTurn(){
   });
 }
 
-function jokerRefresh(handIdx){
-  if(state.animating) return;
+function bankJoker(handIdx){
+  if(state.animating || !isHumanTurn()) return;
   var player = state.players[state.myIndex];
   var joker = player.hand.splice(handIdx,1)[0];
-  state.centerDeck = shuffle(state.centerDeck.concat([joker]));
-  var n = Math.min(5, state.centerDeck.length);
+  player.score.push(joker);
+  pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
   clearSelectionState();
-  state.animating = true;
   render();
-  animateDrawFromDeck(n, $("hand-coins"), function(){
-    var drawn = state.centerDeck.splice(0, n);
-    player.hand = player.hand.concat(drawn);
-    pushLog(player.name+"가 조커를 사용해 손패 "+n+"장을 새로 보충했습니다!");
-    state.animating = false;
-    render();
-    player.captureStreak = 0;
-    state.bonusCaptureFor = null;
-    endTurn();
-  }, true);
+  checkWin(state.myIndex);
 }
 
 /* ---------------- AI ---------------- */
@@ -1838,6 +1828,15 @@ function aiTakeTurn(playerIdx){
   if(state.gameOver) return;
   var player = state.players[playerIdx];
 
+  var jokerIdx = -1;
+  player.hand.forEach(function(c,i){ if(c.isJoker) jokerIdx=i; });
+  if(jokerIdx!==-1){
+    var joker = player.hand.splice(jokerIdx,1)[0];
+    player.score.push(joker);
+    pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
+    if(checkWin(playerIdx)) return;
+  }
+
   var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
   var options = findValidCaptures(player.hand, state.floor);
   var best = chooseAiCapture(options, state.aiDifficulty || "normal", player, opponents);
@@ -1848,26 +1847,6 @@ function aiTakeTurn(playerIdx){
   }
 
   var destEl = document.querySelector('.opponent-card[data-player-idx="'+playerIdx+'"]');
-  var jokerIdx = -1;
-  player.hand.forEach(function(c,i){ if(c.isJoker) jokerIdx=i; });
-
-  if(jokerIdx!==-1 && player.hand.length>=6){
-    var joker = player.hand.splice(jokerIdx,1)[0];
-    state.centerDeck = shuffle(state.centerDeck.concat([joker]));
-    var n5 = Math.min(5, state.centerDeck.length);
-    state.animating = true;
-    render();
-    animateDrawFromDeck(n5, destEl, function(){
-      var drawn5 = state.centerDeck.splice(0, n5);
-      player.hand = player.hand.concat(drawn5);
-      pushLog(player.name+"가 조커를 사용해 손패 "+n5+"장을 새로 보충했습니다!");
-      state.animating = false;
-      render();
-      player.captureStreak = 0;
-      endTurn();
-    }, true);
-    return;
-  }
 
   var n2 = Math.min(2, state.centerDeck.length);
   if(n2<=0){
@@ -1944,8 +1923,7 @@ function renderInstruction(){
   }
   switch(state.mode){
     case "eat-target": bar.textContent = "🎯 타겟이 될 바닥 카드를 선택하세요!"; break;
-    case "joker-choice": bar.textContent = "🃏 조커로 무엇을 할지 선택하세요!"; break;
-    case "joker-eat-target": bar.textContent = "🃏 조커로 가져올 바닥 카드를 선택하세요! (아무거나 가능)"; break;
+    case "joker-choice": bar.textContent = "🃏 조커를 점수덱에 내려놓을까요?"; break;
     default: bar.innerHTML = "✋ 행동을 선택하세요! 손패를 클릭하거나,<br>가져올 수 없으면 [2장 뽑고 턴 종료]를 누르세요.";
   }
 }
@@ -1995,14 +1973,11 @@ function renderFloor(){
   state.floor.forEach(function(fc, fi){
     var slot = el("div","floor-slot");
     var opts = { wild: fc.isJoker };
-    var canTarget = isHumanTurn() && (state.mode==="eat-target" || state.mode==="joker-eat-target");
+    var canTarget = isHumanTurn() && state.mode==="eat-target";
     var valid = false;
     if(canTarget){
-      if(state.mode==="joker-eat-target"){ valid = true; }
-      else {
-        var handCoin = state.players[state.myIndex].hand[state.selectedHandIdx];
-        valid = handCoin ? isValidEat(handCoin, fc) : false;
-      }
+      var handCoin = state.players[state.myIndex].hand[state.selectedHandIdx];
+      valid = handCoin ? isValidEat(handCoin, fc) : false;
       if(!valid) opts.cls = "disabled";
     }
     var d = cardEl(fc, opts);
@@ -2020,7 +1995,7 @@ function renderHand(){
   var player = state.players[state.myIndex];
   player.hand.forEach(function(hc, hi){
     var cls = "hand";
-    if((state.mode==="eat-target"||state.mode==="joker-choice"||state.mode==="joker-eat-target") && state.selectedHandIdx===hi) cls+=" selected";
+    if((state.mode==="eat-target"||state.mode==="joker-choice") && state.selectedHandIdx===hi) cls+=" selected";
     if(!isHumanTurn()) cls += " disabled";
     var d = cardEl(hc, { cls:cls.trim() });
     d.addEventListener("click", function(){ onHandClick(hi); });
@@ -2096,9 +2071,6 @@ function onFloorTargetClick(fi){
 
   if(state.mode==="eat-target"){
     if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
-    state.bonusCaptureFor = null;
-    doEat(state.myIndex, handIdx, fi, isBonus);
-  } else if(state.mode==="joker-eat-target"){
     state.bonusCaptureFor = null;
     doEat(state.myIndex, handIdx, fi, isBonus);
   }
@@ -2181,19 +2153,13 @@ function openJokerChoiceModal(handIdx){
   closeModal();
   var backdrop = el("div","modal-backdrop");
   var box = el("div","modal-box");
-  box.innerHTML = "<h2>조커 사용</h2><p style=\"font-size:13px;color:var(--muted)\">조커로 무엇을 할까요?</p>";
+  box.innerHTML = "<h2>조커 사용</h2><p style=\"font-size:13px;color:var(--muted)\">조커를 내 점수덱에 내려놓을까요? 턴을 소모하지 않습니다.</p>";
   var actions = el("div","modal-actions");
 
-  var eatBtn = el("button","btn primary","🃏 바닥패 가져오기 (만능)");
-  eatBtn.addEventListener("click", function(){
-    state.mode = "joker-eat-target";
+  var bankBtn = el("button","btn primary","✨ 점수덱에 내려놓기");
+  bankBtn.addEventListener("click", function(){
     closeModal();
-    render();
-  });
-  var refreshBtn = el("button","btn","🔄 리프레시 (덱 반납 + 5장 보충)");
-  refreshBtn.addEventListener("click", function(){
-    closeModal();
-    jokerRefresh(handIdx);
+    bankJoker(handIdx);
   });
   var cancelBtn = el("button","btn","✖ 취소");
   cancelBtn.addEventListener("click", function(){
@@ -2202,8 +2168,7 @@ function openJokerChoiceModal(handIdx){
     render();
   });
 
-  actions.appendChild(eatBtn);
-  actions.appendChild(refreshBtn);
+  actions.appendChild(bankBtn);
   actions.appendChild(cancelBtn);
   box.appendChild(actions);
   backdrop.appendChild(box);
@@ -2217,9 +2182,9 @@ function buildRulebookPanel(){
     "<ul>"+
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
-    "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 10으로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 10을 가져올 수 있습니다.</li>"+
+    "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 K로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 K를 가져올 수 있습니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
-    "<li><b>손패 조커</b>: 바닥 카드를 아무거나 가져오거나(만능), 중앙 덱에 반납하고 5장을 새로 받는 리프레시가 가능합니다. 획득한 조커는 점수 슬롯에서 색상·숫자 상관없이 자동으로 10점 + 스트레이트 빈칸을 채워줍니다.</li>"+
+    "<li><b>손패 조커</b>: 캡처에는 쓸 수 없습니다. 대신 내 턴이 끝나기 전까지 언제든 점수덱에 내려놓을 수 있고(턴을 소모하지 않음), 내려놓은 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
     "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
