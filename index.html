@@ -272,6 +272,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <h1 style="font-size:20px;">플레이 인원 선택</h1>
     <p class="sub">부족한 인원은 AI가 대신 플레이합니다 · 인원수만큼 색상이 사용됩니다</p>
     <div class="count-row" id="count-row"></div>
+    <p class="sub" style="margin-top:14px;">AI 난이도</p>
+    <div class="count-row" id="difficulty-row"></div>
     <button class="btn primary big" id="count-next-btn" disabled>다음</button>
     <button class="btn" id="count-back-btn">← 뒤로</button>
   </div>
@@ -1087,6 +1089,22 @@ $("avatar-next-btn").addEventListener("click", function(){
   runOrderCutscene();
 });
 
+var chosenAiDifficulty = (function(){
+  try{ return localStorage.getItem("straightAiDifficulty") || "normal"; }catch(e){ return "normal"; }
+})();
+var difficultyRow = $("difficulty-row");
+[["easy","쉬움"],["normal","보통"],["hard","어려움"]].forEach(function(pair){
+  var b = el("button","count-btn"+(pair[0]===chosenAiDifficulty?" selected":""), pair[1]);
+  b.addEventListener("click", function(){
+    sfxSelect();
+    Array.prototype.forEach.call(difficultyRow.children, function(c){ c.classList.remove("selected"); });
+    b.classList.add("selected");
+    chosenAiDifficulty = pair[0];
+    try{ localStorage.setItem("straightAiDifficulty", pair[0]); }catch(e){}
+  });
+  difficultyRow.appendChild(b);
+});
+
 var countRow = $("count-row");
 [2,3,4].forEach(function(n){
   var b = el("button","count-btn",n);
@@ -1269,6 +1287,7 @@ function renderLobby(data){
 
 function runOrderCutscene(){
   switchScreen("order");
+  state.aiDifficulty = chosenAiDifficulty;
   var orderList = $("order-list");
   orderList.innerHTML = "";
   $("order-start-btn").classList.add("hidden");
@@ -1784,15 +1803,9 @@ function aiTakeTurn(playerIdx){
   if(state.gameOver) return;
   var player = state.players[playerIdx];
 
-  var best = null;
-  player.hand.forEach(function(h, hi){
-    state.floor.forEach(function(f, fi){
-      if(isValidEat(h,f)){
-        var val = f.isJoker ? 10 : pointValue(f);
-        if(!best || val>best.val) best = { hi:hi, fi:fi, val:val };
-      }
-    });
-  });
+  var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
+  var options = findValidCaptures(player.hand, state.floor);
+  var best = chooseAiCapture(options, state.aiDifficulty || "normal", player, opponents);
 
   if(best){
     doEat(playerIdx, best.hi, best.fi);
