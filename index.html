@@ -1729,6 +1729,57 @@ function jokerRefresh(handIdx){
 
 /* ---------------- AI ---------------- */
 
+function findValidCaptures(hand, floor){
+  var options = [];
+  hand.forEach(function(h, hi){
+    floor.forEach(function(f, fi){
+      if(isValidEat(h,f)) options.push({ hi:hi, fi:fi, hand:h, floor:f });
+    });
+  });
+  return options;
+}
+
+function colorProgress(score, color){
+  var vals = {};
+  score.forEach(function(c){
+    if(c.isJoker) return;
+    if(c.color===color || c.isPrism) vals[c.value] = true;
+  });
+  return Object.keys(vals).length;
+}
+
+function chooseAiCapture(options, difficulty, aiPlayer, opponents){
+  if(options.length===0) return null;
+  function baseVal(o){ return o.floor.isJoker ? 10 : pointValue(o.floor); }
+  if(difficulty==="easy"){
+    var best=null;
+    options.forEach(function(o){ var v=baseVal(o); if(!best||v>best.v) best={o:o,v:v}; });
+    return best.o;
+  }
+  if(difficulty==="normal"){
+    var scored = options.map(function(o){
+      var s = baseVal(o);
+      if(o.floor.isPrism) s += 4;
+      s += colorProgress(aiPlayer.score, o.floor.color) * 2;
+      return { o:o, s:s };
+    });
+    scored.sort(function(a,b){ return b.s-a.s; });
+    return scored[0].o;
+  }
+  var scored2 = options.map(function(o){
+    var s = baseVal(o);
+    if(o.floor.isPrism) s += 6;
+    s += colorProgress(aiPlayer.score, o.floor.color) * 2;
+    var denies = opponents.some(function(opp){
+      return opp.hand.some(function(oh){ return isValidEat(oh, o.floor); });
+    });
+    if(denies) s += 4;
+    return { o:o, s:s };
+  });
+  scored2.sort(function(a,b){ return b.s-a.s; });
+  return scored2[0].o;
+}
+
 function aiTakeTurn(playerIdx){
   if(state.gameOver) return;
   var player = state.players[playerIdx];
