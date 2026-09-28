@@ -663,7 +663,8 @@ function buildDeck(colors){
 
 function coinLabel(coin){
   if(coin.isJoker) return "조커";
-  var v = coin.value===1 ? "A" : coin.value;
+  var v = rankLabel(coin.value);
+  if(coin.isPrism) return "프리즘 "+v;
   return COLOR_NAMES[coin.color] + " " + v;
 }
 
@@ -1506,11 +1507,22 @@ function checkWin(playerIdx){
   return false;
 }
 
+function straightRangeLabel(straight){
+  var endRaw = straight.start+4;
+  var end = endRaw>13 ? endRaw-13 : endRaw;
+  return rankLabel(straight.start)+"~"+rankLabel(end);
+}
+
 function playWinCeremony(playerIdx, straight, cb){
   state.ceremonyPlaying = true;
   var player = state.players[playerIdx];
+  var neededRanks = [];
+  for(var k=0;k<5;k++){
+    var r = straight.start+k;
+    neededRanks.push(r>13 ? r-13 : r);
+  }
   var realCards = player.score.filter(function(c){
-    return !c.isJoker && c.color===straight.color && c.value>=straight.start && c.value<=straight.start+4;
+    return !c.isJoker && (c.color===straight.color || c.isPrism) && neededRanks.indexOf(c.value)!==-1;
   }).sort(function(a,b){ return a.value-b.value; });
   var missing = 5 - realCards.length;
   var jokersUsed = player.score.filter(function(c){ return c.isJoker; }).slice(0, missing);
@@ -1555,7 +1567,7 @@ function spawnConfetti(){
 }
 
 function showWinScreen(player, straight){
-  var reason = COLOR_NAMES[straight.color]+" 스트레이트 ("+straight.start+"~"+(straight.start+4)+") 완성!";
+  var reason = COLOR_NAMES[straight.color]+" 스트레이트 ("+straightRangeLabel(straight)+") 완성!";
   $("win-title").innerHTML = player.avatar+" "+player.name+" 승리!";
   $("win-reason").textContent = "🎉 스트레이트! · "+reason;
   switchScreen("win");
@@ -1715,6 +1727,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin, isBonusCapture){
       pushLog("🔥 "+player.name+" 콤보! 보너스 캡처 기회를 얻었습니다.");
       sfxJoker();
       render();
+      pushRoomState();
       if(player.isAI){
         setTimeout(function(){ aiBonusCapture(playerIdx); }, 700);
       }
@@ -1739,10 +1752,16 @@ function aiBonusCapture(playerIdx){
 
 function drawTwoAndEndTurn(){
   if(state.animating || !isHumanTurn()) return;
+  var wasBonus = state.bonusCaptureFor===state.myIndex;
   state.bonusCaptureFor = null;
   var player = state.players[state.myIndex];
-  var n = Math.min(2, state.centerDeck.length);
   clearSelectionState();
+  if(wasBonus){
+    pushLog(player.name+"가 보너스 캡처를 포기하고 턴을 마쳤습니다.");
+    endTurn();
+    return;
+  }
+  var n = Math.min(2, state.centerDeck.length);
   if(n<=0){
     passWithEmptyDeck(player);
     return;
@@ -1768,6 +1787,7 @@ function bankJoker(handIdx){
   pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
   clearSelectionState();
   render();
+  pushRoomState();
   checkWin(state.myIndex);
 }
 
@@ -1834,6 +1854,7 @@ function aiTakeTurn(playerIdx){
     var joker = player.hand.splice(jokerIdx,1)[0];
     player.score.push(joker);
     pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
+    pushRoomState();
     if(checkWin(playerIdx)) return;
   }
 
@@ -1955,6 +1976,9 @@ function renderOpponents(){
     p.score.filter(function(c){ return c.isJoker; }).forEach(function(c){
       scoreWrap.appendChild(cardEl(c, { cls:"opp" }));
     });
+    p.score.filter(function(c){ return c.isPrism; }).forEach(function(c){
+      scoreWrap.appendChild(cardEl(c, { cls:"opp" }));
+    });
     state.colors.forEach(function(color){
       var coins = p.score.filter(function(c){ return !c.isJoker && c.color===color; }).sort(function(a,b){ return a.value-b.value; });
       coins.forEach(function(c){ scoreWrap.appendChild(cardEl(c, { cls:"opp" })); });
@@ -2002,6 +2026,7 @@ function renderHand(){
     wrap.appendChild(d);
   });
 
+  $("exchange-btn").innerHTML = (state.bonusCaptureFor===state.myIndex) ? "🏳️ 보너스 포기" : "🃏 2장 뽑고<br>턴 종료";
   $("exchange-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("sort-hand-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("cancel-action-btn").classList.toggle("hidden", state.mode==="idle" || state.animating);
@@ -2015,6 +2040,10 @@ function renderScore(){
   flow.id = "scoretotal-0";
   var jokers = player.score.filter(function(c){ return c.isJoker; });
   jokers.forEach(function(c){
+    flow.appendChild(cardEl(c, { cls:"tiny" }));
+  });
+  var prisms = player.score.filter(function(c){ return c.isPrism; });
+  prisms.forEach(function(c){
     flow.appendChild(cardEl(c, { cls:"tiny" }));
   });
   state.colors.forEach(function(color){
