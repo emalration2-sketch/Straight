@@ -670,18 +670,19 @@ function pointValue(coin){ if(coin.isJoker) return 10; return coin.value===1 ? 1
    - joker in hand is always wild
    - floor joker can only be captured by a hand A
    - same NUMBER beats regardless of color
+   - prism cards (rank 7, color:null) skip the color check entirely
    - otherwise same color required
-   - floor A(1) can only be captured by a hand 10 (same color)
-   - hand A(1) can capture a floor 10 (same color)
+   - floor A(1) can only be captured by a hand K(13) (same color)
+   - hand A(1) can capture a floor K(13) (same color)
    - otherwise same color & hand value >= floor value
 */
 function isValidEat(hand, floor){
   if(hand.isJoker) return true;
   if(floor.isJoker) return hand.value === 1;
   if(hand.value === floor.value) return true;
-  if(hand.color !== floor.color) return false;
-  if(floor.value === 1) return hand.value === 10;
-  if(hand.value === 1 && floor.value === 10) return true;
+  if(!hand.isPrism && !floor.isPrism && hand.color !== floor.color) return false;
+  if(floor.value === 1) return hand.value === 13;
+  if(hand.value === 1 && floor.value === 13) return true;
   return hand.value >= floor.value;
 }
 
