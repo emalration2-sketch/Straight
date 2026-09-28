@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>스트레이트! · Pixel Room</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
 <style>
@@ -158,15 +160,15 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card-num{position:relative;z-index:2;}
 .pattern-stripe::after,.pattern-dot::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-stardust::after,.pattern-ribbon::after,.pattern-rope::after,.pattern-crosshatch::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
-.pattern-dot::after{background:radial-gradient(rgba(0,0,0,.14) 1.2px,transparent 1.3px);background-size:8px 8px;}
+.pattern-dot::after{background:radial-gradient(rgba(0,0,0,.22) 1.6px,transparent 1.8px);background-size:7px 7px;}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:14px 14px;background-position:0 0,7px 7px;}
-.pattern-diamond::after{inset:5px;border:1px solid rgba(0,0,0,.22);border-radius:6px;background-image:conic-gradient(from 0deg at 0 0,rgba(0,0,0,.22) 0 90deg,transparent 90deg 360deg),conic-gradient(from 90deg at 100% 0,rgba(0,0,0,.22) 0 90deg,transparent 90deg 360deg),conic-gradient(from 180deg at 100% 100%,rgba(0,0,0,.22) 0 90deg,transparent 90deg 360deg),conic-gradient(from 270deg at 0 100%,rgba(0,0,0,.22) 0 90deg,transparent 90deg 360deg);background-size:9px 9px;background-repeat:no-repeat;background-position:top left,top right,bottom right,bottom left;}
+.pattern-diamond::after{inset:4px;border:1.5px solid rgba(0,0,0,.3);border-radius:6px;background-image:linear-gradient(135deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(225deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(315deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(45deg,rgba(0,0,0,.4) 0 50%,transparent 50%);background-size:14px 14px;background-repeat:no-repeat;background-position:top left,top right,bottom right,bottom left;}
 .pattern-stardust::after{background-image:radial-gradient(circle at 15% 20%,rgba(0,0,0,.35) 0 1px,transparent 1.6px),radial-gradient(circle at 70% 15%,rgba(0,0,0,.28) 0 1.3px,transparent 1.9px),radial-gradient(circle at 40% 42%,rgba(0,0,0,.22) 0 .9px,transparent 1.3px),radial-gradient(circle at 85% 50%,rgba(0,0,0,.32) 0 1px,transparent 1.6px),radial-gradient(circle at 22% 68%,rgba(0,0,0,.25) 0 1px,transparent 1.6px),radial-gradient(circle at 62% 78%,rgba(0,0,0,.35) 0 1.4px,transparent 1.9px),radial-gradient(circle at 90% 85%,rgba(0,0,0,.22) 0 .9px,transparent 1.3px),radial-gradient(circle at 33% 90%,rgba(0,0,0,.28) 0 1px,transparent 1.6px);}
 .pattern-ribbon::after{background-image:linear-gradient(-45deg,transparent 0 40%,rgba(0,0,0,.2) 40% 58%,transparent 58% 100%);background-size:65% 65%;background-position:-8% -8%;background-repeat:no-repeat;}
-.pattern-rope::after{border:6px solid transparent;border-image:repeating-linear-gradient(45deg,rgba(0,0,0,.3) 0 4px,rgba(0,0,0,.08) 4px 8px) 14;}
-.pattern-crosshatch::after{background-image:repeating-linear-gradient(30deg,rgba(0,0,0,.1) 0 1px,transparent 1px 5px),repeating-linear-gradient(150deg,rgba(0,0,0,.1) 0 1px,transparent 1px 5px);}
-.pattern-preview{width:26px;height:26px;border-radius:6px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
+.pattern-rope::after{border:6px solid transparent;border-image:repeating-linear-gradient(45deg,rgba(0,0,0,.38) 0 4px,rgba(0,0,0,.1) 4px 8px) 14;}
+.pattern-crosshatch::after{background-image:repeating-linear-gradient(0deg,rgba(0,0,0,.12) 0 1px,transparent 1px 6px),repeating-linear-gradient(90deg,rgba(0,0,0,.12) 0 1px,transparent 1px 6px);}
+.pattern-preview{width:34px;height:34px;border-radius:7px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
 .card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
 .card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 0 8px rgba(255,215,107,.8),0 0 16px rgba(255,215,107,.4);opacity:.95;}
 @keyframes wildPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.85;}}
@@ -186,6 +188,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .theme-list{display:flex;flex-direction:column;gap:6px;padding:6px 0 2px;}
 .theme-swatch-btn{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:var(--panel2);border:2px solid transparent;color:var(--text);font-size:12.5px;cursor:pointer;}
 .theme-swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
+.pattern-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:6px 0 2px;}
+.pattern-swatch-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 4px;border-radius:10px;background:var(--panel2);border:2px solid transparent;color:var(--text);cursor:pointer;}
+.pattern-swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
+.pattern-name{font-size:10.5px;text-align:center;line-height:1.2;}
 .theme-dots{display:flex;gap:3px;flex-shrink:0;}
 .theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(var(--line-rgb),.4);flex-shrink:0;}
 .theme-name{flex:1;text-align:left;}
@@ -2173,12 +2179,12 @@ function openSettingsModal(){
   });
 
   var artLabel = el("div","settings-row","<span>🎨 카드 뒷면</span>");
-  var artRow = el("div","theme-list");
+  var artRow = el("div","pattern-grid");
   CARD_BACK_PRESETS.forEach(function(preset, i){
-    var pb = el("button","theme-swatch-btn"+(i===backPresetIndex?" primary":""));
+    var pb = el("button","pattern-swatch-btn"+(i===backPresetIndex?" primary":""));
     var preview = el("span","pattern-preview "+preset.cls);
     pb.appendChild(preview);
-    pb.appendChild(el("span","theme-name", preset.name));
+    pb.appendChild(el("span","pattern-name", preset.name));
     pb.addEventListener("click", function(){
       setBackPreset(i);
       Array.prototype.forEach.call(artRow.children, function(c){ c.classList.remove("primary"); });
