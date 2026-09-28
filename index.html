@@ -155,6 +155,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.opp-back{width:11px;height:16px;border-radius:3px;border-width:1px;cursor:default;flex-shrink:0;}
 .card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
 .card.joker{background:linear-gradient(135deg,#ffffff,#e4e2ef);color:#2a2440;border-color:rgba(42,36,64,.35);}
+.card.prism{color:#241f3d;border-color:rgba(255,255,255,.55);}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
@@ -665,6 +666,14 @@ function coinLabel(coin){
 }
 
 function pointValue(coin){ if(coin.isJoker) return 10; return coin.value===1 ? 1 : coin.value; }
+
+function rankLabel(v){
+  if(v===1) return "A";
+  if(v===11) return "J";
+  if(v===12) return "Q";
+  if(v===13) return "K";
+  return v;
+}
 
 /* eat validity rules:
    - joker in hand is always wild
@@ -1793,12 +1802,17 @@ function cardEl(coin, opts){
     if(opts.wild) d.classList.add("wildfloor");
     d.textContent = "★";
   } else {
-    var base = COLORS[coin.color];
-    d.style.background = "linear-gradient(155deg,"+shadeColor(base,35)+","+base+" 55%,"+shadeColor(base,-35)+")";
+    if(coin.isPrism){
+      d.classList.add("prism");
+      d.style.background = "linear-gradient(135deg,#ff6b6b,#ffd76b 25%,#4ce0a0 50%,#33d6c0 75%,#7f77dd)";
+    } else {
+      var base = COLORS[coin.color];
+      d.style.background = "linear-gradient(155deg,"+shadeColor(base,35)+","+base+" 55%,"+shadeColor(base,-35)+")";
+    }
     var clsStr = opts.cls || "";
     var isSmall = clsStr.indexOf("tiny")!==-1 || clsStr.indexOf("opp")!==-1;
     if(!isSmall) d.classList.add(CARD_BACK_PRESETS[backPresetIndex].cls);
-    d.appendChild(el("span","card-num", coin.value===1 ? "A" : coin.value));
+    d.appendChild(el("span","card-num", rankLabel(coin.value)));
   }
   return d;
 }
