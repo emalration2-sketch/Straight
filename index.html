@@ -888,7 +888,7 @@ function maybeDriveAi(idx, delay){
 function createRoom(maxPlayers, cb){
   ensureFirebase().then(function(){
     var code = genRoomCode();
-    var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
+    var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[], captureStreak:0 };
     var roomData = {
       code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
@@ -921,7 +921,7 @@ function joinRoom(code, cb){
         return;
       }
       if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
-      var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
+      var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[], captureStreak:0 };
       var newPlayers = data.players.concat([me]);
       fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
         state.mpRoomCode = code;
@@ -1011,7 +1011,7 @@ function startOnlineGame(){
     var ch;
     do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(usedNames[ch.name]);
     usedNames[ch.name]=true;
-    lobbyPlayers.push({ clientId:null, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
+    lobbyPlayers.push({ clientId:null, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[], captureStreak:0 });
   }
 
   var colors = colorsForCount(lobbyPlayers.length);
@@ -1293,13 +1293,13 @@ function runOrderCutscene(){
   $("order-start-btn").classList.add("hidden");
 
   var players = [];
-  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] });
+  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[], captureStreak:0 });
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
     do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(used[ch.name]);
     used[ch.name]=true;
-    players.push({ idx:i, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
+    players.push({ idx:i, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[], captureStreak:0 });
   }
 
   var draws = players.map(function(){ return 1+Math.floor(Math.random()*10); });
