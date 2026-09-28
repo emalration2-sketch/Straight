@@ -724,6 +724,7 @@ var state = {
   colors: [],
   turnOrder: [],
   currentTurnPos: 0,
+  bonusCaptureFor: null,
   gameOver: false,
   animating: false,
   selectedHandIdx: null,
@@ -1466,6 +1467,7 @@ function declareDraw(){
 
 function passWithEmptyDeck(player){
   pushLog(player.name+"가 뽑을 카드가 없어 턴을 넘겼습니다.");
+  player.captureStreak = 0;
   state.noProgressStreak++;
   if(state.noProgressStreak >= state.turnOrder.length){
     declareDraw();
@@ -1675,12 +1677,12 @@ function playCaptureAnimation(opts, onComplete){
 
 /* ---------------- eat / exchange execution ---------------- */
 
-function doEat(playerIdx, handIdx, floorIdx){
+function doEat(playerIdx, handIdx, floorIdx, isBonusCapture){
   var floorCoin = state.floor[floorIdx];
-  finishEat(playerIdx, handIdx, floorIdx, floorCoin);
+  finishEat(playerIdx, handIdx, floorIdx, floorCoin, isBonusCapture);
 }
 
-function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
+function finishEat(playerIdx, handIdx, floorIdx, capturedCoin, isBonusCapture){
   var player = state.players[playerIdx];
   var handCoin = player.hand[handIdx];
   state.animating = true;
@@ -1695,19 +1697,47 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
   }, function(){
     player.score.push(capturedCoin);
     player.hand.splice(handIdx,1);
-    state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, color:handCoin.color, value:handCoin.value };
+    state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, color:handCoin.color, value:handCoin.value, isPrism:handCoin.isPrism };
     pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
     state.noProgressStreak = 0;
     state.animating = false;
     clearSelectionState();
+    if(!isBonusCapture){
+      player.captureStreak = (player.captureStreak||0) + 1;
+    }
     render();
     if(checkWin(playerIdx)) return;
+
+    if(!isBonusCapture && player.captureStreak===2 && findValidCaptures(player.hand, state.floor).length>0){
+      state.bonusCaptureFor = playerIdx;
+      pushLog("🔥 "+player.name+" 콤보! 보너스 캡처 기회를 얻었습니다.");
+      sfxJoker();
+      render();
+      if(player.isAI){
+        setTimeout(function(){ aiBonusCapture(playerIdx); }, 700);
+      }
+      return;
+    }
     endTurn();
   });
 }
 
+function aiBonusCapture(playerIdx){
+  state.bonusCaptureFor = null;
+  var player = state.players[playerIdx];
+  var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
+  var options = findValidCaptures(player.hand, state.floor);
+  var pick = chooseAiCapture(options, state.aiDifficulty || "normal", player, opponents);
+  if(pick){
+    doEat(playerIdx, pick.hi, pick.fi, true);
+  } else {
+    endTurn();
+  }
+}
+
 function drawTwoAndEndTurn(){
   if(state.animating || !isHumanTurn()) return;
+  state.bonusCaptureFor = null;
   var player = state.players[state.myIndex];
   var n = Math.min(2, state.centerDeck.length);
   clearSelectionState();
@@ -1723,6 +1753,7 @@ function drawTwoAndEndTurn(){
     pushLog(player.name+"가 중앙 덱에서 "+n+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
     render();
+    player.captureStreak = 0;
     endTurn();
   });
 }
@@ -1742,6 +1773,7 @@ function jokerRefresh(handIdx){
     pushLog(player.name+"가 조커를 사용해 손패 "+n+"장을 새로 보충했습니다!");
     state.animating = false;
     render();
+    player.captureStreak = 0;
     endTurn();
   }, true);
 }
@@ -1828,6 +1860,7 @@ function aiTakeTurn(playerIdx){
       pushLog(player.name+"가 조커를 사용해 손패 "+n5+"장을 새로 보충했습니다!");
       state.animating = false;
       render();
+      player.captureStreak = 0;
       endTurn();
     }, true);
     return;
@@ -1846,6 +1879,7 @@ function aiTakeTurn(playerIdx){
     pushLog(player.name+"가 중앙 덱에서 "+n2+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
     render();
+    player.captureStreak = 0;
     endTurn();
   });
 }
@@ -1899,6 +1933,10 @@ function renderInstruction(){
     if(state.animating){ bar.textContent = "카드가 이동 중입니다..."; return; }
     var cur = state.players[currentPlayerIdx()];
     bar.innerHTML = (cur ? cur.avatar+" "+cur.name : "상대") + "의 턴입니다...";
+    return;
+  }
+  if(state.bonusCaptureFor === state.myIndex){
+    bar.innerHTML = "🔥 콤보! 보너스 캡처 기회입니다. 손패를 클릭하거나 [2장 뽑고 턴 종료]로 넘어가세요.";
     return;
   }
   switch(state.mode){
