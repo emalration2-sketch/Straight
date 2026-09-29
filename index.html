@@ -590,10 +590,10 @@ function recordTutorialDone(){
 }
 
 var pendingUnlocks = [];
-function maybeRecordLocalGameResult(won){
+function maybeRecordLocalGameResult(outcome, meta){
   if(state.statsRecorded) return;
   state.statsRecorded = true;
-  pendingUnlocks = recordGameResult(won);
+  pendingUnlocks = pendingUnlocks.concat(recordGameResult(outcome, meta));
 }
 
 // Invariant: must run before getClientId() writes straightClientId — otherwise every
@@ -1135,12 +1135,22 @@ function applyRemoteRoomState(data){
   if(state.gameOver && !wasOver && !state.ceremonyShown){
     state.ceremonyShown = true;
     if(state.isDraw){
-      maybeRecordLocalGameResult(false);
+      maybeRecordLocalGameResult("draw");
       setTimeout(showDrawScreen, 800);
     } else {
       var winner = state.players[state.winnerIndex];
       if(winner && state.winnerStraight){
-        maybeRecordLocalGameResult(state.winnerIndex===state.myIndex);
+        if(state.winnerIndex===state.myIndex){
+          maybeRecordLocalGameResult("win", {
+            difficulty: state.aiDifficulty,
+            isOnline: isMultiplayer(),
+            playerCount: state.turnOrder.length,
+            straight: state.winnerStraight,
+            scoreLen: winner.score.length
+          });
+        } else {
+          maybeRecordLocalGameResult("loss");
+        }
         playWinCeremony(state.winnerIndex, state.winnerStraight, function(){
           showWinScreen(winner, state.winnerStraight);
         });
@@ -1752,7 +1762,7 @@ function declareDraw(){
   pushLog("🤝 중앙 덱이 모두 소진되어 무승부로 게임이 종료되었습니다.");
   render();
   pushRoomState();
-  maybeRecordLocalGameResult(false);
+  maybeRecordLocalGameResult("draw");
   setTimeout(showDrawScreen, 1000);
 }
 
@@ -1803,7 +1813,17 @@ function checkWin(playerIdx){
     clearTurnTimer();
     render();
     pushRoomState();
-    maybeRecordLocalGameResult(playerIdx===state.myIndex);
+    if(playerIdx===state.myIndex){
+      maybeRecordLocalGameResult("win", {
+        difficulty: state.aiDifficulty,
+        isOnline: isMultiplayer(),
+        playerCount: state.turnOrder.length,
+        straight: straight,
+        scoreLen: player.score.length
+      });
+    } else {
+      maybeRecordLocalGameResult("loss");
+    }
     playWinCeremony(playerIdx, straight, function(){
       showWinScreen(player, straight);
     });
@@ -2016,6 +2036,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     capturedCoin: capturedCoin
   }, function(){
     player.score.push(capturedCoin);
+    if(capturedCoin.isPrism && playerIdx===state.myIndex) bumpStatAndCheck("prismBanked", 1);
     player.hand.splice(handIdx,1);
     state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, color:handCoin.color, value:handCoin.value, isPrism:handCoin.isPrism };
     pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
@@ -2054,6 +2075,7 @@ function bankJoker(handIdx){
   var player = state.players[state.myIndex];
   var joker = player.hand.splice(handIdx,1)[0];
   player.score.push(joker);
+  bumpStatAndCheck("jokersBanked", 1);
   pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
   clearSelectionState();
   render();
@@ -2612,6 +2634,7 @@ function openTutorialModal(){
     if(slideIdx<TUTORIAL_SLIDES.length-1){ slideIdx++; sfxSelect(); renderSlide(); }
   });
   startBtn.addEventListener("click", function(){
+    recordTutorialDone();
     closeModal();
     $("start-btn").click();
   });
