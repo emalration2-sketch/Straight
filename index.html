@@ -66,6 +66,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .avatar-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:13px;}
 .avatar-btn.locked > :not(.lock-hint){opacity:.42;filter:grayscale(.7);}
 .lock-hint{font-size:9px;line-height:1.2;color:var(--text);font-weight:700;white-space:nowrap;}
+.my-equip-summary{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0;font-size:12px;color:var(--muted);}
+.my-equip-summary.hidden{display:none;}
+.my-equip-ring{width:24px;height:24px;}
 .border-ring{position:relative;display:inline-flex;}
 .border-silver{border:5px groove #b8bcc4;border-radius:50%;}
 .border-rainbow{border-width:4px;border-style:solid;border-radius:50%;border-top-color:#d4537e;border-right-color:#7f77dd;border-bottom-color:#33d6c0;border-left-color:#f6a83c;}
@@ -339,6 +342,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
   <div class="screen hidden" id="screen-avatar">
     <h1 style="font-size:20px;">캐릭터를 선택하세요</h1>
+    <div class="my-equip-summary hidden" id="my-equip-summary"></div>
     <div class="avatar-grid" id="avatar-grid"></div>
     <button class="btn primary big" id="avatar-next-btn" disabled>순서 정하기</button>
     <button class="btn" id="avatar-back-btn">← 뒤로</button>
@@ -506,7 +510,7 @@ var UNLOCK_MILESTONES = [
   { id:"misc:kstraight",  kind:"border", label:"실버",    check:function(s){ return s.hasKStraightWin; },    hint:function(s){ return "10-J-Q-K-A 완성"; } },
   { id:"misc:online4p50", kind:"border", label:"하트",    check:function(s){ return s.fourPOnlineWins>=50; },hint:function(s){ return "4인전 "+rem(50,s.fourPOnlineWins)+"승"; } },
   { id:"misc:online1",    kind:"title",  label:"소셜",    check:function(s){ return s.onlineWins>=1; },      hint:function(s){ return "온라인 "+rem(1,s.onlineWins)+"승"; } },
-  { id:"misc:allcolors",  kind:"title",  label:"올컬러",  check:function(s){ return s.colorsWon.length>=4; },hint:function(s){ return rem(4,s.colorsWon.length)+"색 남음"; } },
+  { id:"misc:allcolors",  kind:"title",  label:"올컬러",  check:function(s){ return s.colorsWon.length>=4; },hint:function(s){ return rem(4,s.colorsWon.length)+"색"; } },
   { id:"misc:bighand",    kind:"title",  label:"빅핸드",  check:function(s){ return s.hasBigHandWin; },      hint:function(s){ return "점수덱 20장 승리"; } },
 
   { id:"pattern:diagonal", kind:"pattern", label:"다이애그널", check:function(s){ return s.tutorialDone; }, hint:function(s){ return "튜토리얼 완주"; } }
@@ -546,14 +550,14 @@ function saveUnlocks(list){
 }
 function isExistingPlayer(){
   try{
-    // straightClientId is deliberately excluded: getClientId() below writes it
-    // unconditionally on every load (even a brand-new player's first load), so
-    // treating its presence as "existing player" would misclassify literally
-    // everyone as a fully-unlocked veteran starting from their second page
-    // load/refresh. Only keys that are written solely via a deliberate user
-    // action (submitting a nickname, changing a card theme/back/AI difficulty)
-    // are reliable signals of a pre-existing save.
-    var keys = ["straightNickname","straightCardTheme","straightArtPreset","straightAiDifficulty"];
+    // straightClientId is included again here: initUnlocksIfNeeded() only ever consults
+    // isExistingPlayer() on a save's true first-ever load (once straightUnlocks exists,
+    // even as [], initUnlocksIfNeeded() short-circuits before reaching this check on every
+    // later load). getClientId() itself isn't called until well after
+    // migrateOldUnlocksIfNeeded()/initUnlocksIfNeeded() run, so straightClientId is never
+    // yet written the first time this function runs — its presence here is therefore
+    // still a reliable signal of a pre-existing save, same as the other keys below.
+    var keys = ["straightNickname","straightCardTheme","straightArtPreset","straightAiDifficulty","straightClientId"];
     for(var i=0;i<keys.length;i++){ if(localStorage.getItem(keys[i])!==null) return true; }
     return false;
   }catch(e){ return false; }
@@ -590,6 +594,55 @@ function checkUnlocks(stats, unlocks){
   });
   return { updated:updated, newly:newly };
 }
+
+// Migrates saves from the OLD 11-entry unlock scheme (ids like "avatar:메가블록",
+// "pattern:argyle") that shipped in a previous, already-live version, into the NEW
+// 31-entry "win:N"/"games:N"/"misc:<slug>" scheme this branch introduces. Without this,
+// any player (including the game's own owner) who played under the old scheme has a
+// straightUnlocks array full of ids the new scheme doesn't recognize, and appears almost
+// entirely locked. Must run exactly once per browser, and must run BEFORE
+// initUnlocksIfNeeded() reads straightUnlocks.
+var UNLOCK_SCHEMA_VERSION = "2";
+function migrateOldUnlocksIfNeeded(){
+  try{
+    if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
+    var raw = localStorage.getItem("straightUnlocks");
+    if(raw===null){
+      localStorage.setItem("straightUnlocksVer", UNLOCK_SCHEMA_VERSION);
+      return;
+    }
+    var oldList;
+    try{ oldList = JSON.parse(raw); }catch(e){ oldList = null; }
+    if(!Array.isArray(oldList)){
+      localStorage.setItem("straightUnlocksVer", UNLOCK_SCHEMA_VERSION);
+      return;
+    }
+    var migrated;
+    if(oldList.length>=11){
+      migrated = UNLOCK_MILESTONES.map(function(m){ return m.id; });
+    } else {
+      var OLD_TO_NEW = {
+        "avatar:메가블록": "win:300",
+        "avatar:카이저 핑": "win:500",
+        "avatar:크러셔 루": "win:200",
+        "pattern:argyle": "games:50",
+        "pattern:diamond": "games:200"
+      };
+      migrated = [];
+      oldList.forEach(function(oldId){
+        if(OLD_TO_NEW[oldId]) migrated.push(OLD_TO_NEW[oldId]);
+        else if(oldId==="pattern:diagonal") migrated.push("pattern:diagonal");
+      });
+      migrated.push("win:30");
+    }
+    var result = checkUnlocks(loadStats(), migrated);
+    var deduped = [];
+    result.updated.forEach(function(id){ if(deduped.indexOf(id)===-1) deduped.push(id); });
+    saveUnlocks(deduped);
+    localStorage.setItem("straightUnlocksVer", UNLOCK_SCHEMA_VERSION);
+  }catch(e){}
+}
+
 function recordGameResult(outcome, meta){
   var stats = loadStats();
   stats.games = stats.games+1;
@@ -643,9 +696,13 @@ function maybeRecordLocalGameResult(outcome, meta){
   pendingUnlocks = pendingUnlocks.concat(recordGameResult(outcome, meta));
 }
 
-// Note: isExistingPlayer() (above) intentionally ignores straightClientId — see its
-// comment. Keeping this call ahead of getClientId() below is still good practice, but
-// is no longer load-bearing for new-vs-existing classification.
+// migrateOldUnlocksIfNeeded() must run before initUnlocksIfNeeded() reads straightUnlocks,
+// so that a player carrying an old-scheme save gets rewritten to the new scheme first.
+// Both, in turn, must run before getClientId() (below, in the multiplayer section) writes
+// straightClientId for the very first time on a truly brand-new browser — otherwise
+// isExistingPlayer() would misclassify a real new player as an existing one. That ordering
+// holds: getClientId() isn't called until much later in the file, well after this point.
+migrateOldUnlocksIfNeeded();
 var straightUnlocks = initUnlocksIfNeeded();
 
 var backPresetIndex = 0;
@@ -1434,12 +1491,13 @@ function renderAvatarGrid(){
   CHARACTERS.forEach(function(ch){
     var unlocked = isAvatarUnlocked(ch.name, straightUnlocks);
     var b = el("button","avatar-btn"+(unlocked?"":" locked"));
-    b.innerHTML = avatarWithBorderHTML("<span>"+avatarIconHTML(ch)+"</span>")+"<span class=\"nm\">"+nameWithTitle(ch.name)+"</span>";
+    b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+"</span>";
     if(!unlocked){
       b.title = unlockHintTextFor("avatar", ch.name);
       b.appendChild(el("span","lock-hint", unlockHintShortFor("avatar", ch.name)));
       b.disabled = true;
     } else {
+      if(chosenCharacter && chosenCharacter.name===ch.name) b.classList.add("selected");
       b.addEventListener("click", function(){
         sfxSelect();
         Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
@@ -1451,6 +1509,22 @@ function renderAvatarGrid(){
     avatarGrid.appendChild(b);
   });
 }
+function renderMyEquipSummary(){
+  var host = $("my-equip-summary");
+  if(!host) return;
+  var title = activeTitleLabel();
+  var borderCls = activeBorderCls();
+  if(!title && !borderCls){
+    host.classList.add("hidden");
+    host.innerHTML = "";
+    return;
+  }
+  var ring = borderCls ? "<span class=\"border-ring "+borderCls+" my-equip-ring\"></span>" : "";
+  var titleText = title ? "<span class=\"my-equip-text\">〈"+title+"〉</span>" : "";
+  host.innerHTML = ring + titleText;
+  host.classList.remove("hidden");
+}
+renderMyEquipSummary();
 renderAvatarGrid();
 
 $("start-btn").addEventListener("click", function(){
@@ -1507,6 +1581,7 @@ var countRow = $("count-row");
 
 $("count-next-btn").addEventListener("click", function(){
   sfxSelect();
+  renderMyEquipSummary();
   renderAvatarGrid();
   switchScreen("avatar");
 });
@@ -1987,7 +2062,8 @@ function spawnConfetti(){
 
 function showWinScreen(player, straight){
   var reason = COLOR_NAMES[straight.color]+" 스트레이트 ("+straightRangeLabel(straight)+") 완성!";
-  $("win-title").innerHTML = avatarWithBorderHTML(player.avatar)+" "+nameWithTitle(player.name)+" 승리!";
+  var isMe = player===state.players[state.myIndex];
+  $("win-title").innerHTML = (isMe ? avatarWithBorderHTML(player.avatar) : player.avatar)+" "+(isMe ? nameWithTitle(player.name) : player.name)+" 승리!";
   $("win-reason").textContent = "🎉 스트레이트! · "+reason;
   switchScreen("win");
   var emojiEl = document.querySelector(".win-emoji");
@@ -2632,6 +2708,7 @@ function achievementGroupLabel(id){
   if(id.indexOf("misc:")===0) return "✨ 기타 미션";
   return "📖 튜토리얼";
 }
+var NO_COUNTDOWN_SUFFIX = ["misc:kstraight","misc:bighand","pattern:diagonal"];
 function renderAchievementsScreen(){
   var host = $("achv-list");
   host.innerHTML = "";
@@ -2651,7 +2728,7 @@ function renderAchievementsScreen(){
       row.appendChild(el("div","", milestonePreviewHTML(m)));
       var info = el("div","achv-info");
       info.appendChild(el("p","achv-label", m.label));
-      info.appendChild(el("p","achv-cond", unlocked ? "달성" : m.hint(stats)+" 남음"));
+      info.appendChild(el("p","achv-cond", unlocked ? "달성" : (m.hint(stats) + (NO_COUNTDOWN_SUFFIX.indexOf(m.id)===-1 ? " 남음" : ""))));
       row.appendChild(info);
       host.appendChild(row);
     });
