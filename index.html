@@ -248,6 +248,14 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .achv-info{flex:1;min-width:0;}
 .achv-label{font-size:13px;font-weight:700;margin:0;}
 .achv-cond{font-size:11px;color:var(--muted);margin:1px 0 0;}
+.coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
+.coll-tab{font-size:12px;padding:6px 12px;}
+.coll-grid{width:100%;max-width:480px;max-height:55vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:8px;padding:4px;}
+.coll-item{background:var(--panel2);border-radius:10px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;}
+.coll-item.locked{opacity:.45;}
+.coll-item.equipped{border:2px solid var(--accent);}
+.coll-item-name{font-size:11.5px;font-weight:700;margin:0;}
+.coll-item-state{font-size:10px;color:var(--muted);margin:0;}
 @keyframes trophyBounce{0%{transform:scale(0) rotate(-20deg);opacity:0;}60%{transform:scale(1.15) rotate(8deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
 .confetti-piece{position:fixed;top:-20px;opacity:.95;pointer-events:none;z-index:99997;animation:confettiFall linear forwards;}
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(112vh) rotate(720deg);opacity:.25;}}
@@ -397,6 +405,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <h1 style="font-size:20px;">🏆 업적</h1>
     <div class="achv-list" id="achv-list"></div>
     <button class="btn" id="achv-back-btn">← 뒤로</button>
+  </div>
+
+  <div class="screen hidden" id="screen-collection">
+    <h1 style="font-size:20px;">🎒 수집품</h1>
+    <div class="coll-tabs" id="coll-tabs"></div>
+    <div class="coll-grid" id="coll-grid"></div>
+    <button class="btn" id="coll-back-btn">← 뒤로</button>
   </div>
 
 </div>
@@ -825,7 +840,7 @@ function $(id){ return document.getElementById(id); }
 function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 function switchScreen(name){
-  ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win","achievements"].forEach(function(s){
+  ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win","achievements","collection"].forEach(function(s){
     $("screen-"+s).classList.toggle("hidden", s!==name);
   });
 }
@@ -2622,6 +2637,71 @@ function renderAchievementsScreen(){
   });
 }
 
+var COLLECTION_TABS = [
+  { kind:"avatar", label:"아바타" },
+  { kind:"pattern", label:"패턴" },
+  { kind:"title", label:"칭호" },
+  { kind:"border", label:"테두리" }
+];
+var collectionActiveTab = "avatar";
+function collectionItemsFor(kind){
+  if(kind==="avatar"){
+    return CHARACTERS.map(function(ch){
+      return { id:"avatar:"+ch.name, name:ch.name, unlocked:isAvatarUnlocked(ch.name, straightUnlocks), preview:"<span class=\"achv-preview\">"+avatarIconHTML(ch)+"</span>" };
+    });
+  }
+  if(kind==="pattern"){
+    return CARD_BACK_PRESETS.map(function(p){
+      return { id:"pattern:"+p.id, name:p.name, unlocked:isPatternUnlocked(p.id, straightUnlocks), preview:"<span class=\"achv-preview pattern-preview "+p.cls+"\"></span>" };
+    });
+  }
+  if(kind==="title"){
+    return TITLE_PRESETS.map(function(t){
+      return { id:t.id, name:t.name, unlocked:isTitleUnlocked(t.id, straightUnlocks), preview:"<span class=\"achv-preview achv-title-chip\">"+t.name+"</span>" };
+    });
+  }
+  return BORDER_PRESETS.map(function(b){
+    return { id:b.id, name:b.name, unlocked:isBorderUnlocked(b.id, straightUnlocks), preview:"<span class=\"achv-preview border-ring "+b.cls+"\"></span>" };
+  });
+}
+function renderCollectionScreen(){
+  var tabsHost = $("coll-tabs");
+  tabsHost.innerHTML = "";
+  COLLECTION_TABS.forEach(function(t){
+    var b = el("button","btn coll-tab"+(t.kind===collectionActiveTab?" primary":""), t.label);
+    b.addEventListener("click", function(){
+      collectionActiveTab = t.kind;
+      sfxSelect();
+      renderCollectionScreen();
+    });
+    tabsHost.appendChild(b);
+  });
+  var grid = $("coll-grid");
+  grid.innerHTML = "";
+  var items = collectionItemsFor(collectionActiveTab);
+  var canEquip = collectionActiveTab==="title" || collectionActiveTab==="border";
+  var activeId = collectionActiveTab==="title" ? getActiveTitle() : (collectionActiveTab==="border" ? getActiveBorder() : null);
+  items.forEach(function(it){
+    var card = el("div","coll-item"+(it.unlocked?"":" locked")+(canEquip && it.unlocked && activeId===it.id ? " equipped" : ""));
+    card.appendChild(el("div","", it.preview));
+    card.appendChild(el("p","coll-item-name", it.name));
+    if(!it.unlocked){
+      card.appendChild(el("p","coll-item-state","🔒 미보유"));
+    } else if(canEquip){
+      var btn = el("button","btn"+(activeId===it.id?" primary":""), activeId===it.id?"장착 중":"장착");
+      btn.addEventListener("click", function(){
+        if(collectionActiveTab==="title") setActiveTitle(it.id); else setActiveBorder(it.id);
+        sfxSelect();
+        renderCollectionScreen();
+      });
+      card.appendChild(btn);
+    } else {
+      card.appendChild(el("p","coll-item-state","보유"));
+    }
+    grid.appendChild(card);
+  });
+}
+
 var TUTORIAL_SLIDES = [
   {
     title: "🎯 목표",
@@ -2905,6 +2985,16 @@ $("achievements-btn").addEventListener("click", function(){
   switchScreen("achievements");
 });
 $("achv-back-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("start");
+});
+$("collection-btn").addEventListener("click", function(){
+  sfxSelect();
+  collectionActiveTab = "avatar";
+  renderCollectionScreen();
+  switchScreen("collection");
+});
+$("coll-back-btn").addEventListener("click", function(){
   sfxSelect();
   switchScreen("start");
 });
