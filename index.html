@@ -188,6 +188,16 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:20px;}
 .modal-box{background:var(--panel);border-radius:16px;padding:18px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.6);}
 .modal-box h2{margin:0 0 8px;font-size:17px;color:var(--pink);}
+.tutorial-box{max-width:340px;text-align:center;position:relative;}
+.tutorial-close{position:absolute;top:8px;right:8px;width:28px;height:28px;font-size:14px;}
+.tutorial-slide-body{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+.tutorial-text{font-size:13px;line-height:1.55;color:var(--text);text-align:left;}
+.tutorial-card-row{display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;}
+.tutorial-arrow{font-size:18px;color:var(--muted);}
+.tutorial-dots{display:flex;gap:6px;justify-content:center;margin:10px 0;}
+.tutorial-dot{width:7px;height:7px;border-radius:50%;background:rgba(var(--line-rgb),.3);}
+.tutorial-dot.active{background:var(--accent);}
+.tutorial-nav{display:flex;gap:8px;justify-content:center;}
 .modal-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px;border-bottom:1px solid rgba(var(--line-rgb),.15);font-size:13px;min-width:220px;}
 .settings-track-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:5px 0 2px;}
@@ -227,6 +237,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     </div>
     <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
       <button class="btn primary big" id="start-btn">게임 시작</button>
+      <button class="icon-btn" id="tutorial-btn" title="튜토리얼">📖</button>
       <button class="icon-btn" id="start-settings-btn" title="설정">⚙️</button>
     </div>
   </div>
@@ -2341,6 +2352,143 @@ document.addEventListener("click", function(e){
   }
 });
 
+var TUTORIAL_SLIDES = [
+  {
+    title: "🎯 목표",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","같은 색 카드로 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다. 숫자는 A, 2~10, J, Q, K 순서입니다."));
+      var row = el("div","tutorial-card-row");
+      [3,4,5,6,7].forEach(function(v){
+        row.appendChild(cardEl({ id:"tut-goal-"+v, color:"PINK", value:v }, { cls:"tiny" }));
+      });
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "🔄 턴마다 할 일",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","내 턴에는 둘 중 하나를 합니다.<br>① 손패 카드로 바닥 카드를 <b>가져오기(캡처)</b><br>② 가져올 카드가 없으면 중앙 덱에서 <b>2장 뽑기</b>"));
+      return wrap;
+    }
+  },
+  {
+    title: "🎨 색상 + 숫자 매칭",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","손패 카드가 바닥 카드와 <b>같은 색이면서 숫자가 같거나 높으면</b> 가져올 수 있습니다.<br>숫자가 정확히 같으면 색이 달라도 가져올 수 있습니다."));
+      var row = el("div","tutorial-card-row");
+      row.appendChild(cardEl({ id:"tut-match-hand", color:"BLUE", value:9 }, { cls:"tiny" }));
+      row.appendChild(el("span","tutorial-arrow","→"));
+      row.appendChild(cardEl({ id:"tut-match-floor", color:"BLUE", value:6 }, { cls:"tiny" }));
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "🌈 프리즘카드",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","색이 없는 특수 카드로 숫자는 항상 7입니다.<br>손패의 아무 7로나 가져올 수 있고, 점수덱에서는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다."));
+      var row = el("div","tutorial-card-row");
+      row.appendChild(cardEl({ id:"tut-prism", isPrism:true, value:7, color:null }, { cls:"tiny" }));
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "🃏 조커 사용법",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","조커는 캡처에는 쓸 수 없습니다.<br>대신 내 턴에 언제든(턴을 소모하지 않고) 점수덱에 내려놓을 수 있고, 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.<br>손패에서 조커를 누르면 점수덱이 반짝이고, 그 자리를 누르면 내려놓습니다."));
+      var row = el("div","tutorial-card-row");
+      row.appendChild(cardEl({ id:"tut-joker", isJoker:true }, { cls:"tiny" }));
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "⚠️ 바닥 조커 특수 규칙",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","바닥에 놓인 조커는 손패의 <b>A</b>로만 가져올 수 있습니다."));
+      var row = el("div","tutorial-card-row");
+      row.appendChild(cardEl({ id:"tut-floorjoker-a", color:"YELLOW", value:1 }, { cls:"tiny" }));
+      row.appendChild(el("span","tutorial-arrow","→"));
+      row.appendChild(cardEl({ id:"tut-floorjoker-j", isJoker:true }, { cls:"tiny" }));
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "🏆 승리 조건",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","점수덱에 같은 색 5연속 숫자를 가장 먼저 완성하면 즉시 승리합니다.<br>아무도 완성하지 못한 채 중앙 덱이 모두 소진되면 무승부로 게임이 끝납니다."));
+      return wrap;
+    }
+  }
+];
+
+function openTutorialModal(){
+  closeModal();
+  var slideIdx = 0;
+  var backdrop = el("div","modal-backdrop");
+  var box = el("div","modal-box tutorial-box");
+  var closeX = el("button","icon-btn tutorial-close","✖");
+  closeX.addEventListener("click", function(){ closeModal(); });
+  var titleEl = el("h2","");
+  var bodyHost = el("div","");
+  var dotsRow = el("div","tutorial-dots");
+  var dots = TUTORIAL_SLIDES.map(function(){
+    var d = el("span","tutorial-dot");
+    dotsRow.appendChild(d);
+    return d;
+  });
+  var navRow = el("div","tutorial-nav");
+  var prevBtn = el("button","btn","← 이전");
+  var nextBtn = el("button","btn primary","다음 →");
+  var startBtn = el("button","btn primary hidden","🎮 시작하기");
+
+  function renderSlide(){
+    var slide = TUTORIAL_SLIDES[slideIdx];
+    titleEl.textContent = slide.title;
+    bodyHost.innerHTML = "";
+    bodyHost.appendChild(slide.build());
+    dots.forEach(function(d,i){ d.classList.toggle("active", i===slideIdx); });
+    prevBtn.disabled = slideIdx===0;
+    var isLast = slideIdx===TUTORIAL_SLIDES.length-1;
+    nextBtn.classList.toggle("hidden", isLast);
+    startBtn.classList.toggle("hidden", !isLast);
+  }
+
+  prevBtn.addEventListener("click", function(){
+    if(slideIdx>0){ slideIdx--; sfxSelect(); renderSlide(); }
+  });
+  nextBtn.addEventListener("click", function(){
+    if(slideIdx<TUTORIAL_SLIDES.length-1){ slideIdx++; sfxSelect(); renderSlide(); }
+  });
+  startBtn.addEventListener("click", function(){
+    closeModal();
+    $("start-btn").click();
+  });
+  navRow.appendChild(prevBtn);
+  navRow.appendChild(nextBtn);
+  navRow.appendChild(startBtn);
+
+  box.appendChild(closeX);
+  box.appendChild(titleEl);
+  box.appendChild(bodyHost);
+  box.appendChild(dotsRow);
+  box.appendChild(navRow);
+  backdrop.appendChild(box);
+  backdrop.addEventListener("click", function(e){ if(e.target===backdrop) closeModal(); });
+  tooltipLayer.appendChild(backdrop);
+  renderSlide();
+}
+
 function openSettingsModal(){
   closeModal();
   var backdrop = el("div","modal-backdrop");
@@ -2473,6 +2621,10 @@ $("settings-btn").addEventListener("click", function(){
 $("start-settings-btn").addEventListener("click", function(){
   unlockAudio();
   openSettingsModal();
+});
+$("tutorial-btn").addEventListener("click", function(){
+  sfxSelect();
+  openTutorialModal();
 });
 
 $("sync-btn").addEventListener("click", function(){
