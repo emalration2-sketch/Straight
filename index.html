@@ -64,6 +64,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .avatar-btn.selected{border-color:gold;box-shadow:0 0 12px 2px rgba(255,215,0,.6);}
 .avatar-btn.locked{position:relative;opacity:.42;filter:grayscale(.7);cursor:not-allowed;}
 .avatar-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:13px;}
+.lock-hint{font-size:9px;line-height:1.2;color:var(--muted);white-space:nowrap;}
 
 /* count select */
 .count-row{display:flex;gap:10px;}
@@ -1165,14 +1166,23 @@ function leaveRoom(){
 
 /* ---------------- avatar / count / start flow ---------------- */
 
+function findMilestone(id){
+  for(var i=0;i<UNLOCK_MILESTONES.length;i++){ if(UNLOCK_MILESTONES[i].id===id) return UNLOCK_MILESTONES[i]; }
+  return null;
+}
 function unlockHintText(id){
-  var m = null;
-  for(var i=0;i<UNLOCK_MILESTONES.length;i++){ if(UNLOCK_MILESTONES[i].id===id){ m=UNLOCK_MILESTONES[i]; break; } }
+  var m = findMilestone(id);
   if(!m) return "";
   var stats = loadStats();
   var remainWins = Math.max(0, m.winsRequired - stats.wins);
   var remainGames = Math.max(0, m.gamesRequired - stats.games);
   return "🔒 승리 "+remainWins+"회 또는 플레이 "+remainGames+"판 후 해금";
+}
+function unlockHintShort(id){
+  var m = findMilestone(id);
+  if(!m) return "";
+  var stats = loadStats();
+  return Math.max(0, m.winsRequired - stats.wins)+"승 또는 "+Math.max(0, m.gamesRequired - stats.games)+"판";
 }
 
 var avatarGrid = $("avatar-grid");
@@ -1182,6 +1192,7 @@ CHARACTERS.forEach(function(ch){
   b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+"</span>";
   if(!unlocked){
     b.title = unlockHintText("avatar:"+ch.name);
+    b.appendChild(el("span","lock-hint", unlockHintShort("avatar:"+ch.name)));
     b.disabled = true;
   } else {
     b.addEventListener("click", function(){
@@ -2395,6 +2406,7 @@ function openSettingsModal(){
     pb.appendChild(el("span","pattern-name", preset.name));
     if(!unlocked){
       pb.title = unlockHintText("pattern:"+preset.id);
+      pb.appendChild(el("span","lock-hint", unlockHintShort("pattern:"+preset.id)));
       pb.disabled = true;
     } else {
       pb.addEventListener("click", function(){
