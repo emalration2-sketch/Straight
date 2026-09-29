@@ -67,6 +67,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .count-row{display:flex;gap:10px;}
 .count-btn{width:56px;height:56px;border-radius:50%;font-size:20px;font-weight:800;background:var(--panel2);border:2px solid transparent;color:var(--text);}
 .count-btn.selected{border-color:var(--pink);}
+.count-btn.diff-btn{font-size:11px;}
 
 /* order cutscene */
 .order-list{display:flex;flex-direction:column;gap:6px;min-width:240px;}
@@ -133,7 +134,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .hand-actions .btn{flex:1;font-size:10px;padding:6px 3px;border-radius:9px;line-height:1.15;min-width:0;}
 .btn.exchange-big{flex:1.25;font-size:10px;font-weight:800;padding:6px 3px;border-radius:9px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
 .btn.exchange-big:active{transform:scale(.95);}
-.score-body{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;overflow:hidden;}
+.score-body{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;overflow:hidden;border-radius:10px;}
+.score-body.bank-target{cursor:pointer;animation:bankGlow 1s ease-in-out infinite;}
+@keyframes bankGlow{0%,100%{box-shadow:0 0 0 2px var(--accent);}50%{box-shadow:0 0 16px 6px var(--accent);}}
 .score-flow{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;gap:3px;overflow:hidden;min-height:0;}
 .score-total{font-size:11.5px;font-weight:800;flex-shrink:0;color:var(--accent);}
 
@@ -1040,6 +1043,7 @@ function startOnlineGame(){
   state.turnSeq = 0;
   state.noProgressStreak = 0;
   state.bonusCaptureFor = null;
+  state.aiDifficulty = chosenAiDifficulty;
   aiDriveGuard = {};
   state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
   var myIdx = -1;
@@ -1098,7 +1102,7 @@ var chosenAiDifficulty = (function(){
 })();
 var difficultyRow = $("difficulty-row");
 [["easy","쉬움"],["normal","보통"],["hard","어려움"]].forEach(function(pair){
-  var b = el("button","count-btn"+(pair[0]===chosenAiDifficulty?" selected":""), pair[1]);
+  var b = el("button","count-btn diff-btn"+(pair[0]===chosenAiDifficulty?" selected":""), pair[1]);
   b.addEventListener("click", function(){
     sfxSelect();
     Array.prototype.forEach.call(difficultyRow.children, function(c){ c.classList.remove("selected"); });
@@ -1612,10 +1616,10 @@ function animateFly(fromRect, toRect, coinData, duration, cb){
   }, duration+20);
 }
 
-function animateDrawFromDeck(count, destEl, cb, isJokerDraw){
+function animateDrawFromDeck(count, destEl, cb){
   var deckEl = $("deck-visual");
   if(!deckEl || !destEl || count<=0){ cb(); return; }
-  if(isJokerDraw) sfxJoker(); else sfxDraw();
+  sfxDraw();
   var deckRect = deckEl.getBoundingClientRect();
   var remaining = count;
   for(var i=0;i<count;i++){
@@ -1815,7 +1819,7 @@ function colorProgress(score, color){
 
 function chooseAiCapture(options, difficulty, aiPlayer, opponents){
   if(options.length===0) return null;
-  function baseVal(o){ return o.floor.isJoker ? 10 : pointValue(o.floor); }
+  function baseVal(o){ return pointValue(o.floor); }
   if(difficulty==="easy"){
     var best=null;
     options.forEach(function(o){ var v=baseVal(o); if(!best||v>best.v) best={o:o,v:v}; });
@@ -1849,11 +1853,12 @@ function aiTakeTurn(playerIdx){
   if(state.gameOver) return;
   var player = state.players[playerIdx];
 
-  var jokerIdx = -1;
-  player.hand.forEach(function(c,i){ if(c.isJoker) jokerIdx=i; });
-  if(jokerIdx!==-1){
-    var joker = player.hand.splice(jokerIdx,1)[0];
-    player.score.push(joker);
+  var jokerIndices = [];
+  player.hand.forEach(function(c,i){ if(c.isJoker) jokerIndices.push(i); });
+  if(jokerIndices.length>0){
+    for(var ji=jokerIndices.length-1; ji>=0; ji--){
+      player.score.push(player.hand.splice(jokerIndices[ji],1)[0]);
+    }
     pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
     pushRoomState();
     if(checkWin(playerIdx)) return;
@@ -1945,7 +1950,7 @@ function renderInstruction(){
   }
   switch(state.mode){
     case "eat-target": bar.textContent = "🎯 타겟이 될 바닥 카드를 선택하세요!"; break;
-    case "joker-choice": bar.textContent = "🃏 조커를 점수덱에 내려놓을까요?"; break;
+    case "joker-choice": bar.textContent = "✨ 반짝이는 점수덱을 눌러 조커를 내려놓으세요!"; break;
     default: bar.innerHTML = "✋ 행동을 선택하세요! 손패를 클릭하거나,<br>가져올 수 없으면 [2장 뽑고 턴 종료]를 누르세요.";
   }
 }
@@ -2036,6 +2041,7 @@ function renderHand(){
 function renderScore(){
   var area = $("score-body");
   area.innerHTML = "";
+  area.classList.toggle("bank-target", isHumanTurn() && state.mode==="joker-choice");
   var player = state.players[state.myIndex];
   var flow = el("div","score-flow");
   flow.id = "scoretotal-0";
@@ -2069,7 +2075,6 @@ function onHandClick(hi){
       state.selectedHandIdx = hi;
       state.mode = "joker-choice";
       render();
-      openJokerChoiceModal(hi);
     } else {
       state.selectedHandIdx = hi;
       state.mode = "eat-target";
@@ -2088,6 +2093,23 @@ function onHandClick(hi){
       render();
     }
   }
+
+  if(state.mode==="joker-choice"){
+    if(hi===state.selectedHandIdx){
+      clearSelectionState();
+      render();
+    } else if(coin.isJoker){
+      sfxSelect();
+      state.selectedHandIdx = hi;
+      render();
+    }
+  }
+}
+
+function onScoreBodyClick(){
+  if(state.animating || !isHumanTurn()) return;
+  if(state.mode!=="joker-choice") return;
+  bankJoker(state.selectedHandIdx);
 }
 
 function onFloorTargetClick(fi){
@@ -2118,6 +2140,7 @@ function sortHand(){
 
 $("exchange-btn").addEventListener("click", function(){ drawTwoAndEndTurn(); });
 $("sort-hand-btn").addEventListener("click", function(){ sortHand(); });
+$("score-body").addEventListener("click", function(){ onScoreBodyClick(); });
 $("cancel-action-btn").addEventListener("click", function(){ if(state.animating) return; clearSelectionState(); render(); });
 
 /* ---------------- emoji chat ---------------- */
@@ -2179,42 +2202,20 @@ document.addEventListener("click", function(e){
 
 function closeModal(){ tooltipLayer.innerHTML = ""; }
 
-function openJokerChoiceModal(handIdx){
-  closeModal();
-  var backdrop = el("div","modal-backdrop");
-  var box = el("div","modal-box");
-  box.innerHTML = "<h2>조커 사용</h2><p style=\"font-size:13px;color:var(--muted)\">조커를 내 점수덱에 내려놓을까요? 턴을 소모하지 않습니다.</p>";
-  var actions = el("div","modal-actions");
-
-  var bankBtn = el("button","btn primary","✨ 점수덱에 내려놓기");
-  bankBtn.addEventListener("click", function(){
-    closeModal();
-    bankJoker(handIdx);
-  });
-  var cancelBtn = el("button","btn","✖ 취소");
-  cancelBtn.addEventListener("click", function(){
-    clearSelectionState();
-    closeModal();
-    render();
-  });
-
-  actions.appendChild(bankBtn);
-  actions.appendChild(cancelBtn);
-  box.appendChild(actions);
-  backdrop.appendChild(box);
-  tooltipLayer.appendChild(backdrop);
-}
 
 function buildRulebookPanel(){
   var panel = $("rulebook-panel");
   panel.innerHTML =
     "<h2>📖 게임 규칙 요약</h2>"+
     "<ul>"+
+    "<li><b>숫자 체계</b>: A, 2~10, J, Q, K (13랭크). A는 가장 낮은 숫자와 가장 높은 숫자 양쪽으로 쓰일 수 있습니다 (예: A-2-3-4-5, 10-J-Q-K-A 모두 가능). 단 K 다음 바로 A로 넘어가는 순환(K-A-2-3-4)은 인정하지 않습니다.</li>"+
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
     "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 K로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 K를 가져올 수 있습니다.</li>"+
+    "<li><b>프리즘카드</b>: 색상 없이 숫자 7 고정인 특수 카드입니다. 손패의 아무 7로나 캡처할 수 있고, 점수덱에 있을 때는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
     "<li><b>손패 조커</b>: 캡처에는 쓸 수 없습니다. 대신 내 턴이 끝나기 전까지 언제든 점수덱에 내려놓을 수 있고(턴을 소모하지 않음), 내려놓은 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
+    "<li><b>콤보 보너스</b>: 드로우 없이 캡처를 2턴 연속 성공하면 그 턴에 한해 보너스 캡처 기회를 한 번 더 얻습니다 (턴당 최대 1회, 무한 연쇄 아님).</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
     "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
