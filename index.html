@@ -193,6 +193,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .swatch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:5px 0 2px;}
 .swatch-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 4px;border-radius:10px;background:var(--panel2);border:2px solid transparent;color:var(--text);cursor:pointer;}
 .swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
+.swatch-btn.locked{position:relative;opacity:.42;filter:grayscale(.7);cursor:not-allowed;}
+.swatch-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:12px;}
 .pattern-name{font-size:10.5px;text-align:center;line-height:1.2;}
 .section-label{font-size:11.5px;color:var(--muted);font-weight:700;padding:9px 2px 2px;}
 .theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(var(--line-rgb),.4);flex-shrink:0;}
@@ -2386,16 +2388,22 @@ function openSettingsModal(){
   var artLabel = el("div","section-label","🎨 카드 뒷면");
   var artRow = el("div","swatch-grid");
   CARD_BACK_PRESETS.forEach(function(preset, i){
-    var pb = el("button","swatch-btn"+(i===backPresetIndex?" primary":""));
+    var unlocked = isPatternUnlocked(preset.id, straightUnlocks);
+    var pb = el("button","swatch-btn"+(i===backPresetIndex?" primary":"")+(unlocked?"":" locked"));
     var preview = el("span","pattern-preview "+preset.cls);
     pb.appendChild(preview);
     pb.appendChild(el("span","pattern-name", preset.name));
-    pb.addEventListener("click", function(){
-      setBackPreset(i);
-      Array.prototype.forEach.call(artRow.children, function(c){ c.classList.remove("primary"); });
-      pb.classList.add("primary");
-      sfxSelect();
-    });
+    if(!unlocked){
+      pb.title = unlockHintText("pattern:"+preset.id);
+      pb.disabled = true;
+    } else {
+      pb.addEventListener("click", function(){
+        setBackPreset(i);
+        Array.prototype.forEach.call(artRow.children, function(c){ c.classList.remove("primary"); });
+        pb.classList.add("primary");
+        sfxSelect();
+      });
+    }
     artRow.appendChild(pb);
   });
 
