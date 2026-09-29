@@ -902,8 +902,8 @@ git commit -m "fix: point avatar and pattern lock UI at the new label-based unlo
 - Consumes: Task 2의 `TITLE_PRESETS`/`BORDER_PRESETS`/`isTitleUnlocked`/
   `isBorderUnlocked`.
 - Produces: `setActiveTitle(id)`, `setActiveBorder(id)`, `getActiveTitle()`,
-  `getActiveBorder()`, `renderNameWithTitle(name)`(문자열 헬퍼),
-  `wrapAvatarWithBorder(avatarHTML)`(문자열 헬퍼) — Task 6/7이 동일 헬퍼를
+  `getActiveBorder()`, `nameWithTitle(name)`(문자열 헬퍼),
+  `avatarWithBorderHTML(avatarInner)`(문자열 헬퍼) — Task 6/7이 동일 헬퍼를
   재사용한다.
 
 - [ ] **Step 1: 장착 상태 저장/조회 함수.** `TITLE_PRESETS`/`BORDER_PRESETS`
