@@ -546,20 +546,35 @@ function saveUnlocks(list){
 }
 function isExistingPlayer(){
   try{
-    var keys = ["straightClientId","straightNickname","straightCardTheme","straightArtPreset","straightAiDifficulty"];
+    // straightClientId is deliberately excluded: getClientId() below writes it
+    // unconditionally on every load (even a brand-new player's first load), so
+    // treating its presence as "existing player" would misclassify literally
+    // everyone as a fully-unlocked veteran starting from their second page
+    // load/refresh. Only keys that are written solely via a deliberate user
+    // action (submitting a nickname, changing a card theme/back/AI difficulty)
+    // are reliable signals of a pre-existing save.
+    var keys = ["straightNickname","straightCardTheme","straightArtPreset","straightAiDifficulty"];
     for(var i=0;i<keys.length;i++){ if(localStorage.getItem(keys[i])!==null) return true; }
     return false;
   }catch(e){ return false; }
 }
 function initUnlocksIfNeeded(){
-  var allIds = UNLOCK_MILESTONES.map(function(m){ return m.id; });
   var existing = loadUnlocksRaw();
-  if(isExistingPlayer()){
-    var merged = existing===null ? allIds.slice() : existing.concat(allIds.filter(function(id){ return existing.indexOf(id)===-1; }));
-    if(existing===null || merged.length!==existing.length) saveUnlocks(merged);
-    return merged;
-  }
+  // Once straightUnlocks has been initialized (even as [] for a brand-new player), it is
+  // the source of truth for that save's progress on every subsequent load — do NOT
+  // re-run the existing-player migration below. Re-checking isExistingPlayer() on every
+  // load was a serious bug: a genuinely new player only has to set any one casual setting
+  // (AI difficulty, card theme, card back, nickname) and then reload/restart — something
+  // that happens on literally every "다시하기" click — and this branch would silently
+  // bulldoze their real partial progress by force-merging every milestone id into it.
+  // The full-unlock grandfather merge below must only ever run once, on the very first
+  // load for a save that has no straightUnlocks key at all.
   if(existing!==null) return existing;
+  var allIds = UNLOCK_MILESTONES.map(function(m){ return m.id; });
+  if(isExistingPlayer()){
+    saveUnlocks(allIds.slice());
+    return allIds.slice();
+  }
   saveUnlocks([]);
   return [];
 }
@@ -628,9 +643,9 @@ function maybeRecordLocalGameResult(outcome, meta){
   pendingUnlocks = pendingUnlocks.concat(recordGameResult(outcome, meta));
 }
 
-// Invariant: must run before getClientId() writes straightClientId — otherwise every
-// brand-new visitor already has straightClientId set by the time isExistingPlayer() runs
-// and gets misclassified as an existing player (fully unlocked) instead of a new one.
+// Note: isExistingPlayer() (above) intentionally ignores straightClientId — see its
+// comment. Keeping this call ahead of getClientId() below is still good practice, but
+// is no longer load-bearing for new-vs-existing classification.
 var straightUnlocks = initUnlocksIfNeeded();
 
 var backPresetIndex = 0;
@@ -1413,26 +1428,30 @@ function leaveRoom(){
 
 /* ---------------- avatar / count / start flow ---------------- */
 
-var avatarGrid = $("avatar-grid");
-CHARACTERS.forEach(function(ch){
-  var unlocked = isAvatarUnlocked(ch.name, straightUnlocks);
-  var b = el("button","avatar-btn"+(unlocked?"":" locked"));
-  b.innerHTML = avatarWithBorderHTML("<span>"+avatarIconHTML(ch)+"</span>")+"<span class=\"nm\">"+nameWithTitle(ch.name)+"</span>";
-  if(!unlocked){
-    b.title = unlockHintTextFor("avatar", ch.name);
-    b.appendChild(el("span","lock-hint", unlockHintShortFor("avatar", ch.name)));
-    b.disabled = true;
-  } else {
-    b.addEventListener("click", function(){
-      sfxSelect();
-      Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
-      b.classList.add("selected");
-      chosenCharacter = ch;
-      $("avatar-next-btn").disabled = false;
-    });
-  }
-  avatarGrid.appendChild(b);
-});
+function renderAvatarGrid(){
+  var avatarGrid = $("avatar-grid");
+  avatarGrid.innerHTML = "";
+  CHARACTERS.forEach(function(ch){
+    var unlocked = isAvatarUnlocked(ch.name, straightUnlocks);
+    var b = el("button","avatar-btn"+(unlocked?"":" locked"));
+    b.innerHTML = avatarWithBorderHTML("<span>"+avatarIconHTML(ch)+"</span>")+"<span class=\"nm\">"+nameWithTitle(ch.name)+"</span>";
+    if(!unlocked){
+      b.title = unlockHintTextFor("avatar", ch.name);
+      b.appendChild(el("span","lock-hint", unlockHintShortFor("avatar", ch.name)));
+      b.disabled = true;
+    } else {
+      b.addEventListener("click", function(){
+        sfxSelect();
+        Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
+        b.classList.add("selected");
+        chosenCharacter = ch;
+        $("avatar-next-btn").disabled = false;
+      });
+    }
+    avatarGrid.appendChild(b);
+  });
+}
+renderAvatarGrid();
 
 $("start-btn").addEventListener("click", function(){
   unlockAudio();
@@ -1488,6 +1507,7 @@ var countRow = $("count-row");
 
 $("count-next-btn").addEventListener("click", function(){
   sfxSelect();
+  renderAvatarGrid();
   switchScreen("avatar");
 });
 
@@ -1857,8 +1877,9 @@ function renderUnlockToast(){
     toast.innerHTML = "";
     return;
   }
+  var unlockKindLabels = { avatar:"새 아바타", pattern:"새 카드 뒷면", title:"새 칭호", border:"새 테두리" };
   var lines = pendingUnlocks.map(function(m){
-    var kindLabel = m.kind==="avatar" ? "새 아바타" : "새 카드 뒷면";
+    var kindLabel = unlockKindLabels[m.kind] || "새 보상";
     return "🎉 "+kindLabel+" 해금: "+m.label;
   });
   toast.innerHTML = lines.join("<br>");
