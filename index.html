@@ -62,6 +62,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .avatar-btn{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:28px;background:var(--panel);border-radius:14px;padding:10px 6px;border:2px solid transparent;cursor:pointer;}
 .avatar-btn .nm{font-size:10.5px;color:var(--muted);white-space:nowrap;}
 .avatar-btn.selected{border-color:gold;box-shadow:0 0 12px 2px rgba(255,215,0,.6);}
+.avatar-btn.locked{position:relative;opacity:.42;filter:grayscale(.7);cursor:not-allowed;}
+.avatar-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:13px;}
 
 /* count select */
 .count-row{display:flex;gap:10px;}
@@ -1161,17 +1163,33 @@ function leaveRoom(){
 
 /* ---------------- avatar / count / start flow ---------------- */
 
+function unlockHintText(id){
+  var m = null;
+  for(var i=0;i<UNLOCK_MILESTONES.length;i++){ if(UNLOCK_MILESTONES[i].id===id){ m=UNLOCK_MILESTONES[i]; break; } }
+  if(!m) return "";
+  var stats = loadStats();
+  var remainWins = Math.max(0, m.winsRequired - stats.wins);
+  var remainGames = Math.max(0, m.gamesRequired - stats.games);
+  return "🔒 승리 "+remainWins+"회 또는 플레이 "+remainGames+"판 후 해금";
+}
+
 var avatarGrid = $("avatar-grid");
 CHARACTERS.forEach(function(ch){
-  var b = el("button","avatar-btn");
+  var unlocked = isAvatarUnlocked(ch.name, straightUnlocks);
+  var b = el("button","avatar-btn"+(unlocked?"":" locked"));
   b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+"</span>";
-  b.addEventListener("click", function(){
-    sfxSelect();
-    Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
-    b.classList.add("selected");
-    chosenCharacter = ch;
-    $("avatar-next-btn").disabled = false;
-  });
+  if(!unlocked){
+    b.title = unlockHintText("avatar:"+ch.name);
+    b.disabled = true;
+  } else {
+    b.addEventListener("click", function(){
+      sfxSelect();
+      Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
+      b.classList.add("selected");
+      chosenCharacter = ch;
+      $("avatar-next-btn").disabled = false;
+    });
+  }
   avatarGrid.appendChild(b);
 });
 
