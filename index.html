@@ -421,27 +421,61 @@ var CARD_BACK_PRESETS = [
 var UNLOCK_STARTER_AVATARS = ["허니뱅","고양이 예언자"];
 var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag"];
 
+function rem(target, current){ return Math.max(0, target-(current||0)); }
 var UNLOCK_MILESTONES = [
-  { winsRequired:1,  gamesRequired:3,   kind:"avatar",  id:"avatar:바코드 라이언", label:"바코드 라이언" },
-  { winsRequired:2,  gamesRequired:6,   kind:"avatar",  id:"avatar:메가블록",     label:"메가블록" },
-  { winsRequired:3,  gamesRequired:9,   kind:"pattern", id:"pattern:argyle",     label:"아가일" },
-  { winsRequired:5,  gamesRequired:15,  kind:"avatar",  id:"avatar:카이저 핑",    label:"카이저 핑" },
-  { winsRequired:8,  gamesRequired:24,  kind:"pattern", id:"pattern:diamond",    label:"다이아몬드" },
-  { winsRequired:12, gamesRequired:36,  kind:"avatar",  id:"avatar:매드독",      label:"매드독" },
-  { winsRequired:18, gamesRequired:54,  kind:"pattern", id:"pattern:honeycomb",  label:"허니콤" },
-  { winsRequired:25, gamesRequired:75,  kind:"avatar",  id:"avatar:크러셔 루",   label:"크러셔 루" },
-  { winsRequired:35, gamesRequired:105, kind:"pattern", id:"pattern:diagonal",   label:"다이애그널" },
-  { winsRequired:50, gamesRequired:150, kind:"avatar",  id:"avatar:스파크 렉스", label:"스파크 렉스" },
-  { winsRequired:65, gamesRequired:195, kind:"pattern", id:"pattern:ripple",     label:"리플" }
+  { id:"win:10",   kind:"avatar",  label:"나이트올빼미",   check:function(s){ return s.wins>=10; },   hint:function(s){ return rem(10,s.wins)+"승"; } },
+  { id:"win:20",   kind:"title",   label:"초보",          check:function(s){ return s.wins>=20; },   hint:function(s){ return rem(20,s.wins)+"승"; } },
+  { id:"win:30",   kind:"avatar",  label:"고양이 예언자",  check:function(s){ return s.wins>=30; },   hint:function(s){ return rem(30,s.wins)+"승"; } },
+  { id:"win:50",   kind:"avatar",  label:"슬로우모",       check:function(s){ return s.wins>=50; },   hint:function(s){ return rem(50,s.wins)+"승"; } },
+  { id:"win:100",  kind:"title",   label:"능숙",          check:function(s){ return s.wins>=100; },  hint:function(s){ return rem(100,s.wins)+"승"; } },
+  { id:"win:200",  kind:"avatar",  label:"크러셔 루",      check:function(s){ return s.wins>=200; },  hint:function(s){ return rem(200,s.wins)+"승"; } },
+  { id:"win:300",  kind:"avatar",  label:"메가블록",       check:function(s){ return s.wins>=300; },  hint:function(s){ return rem(300,s.wins)+"승"; } },
+  { id:"win:400",  kind:"title",   label:"마스터",        check:function(s){ return s.wins>=400; },  hint:function(s){ return rem(400,s.wins)+"승"; } },
+  { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=500; },  hint:function(s){ return rem(500,s.wins)+"승"; } },
+  { id:"win:1000", kind:"avatar",  label:"폭스트릭",       check:function(s){ return s.wins>=1000; }, hint:function(s){ return rem(1000,s.wins)+"승"; } },
+
+  { id:"games:10",   kind:"pattern", label:"도트",     check:function(s){ return s.games>=10; },   hint:function(s){ return rem(10,s.games)+"판"; } },
+  { id:"games:20",   kind:"title",   label:"발걸음",   check:function(s){ return s.games>=20; },   hint:function(s){ return rem(20,s.games)+"판"; } },
+  { id:"games:30",   kind:"pattern", label:"웨이브",   check:function(s){ return s.games>=30; },   hint:function(s){ return rem(30,s.games)+"판"; } },
+  { id:"games:50",   kind:"pattern", label:"아가일",   check:function(s){ return s.games>=50; },   hint:function(s){ return rem(50,s.games)+"판"; } },
+  { id:"games:100",  kind:"title",   label:"꾸준함",   check:function(s){ return s.games>=100; },  hint:function(s){ return rem(100,s.games)+"판"; } },
+  { id:"games:200",  kind:"pattern", label:"다이아몬드", check:function(s){ return s.games>=200; }, hint:function(s){ return rem(200,s.games)+"판"; } },
+  { id:"games:300",  kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=300; },  hint:function(s){ return rem(300,s.games)+"판"; } },
+  { id:"games:400",  kind:"title",   label:"베테랑",   check:function(s){ return s.games>=400; },  hint:function(s){ return rem(400,s.games)+"판"; } },
+  { id:"games:500",  kind:"pattern", label:"로열",     check:function(s){ return s.games>=500; },  hint:function(s){ return rem(500,s.games)+"판"; } },
+  { id:"games:1000", kind:"pattern", label:"코스믹",   check:function(s){ return s.games>=1000; }, hint:function(s){ return rem(1000,s.games)+"판"; } },
+
+  { id:"misc:streak10",   kind:"border", label:"불꽃",    check:function(s){ return s.winStreak>=10; },      hint:function(s){ return rem(10,s.winStreak)+"연승"; } },
+  { id:"misc:prism10",    kind:"border", label:"레인보우", check:function(s){ return s.prismBanked>=10; },    hint:function(s){ return "프리즘 "+rem(10,s.prismBanked)+"개"; } },
+  { id:"misc:draws10",    kind:"title",  label:"평화",    check:function(s){ return s.draws>=10; },          hint:function(s){ return "무승부 "+rem(10,s.draws)+"회"; } },
+  { id:"misc:jokers20",   kind:"title",  label:"콜렉터",  check:function(s){ return s.jokersBanked>=20; },   hint:function(s){ return "조커 "+rem(20,s.jokersBanked)+"개"; } },
+  { id:"misc:hard100",    kind:"border", label:"트로피",  check:function(s){ return s.hardWins>=100; },      hint:function(s){ return "어려움 "+rem(100,s.hardWins)+"승"; } },
+  { id:"misc:kstraight",  kind:"border", label:"실버",    check:function(s){ return s.hasKStraightWin; },    hint:function(s){ return "10-J-Q-K-A 완성"; } },
+  { id:"misc:online4p50", kind:"border", label:"하트",    check:function(s){ return s.fourPOnlineWins>=50; },hint:function(s){ return "4인전 "+rem(50,s.fourPOnlineWins)+"승"; } },
+  { id:"misc:online1",    kind:"title",  label:"소셜",    check:function(s){ return s.onlineWins>=1; },      hint:function(s){ return "온라인 "+rem(1,s.onlineWins)+"승"; } },
+  { id:"misc:allcolors",  kind:"title",  label:"올컬러",  check:function(s){ return s.colorsWon.length>=4; },hint:function(s){ return rem(4,s.colorsWon.length)+"색 남음"; } },
+  { id:"misc:bighand",    kind:"title",  label:"빅핸드",  check:function(s){ return s.hasBigHandWin; },      hint:function(s){ return "점수덱 20장 승리"; } },
+
+  { id:"pattern:diagonal", kind:"pattern", label:"다이애그널", check:function(s){ return s.tutorialDone; }, hint:function(s){ return "튜토리얼 완주"; } }
 ];
 
 function loadStats(){
   try{
     var raw = localStorage.getItem("straightStats");
-    if(!raw) return { wins:0, games:0 };
-    var parsed = JSON.parse(raw);
-    return { wins:parsed.wins||0, games:parsed.games||0 };
-  }catch(e){ return { wins:0, games:0 }; }
+    var p = raw ? JSON.parse(raw) : {};
+    return {
+      wins: p.wins||0, games: p.games||0, draws: p.draws||0,
+      winStreak: p.winStreak||0, prismBanked: p.prismBanked||0,
+      jokersBanked: p.jokersBanked||0, hardWins: p.hardWins||0,
+      onlineWins: p.onlineWins||0, fourPOnlineWins: p.fourPOnlineWins||0,
+      colorsWon: p.colorsWon||[], hasKStraightWin: !!p.hasKStraightWin,
+      hasBigHandWin: !!p.hasBigHandWin, tutorialDone: !!p.tutorialDone
+    };
+  }catch(e){
+    return { wins:0, games:0, draws:0, winStreak:0, prismBanked:0, jokersBanked:0,
+      hardWins:0, onlineWins:0, fourPOnlineWins:0, colorsWon:[], hasKStraightWin:false,
+      hasBigHandWin:false, tutorialDone:false };
+  }
 }
 function saveStats(stats){
   try{ localStorage.setItem("straightStats", JSON.stringify(stats)); }catch(e){}
@@ -465,11 +499,16 @@ function isExistingPlayer(){
   }catch(e){ return false; }
 }
 function initUnlocksIfNeeded(){
+  var allIds = UNLOCK_MILESTONES.map(function(m){ return m.id; });
   var existing = loadUnlocksRaw();
+  if(isExistingPlayer()){
+    var merged = existing===null ? allIds.slice() : existing.concat(allIds.filter(function(id){ return existing.indexOf(id)===-1; }));
+    if(existing===null || merged.length!==existing.length) saveUnlocks(merged);
+    return merged;
+  }
   if(existing!==null) return existing;
-  var initial = isExistingPlayer() ? UNLOCK_MILESTONES.map(function(m){ return m.id; }) : [];
-  saveUnlocks(initial);
-  return initial;
+  saveUnlocks([]);
+  return [];
 }
 function isAvatarUnlocked(name, unlocks){
   if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
@@ -479,27 +518,68 @@ function isPatternUnlocked(id, unlocks){
   if(UNLOCK_STARTER_PATTERNS.indexOf(id)!==-1) return true;
   return unlocks.indexOf("pattern:"+id)!==-1;
 }
+function isTitleUnlocked(id, unlocks){
+  return unlocks.indexOf("title:"+id)!==-1;
+}
+function isBorderUnlocked(id, unlocks){
+  return unlocks.indexOf("border:"+id)!==-1;
+}
 function checkUnlocks(stats, unlocks){
   var updated = unlocks.slice();
   var newly = [];
   UNLOCK_MILESTONES.forEach(function(m){
     if(updated.indexOf(m.id)!==-1) return;
-    if(stats.wins>=m.winsRequired || stats.games>=m.gamesRequired){
+    if(m.check(stats)){
       updated.push(m.id);
       newly.push(m);
     }
   });
   return { updated:updated, newly:newly };
 }
-function recordGameResult(won){
+function recordGameResult(outcome, meta){
   var stats = loadStats();
-  stats.games++;
-  if(won) stats.wins++;
+  stats.games = stats.games+1;
+  if(outcome==="win"){
+    stats.wins = stats.wins+1;
+    stats.winStreak = stats.winStreak+1;
+    if(meta){
+      if(meta.difficulty==="hard") stats.hardWins = stats.hardWins+1;
+      if(meta.isOnline) stats.onlineWins = stats.onlineWins+1;
+      if(meta.isOnline && meta.playerCount===4) stats.fourPOnlineWins = stats.fourPOnlineWins+1;
+      if(meta.straight && meta.straight.start===10) stats.hasKStraightWin = true;
+      if(meta.straight && stats.colorsWon.indexOf(meta.straight.color)===-1) stats.colorsWon.push(meta.straight.color);
+      if(meta.scoreLen>=20) stats.hasBigHandWin = true;
+    }
+  } else if(outcome==="draw"){
+    stats.draws = stats.draws+1;
+    stats.winStreak = 0;
+  } else if(outcome==="loss"){
+    stats.winStreak = 0;
+  }
   saveStats(stats);
   var result = checkUnlocks(stats, loadUnlocksRaw() || straightUnlocks);
   straightUnlocks = result.updated;
   saveUnlocks(straightUnlocks);
   return result.newly;
+}
+function bumpStatAndCheck(field, delta){
+  var stats = loadStats();
+  stats[field] = (stats[field]||0)+delta;
+  saveStats(stats);
+  var result = checkUnlocks(stats, loadUnlocksRaw() || straightUnlocks);
+  straightUnlocks = result.updated;
+  saveUnlocks(straightUnlocks);
+  pendingUnlocks = pendingUnlocks.concat(result.newly);
+}
+function recordTutorialDone(){
+  var stats = loadStats();
+  if(stats.tutorialDone) return;
+  stats.tutorialDone = true;
+  saveStats(stats);
+  var result = checkUnlocks(stats, loadUnlocksRaw() || straightUnlocks);
+  straightUnlocks = result.updated;
+  saveUnlocks(straightUnlocks);
+  pendingUnlocks = pendingUnlocks.concat(result.newly);
 }
 
 var pendingUnlocks = [];
@@ -1189,16 +1269,12 @@ function findMilestone(id){
 function unlockHintText(id){
   var m = findMilestone(id);
   if(!m) return "";
-  var stats = loadStats();
-  var remainWins = Math.max(0, m.winsRequired - stats.wins);
-  var remainGames = Math.max(0, m.gamesRequired - stats.games);
-  return "🔒 승리 "+remainWins+"회 또는 플레이 "+remainGames+"판 후 해금";
+  return "🔒 "+m.hint(loadStats())+" 후 해금";
 }
 function unlockHintShort(id){
   var m = findMilestone(id);
   if(!m) return "";
-  var stats = loadStats();
-  return Math.max(0, m.winsRequired - stats.wins)+"승 또는 "+Math.max(0, m.gamesRequired - stats.games)+"판";
+  return m.hint(loadStats());
 }
 
 var avatarGrid = $("avatar-grid");
