@@ -66,6 +66,17 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .avatar-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:13px;}
 .avatar-btn.locked > :not(.lock-hint){opacity:.42;filter:grayscale(.7);}
 .lock-hint{font-size:9px;line-height:1.2;color:var(--text);font-weight:700;white-space:nowrap;}
+.border-ring{position:relative;display:inline-flex;}
+.border-silver{border:5px groove #b8bcc4;border-radius:50%;}
+.border-rainbow{border-width:4px;border-style:solid;border-radius:50%;border-top-color:#d4537e;border-right-color:#7f77dd;border-bottom-color:#33d6c0;border-left-color:#f6a83c;}
+.border-trophy{border:4px double #f6a83c;border-radius:50%;}
+.border-trophy::after{content:"";position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:#f6a83c;}
+.border-flame{border:3px solid #d85a30;border-radius:50%;}
+.border-flame::before,.border-flame::after{content:"";position:absolute;top:-3px;width:5px;height:5px;border-radius:50%;background:#f6a83c;}
+.border-flame::before{left:32%;}
+.border-flame::after{left:62%;}
+.border-heart{border:3px solid #d4537e;border-radius:50%;}
+.border-heart::after{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:#ff8fb3;}
 
 /* count select */
 .count-row{display:flex;gap:10px;}
@@ -167,7 +178,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
-.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-dot::after,.pattern-wave::after,.pattern-hologram::after,.pattern-royal::after,.pattern-cosmic::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:14px 14px;background-position:0 0,7px 7px;}
@@ -175,6 +186,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
 .pattern-diagonal::after{background-image:linear-gradient(135deg,transparent 0 50%,rgba(0,0,0,.18) 50% 100%);}
 .pattern-ripple::after{background-image:repeating-radial-gradient(circle at 25% 30%,transparent 0 5px,rgba(0,0,0,.14) 5px 6px);}
+.pattern-dot::after{background-image:radial-gradient(rgba(0,0,0,.35) 1.5px, transparent 1.7px);background-size:7px 7px;}
+.pattern-wave::after{background-image:radial-gradient(rgba(0,0,0,.16) 1.4px, transparent 1.6px),radial-gradient(rgba(0,0,0,.16) 1.4px, transparent 1.6px);background-size:10px 8px;background-position:0 0,5px 4px;}
+.pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.5) 15% 19%, transparent 19% 45%, rgba(255,255,255,.35) 45% 48%, transparent 48% 75%, rgba(255,255,255,.45) 75% 78%, transparent 78% 100%);}
+.pattern-royal::after{background-image:linear-gradient(45deg,rgba(246,168,60,.55) 25%,transparent 25%,transparent 75%,rgba(246,168,60,.55) 75%),linear-gradient(45deg,rgba(246,168,60,.55) 25%,transparent 25%,transparent 75%,rgba(246,168,60,.55) 75%),radial-gradient(rgba(255,215,107,.7) 1.3px, transparent 1.5px);background-size:14px 14px,14px 14px,14px 14px;background-position:0 0,7px 7px,3.5px 3.5px;}
+.pattern-cosmic::after{background-image:radial-gradient(rgba(255,255,255,.9) 1px, transparent 1.2px),radial-gradient(rgba(255,255,255,.55) 0.8px, transparent 1px),radial-gradient(rgba(255,215,107,.8) 1.3px, transparent 1.5px);background-size:9px 9px,6px 6px,16px 16px;background-position:0 0,3px 5px,8px 2px;}
 .pattern-preview{width:34px;height:34px;border-radius:7px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
 .card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
 .card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 0 8px rgba(255,215,107,.8),0 0 16px rgba(255,215,107,.4);opacity:.95;}
@@ -413,13 +429,18 @@ var CARD_BACK_PRESETS = [
   { id:"diamond", name:"다이아몬드", cls:"pattern-diamond" },
   { id:"honeycomb", name:"허니콤", cls:"pattern-honeycomb" },
   { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal" },
-  { id:"ripple", name:"리플", cls:"pattern-ripple" }
+  { id:"ripple", name:"리플", cls:"pattern-ripple" },
+  { id:"dot", name:"도트", cls:"pattern-dot" },
+  { id:"wave", name:"웨이브", cls:"pattern-wave" },
+  { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
+  { id:"royal", name:"로열", cls:"pattern-royal" },
+  { id:"cosmic", name:"코스믹", cls:"pattern-cosmic" }
 ];
 
 /* ---------------- progress / unlocks ---------------- */
 
-var UNLOCK_STARTER_AVATARS = ["허니뱅","고양이 예언자"];
-var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag"];
+var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","스파크 렉스","매드독"];
+var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag","honeycomb","ripple"];
 
 function rem(target, current){ return Math.max(0, target-(current||0)); }
 var UNLOCK_MILESTONES = [
@@ -509,20 +530,6 @@ function initUnlocksIfNeeded(){
   if(existing!==null) return existing;
   saveUnlocks([]);
   return [];
-}
-function isAvatarUnlocked(name, unlocks){
-  if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
-  return unlocks.indexOf("avatar:"+name)!==-1;
-}
-function isPatternUnlocked(id, unlocks){
-  if(UNLOCK_STARTER_PATTERNS.indexOf(id)!==-1) return true;
-  return unlocks.indexOf("pattern:"+id)!==-1;
-}
-function isTitleUnlocked(id, unlocks){
-  return unlocks.indexOf("title:"+id)!==-1;
-}
-function isBorderUnlocked(id, unlocks){
-  return unlocks.indexOf("border:"+id)!==-1;
 }
 function checkUnlocks(stats, unlocks){
   var updated = unlocks.slice();
@@ -688,8 +695,75 @@ var CHARACTERS = [
   { emoji:"🐧", name:"카이저 핑" },
   { emoji:"🐕", name:"매드독" },
   { emoji:"🦘", name:"크러셔 루" },
-  { emoji:"🐉", name:"스파크 렉스" }
+  { emoji:"🐉", name:"스파크 렉스" },
+  { emoji:"🦉", name:"나이트올빼미" },
+  { emoji:"🐢", name:"슬로우모" },
+  { emoji:"🦊", name:"폭스트릭" }
 ];
+
+var TITLE_PRESETS = [
+  { id:"beginner", name:"초보" },
+  { id:"skilled", name:"능숙" },
+  { id:"master", name:"마스터" },
+  { id:"firststep", name:"발걸음" },
+  { id:"consistent", name:"꾸준함" },
+  { id:"veteran", name:"베테랑" },
+  { id:"peace", name:"평화" },
+  { id:"collector", name:"콜렉터" },
+  { id:"social", name:"소셜" },
+  { id:"allcolor", name:"올컬러" },
+  { id:"bighand", name:"빅핸드" }
+];
+var BORDER_PRESETS = [
+  { id:"silver", name:"실버", cls:"border-silver" },
+  { id:"rainbow", name:"레인보우", cls:"border-rainbow" },
+  { id:"trophy", name:"트로피", cls:"border-trophy" },
+  { id:"flame", name:"불꽃", cls:"border-flame" },
+  { id:"heart", name:"하트", cls:"border-heart" }
+];
+
+function findMilestoneByLabel(kind, label){
+  for(var i=0;i<UNLOCK_MILESTONES.length;i++){
+    var m = UNLOCK_MILESTONES[i];
+    if(m.kind===kind && m.label===label) return m;
+  }
+  return null;
+}
+function isAvatarUnlocked(name, unlocks){
+  if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
+  var m = findMilestoneByLabel("avatar", name);
+  return m ? unlocks.indexOf(m.id)!==-1 : false;
+}
+function isPatternUnlocked(id, unlocks){
+  var preset = null;
+  for(var i=0;i<CARD_BACK_PRESETS.length;i++){ if(CARD_BACK_PRESETS[i].id===id){ preset=CARD_BACK_PRESETS[i]; break; } }
+  if(!preset) return false;
+  if(UNLOCK_STARTER_PATTERNS.indexOf(id)!==-1) return true;
+  var m = findMilestoneByLabel("pattern", preset.name);
+  return m ? unlocks.indexOf(m.id)!==-1 : false;
+}
+function isTitleUnlocked(id, unlocks){
+  var preset = null;
+  for(var i=0;i<TITLE_PRESETS.length;i++){ if(TITLE_PRESETS[i].id===id){ preset=TITLE_PRESETS[i]; break; } }
+  if(!preset) return false;
+  var m = findMilestoneByLabel("title", preset.name);
+  return m ? unlocks.indexOf(m.id)!==-1 : false;
+}
+function isBorderUnlocked(id, unlocks){
+  var preset = null;
+  for(var i=0;i<BORDER_PRESETS.length;i++){ if(BORDER_PRESETS[i].id===id){ preset=BORDER_PRESETS[i]; break; } }
+  if(!preset) return false;
+  var m = findMilestoneByLabel("border", preset.name);
+  return m ? unlocks.indexOf(m.id)!==-1 : false;
+}
+function unlockHintTextFor(kind, label){
+  var m = findMilestoneByLabel(kind, label);
+  return m ? ("🔒 "+m.hint(loadStats())+" 후 해금") : "";
+}
+function unlockHintShortFor(kind, label){
+  var m = findMilestoneByLabel(kind, label);
+  return m ? m.hint(loadStats()) : "";
+}
 
 function avatarIconHTML(ch){ return (ch && ch.avatarIcon) ? ch.avatarIcon : (ch ? ch.emoji : ""); }
 
@@ -1262,29 +1336,14 @@ function leaveRoom(){
 
 /* ---------------- avatar / count / start flow ---------------- */
 
-function findMilestone(id){
-  for(var i=0;i<UNLOCK_MILESTONES.length;i++){ if(UNLOCK_MILESTONES[i].id===id) return UNLOCK_MILESTONES[i]; }
-  return null;
-}
-function unlockHintText(id){
-  var m = findMilestone(id);
-  if(!m) return "";
-  return "🔒 "+m.hint(loadStats())+" 후 해금";
-}
-function unlockHintShort(id){
-  var m = findMilestone(id);
-  if(!m) return "";
-  return m.hint(loadStats());
-}
-
 var avatarGrid = $("avatar-grid");
 CHARACTERS.forEach(function(ch){
   var unlocked = isAvatarUnlocked(ch.name, straightUnlocks);
   var b = el("button","avatar-btn"+(unlocked?"":" locked"));
   b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+"</span>";
   if(!unlocked){
-    b.title = unlockHintText("avatar:"+ch.name);
-    b.appendChild(el("span","lock-hint", unlockHintShort("avatar:"+ch.name)));
+    b.title = unlockHintTextFor("avatar", ch.name);
+    b.appendChild(el("span","lock-hint", unlockHintShortFor("avatar", ch.name)));
     b.disabled = true;
   } else {
     b.addEventListener("click", function(){
@@ -2635,8 +2694,8 @@ function openSettingsModal(){
     pb.appendChild(preview);
     pb.appendChild(el("span","pattern-name", preset.name));
     if(!unlocked){
-      pb.title = unlockHintText("pattern:"+preset.id);
-      pb.appendChild(el("span","lock-hint", unlockHintShort("pattern:"+preset.id)));
+      pb.title = unlockHintTextFor("pattern", preset.name);
+      pb.appendChild(el("span","lock-hint", unlockHintShortFor("pattern", preset.name)));
       pb.disabled = true;
     } else {
       pb.addEventListener("click", function(){
