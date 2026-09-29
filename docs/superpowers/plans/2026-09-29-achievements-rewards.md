@@ -569,7 +569,48 @@ git commit -m "feat: replace unlock milestone table with function-based conditio
   (테두리는 아바타 아이콘 하나를 감싸는 원형 래퍼에 적용하는 클래스다 — 실제
   DOM 구조는 Task 5에서 만든다. 이 Step은 CSS 정의만 담당.)
 
-- [ ] **Step 7: 브라우저로 카드 패턴 5종을 실제 크기에서 확인.** 로컬
+- [ ] **Step 7: milestone label ↔ 카탈로그 name 전수 일치 검증.**
+  `findMilestoneByLabel(kind, label)`과 그 위에 얹힌 `isAvatarUnlocked`/
+  `isPatternUnlocked`/`isTitleUnlocked`/`isBorderUnlocked`는 milestone의
+  `label` 문자열과 카탈로그(`CHARACTERS`/`CARD_BACK_PRESETS`/`TITLE_PRESETS`/
+  `BORDER_PRESETS`)의 `name` 문자열이 **정확히 같은 글자**여야 동작한다. 한
+  글자라도 다르면 그 항목은 해금 조건을 100% 채워도 영원히 잠긴 채로 남는다 —
+  이 프로젝트가 가장 취약해지는 지점이므로 반드시 코드로 전수 검사한다.
+  ```bash
+  node -e "
+  var fs = require('fs');
+  var src = fs.readFileSync('index.html', 'utf8');
+  function block(varName){
+    var start = src.indexOf('var '+varName+' = [');
+    var end = src.indexOf('];', start) + 2;
+    return src.slice(start, end);
+  }
+  function rem(t,c){ return Math.max(0,t-(c||0)); }
+  eval(block('CHARACTERS'));
+  eval(block('CARD_BACK_PRESETS'));
+  eval(block('TITLE_PRESETS'));
+  eval(block('BORDER_PRESETS'));
+  eval(block('UNLOCK_MILESTONES'));
+  var assert = require('assert');
+  var namesByKind = {
+    avatar: CHARACTERS.map(function(c){ return c.name; }),
+    pattern: CARD_BACK_PRESETS.map(function(p){ return p.name; }),
+    title: TITLE_PRESETS.map(function(t){ return t.name; }),
+    border: BORDER_PRESETS.map(function(b){ return b.name; })
+  };
+  var missing = [];
+  UNLOCK_MILESTONES.forEach(function(m){
+    if(namesByKind[m.kind].indexOf(m.label)===-1) missing.push(m.id+' -> '+m.kind+':'+m.label);
+  });
+  assert.strictEqual(missing.length, 0, '카탈로그에 없는 milestone label: '+missing.join(', '));
+  console.log('전수 일치 검증 통과: 31개 milestone 전부 카탈로그에서 찾음');
+  "
+  ```
+  Expected: `전수 일치 검증 통과: 31개 milestone 전부 카탈로그에서 찾음`.
+  실패하면(즉 목록이 출력되면) 그 milestone의 `label`이나 해당 카탈로그
+  항목의 `name` 중 하나에 오타가 있다는 뜻이다 — 둘 중 스펙과 다른 쪽을 고친다.
+
+- [ ] **Step 8: 브라우저로 카드 패턴 5종을 실제 크기에서 확인.** 로컬
   dev 서버(포트 5201, `npx serve -l 5201 .`)를 띄우고 설정 모달의 카드 뒷면
   섹션을 연다 — 지금은 아직 잠금 UI가 옛 milestone 기준으로 깨져 있을 수
   있으니(Task 4에서 고침), 콘솔에서 `localStorage.setItem('straightNickname','t')`
@@ -580,7 +621,7 @@ git commit -m "feat: replace unlock milestone table with function-based conditio
   `applyBackPresetToDeckVisual()`을 호출해 덱 비주얼에도 즉시 반영됨). 문제가
   있으면 이 Step에서 CSS 수치를 조정한다. 서버를 끄고 포트가 비었는지 확인한다.
 
-- [ ] **Step 8: 커밋**
+- [ ] **Step 9: 커밋**
 
 ```bash
 git add index.html
