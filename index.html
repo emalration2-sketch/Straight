@@ -62,9 +62,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .avatar-btn{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:28px;background:var(--panel);border-radius:14px;padding:10px 6px;border:2px solid transparent;cursor:pointer;}
 .avatar-btn .nm{font-size:10.5px;color:var(--muted);white-space:nowrap;}
 .avatar-btn.selected{border-color:gold;box-shadow:0 0 12px 2px rgba(255,215,0,.6);}
-.avatar-btn.locked{position:relative;opacity:.42;filter:grayscale(.7);cursor:not-allowed;}
+.avatar-btn.locked{position:relative;cursor:not-allowed;}
 .avatar-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:13px;}
-.lock-hint{font-size:9px;line-height:1.2;color:var(--muted);white-space:nowrap;}
+.avatar-btn.locked > :not(.lock-hint){opacity:.42;filter:grayscale(.7);}
+.lock-hint{font-size:9px;line-height:1.2;color:var(--text);font-weight:700;white-space:nowrap;}
 
 /* count select */
 .count-row{display:flex;gap:10px;}
@@ -204,8 +205,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .swatch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:5px 0 2px;}
 .swatch-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 4px;border-radius:10px;background:var(--panel2);border:2px solid transparent;color:var(--text);cursor:pointer;}
 .swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
-.swatch-btn.locked{position:relative;opacity:.42;filter:grayscale(.7);cursor:not-allowed;}
+.swatch-btn.locked{position:relative;cursor:not-allowed;}
 .swatch-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:12px;}
+.swatch-btn.locked > :not(.lock-hint){opacity:.42;filter:grayscale(.7);}
 .pattern-name{font-size:10.5px;text-align:center;line-height:1.2;}
 .section-label{font-size:11.5px;color:var(--muted);font-weight:700;padding:9px 2px 2px;}
 .theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(var(--line-rgb),.4);flex-shrink:0;}
@@ -494,7 +496,7 @@ function recordGameResult(won){
   stats.games++;
   if(won) stats.wins++;
   saveStats(stats);
-  var result = checkUnlocks(stats, straightUnlocks);
+  var result = checkUnlocks(stats, loadUnlocksRaw() || straightUnlocks);
   straightUnlocks = result.updated;
   saveUnlocks(straightUnlocks);
   return result.newly;
@@ -507,6 +509,9 @@ function maybeRecordLocalGameResult(won){
   pendingUnlocks = recordGameResult(won);
 }
 
+// Invariant: must run before getClientId() writes straightClientId — otherwise every
+// brand-new visitor already has straightClientId set by the time isExistingPlayer() runs
+// and gets misclassified as an existing player (fully unlocked) instead of a new one.
 var straightUnlocks = initUnlocksIfNeeded();
 
 var backPresetIndex = 0;
@@ -2330,7 +2335,7 @@ function buildRulebookPanel(){
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
     "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 K로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 K를 가져올 수 있습니다.</li>"+
-    "<li><b>프리즘카드</b>: 색상 없이 숫자 7 고정인 특수 카드입니다. 손패의 아무 7로나 캡처할 수 있고, 점수덱에 있을 때는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다.</li>"+
+    "<li><b>프리즘카드</b>: 색상 없이 숫자 7 고정인 특수 카드로, 모든 색의 7로 취급됩니다. 바닥의 프리즘은 7 이상인 아무 색 카드로 가져올 수 있고, 손패의 프리즘으로는 7 이하인 아무 색 카드를 가져올 수 있습니다(바닥 A 제외). 점수덱에서는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
     "<li><b>손패 조커</b>: 캡처에는 쓸 수 없습니다. 대신 내 턴이 끝나기 전까지 언제든 점수덱에 내려놓을 수 있고(턴을 소모하지 않음), 내려놓은 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
@@ -2357,7 +2362,7 @@ var TUTORIAL_SLIDES = [
     title: "🎯 목표",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","같은 색 카드로 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다. 숫자는 A, 2~10, J, Q, K 순서입니다."));
+      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 A, 2~10, J, Q, K 순서이고, A는 10-J-Q-K-A처럼 맨 위에도 이어집니다."));
       var row = el("div","tutorial-card-row");
       [3,4,5,6,7].forEach(function(v){
         row.appendChild(cardEl({ id:"tut-goal-"+v, color:"PINK", value:v }, { cls:"tiny" }));
@@ -2370,7 +2375,7 @@ var TUTORIAL_SLIDES = [
     title: "🔄 턴마다 할 일",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","내 턴에는 둘 중 하나를 합니다.<br>① 손패 카드로 바닥 카드를 <b>가져오기(캡처)</b><br>② 가져올 카드가 없으면 중앙 덱에서 <b>2장 뽑기</b>"));
+      wrap.appendChild(el("p","tutorial-text","내 턴에는 둘 중 하나를 합니다.<br>① 손패 카드로 바닥 카드를 <b>가져오기(캡처)</b> — 가져온 카드는 내 점수덱으로 가고, 사용한 손패 카드는 그 자리 바닥에 남습니다.<br>② 가져올 카드가 없으면 중앙 덱에서 <b>2장 뽑기</b>"));
       return wrap;
     }
   },
@@ -2378,7 +2383,7 @@ var TUTORIAL_SLIDES = [
     title: "🎨 색상 + 숫자 매칭",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","손패 카드가 바닥 카드와 <b>같은 색이면서 숫자가 같거나 높으면</b> 가져올 수 있습니다.<br>숫자가 정확히 같으면 색이 달라도 가져올 수 있습니다."));
+      wrap.appendChild(el("p","tutorial-text","손패 카드가 바닥 카드와 <b>같은 색이면서 숫자가 같거나 높으면</b> 가져올 수 있습니다.<br>숫자가 정확히 같으면 색이 달라도 가져올 수 있습니다.<br>단, 바닥의 A는 A 또는 같은 색 K로만 가져올 수 있고, 손패의 A로는 같은 색 K도 가져올 수 있습니다."));
       var row = el("div","tutorial-card-row");
       row.appendChild(cardEl({ id:"tut-match-hand", color:"BLUE", value:9 }, { cls:"tiny" }));
       row.appendChild(el("span","tutorial-arrow","→"));
@@ -2391,7 +2396,7 @@ var TUTORIAL_SLIDES = [
     title: "🌈 프리즘카드",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","색이 없는 특수 카드로 숫자는 항상 7입니다.<br>손패의 아무 7로나 가져올 수 있고, 점수덱에서는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다."));
+      wrap.appendChild(el("p","tutorial-text","색이 없는 특수 카드로 숫자는 항상 7이며, 모든 색의 7로 취급됩니다.<br>바닥의 프리즘은 7 이상인 아무 색 카드로 가져올 수 있고, 손패의 프리즘으로는 7 이하인 아무 색 카드를 가져올 수 있습니다(바닥 A 제외).<br>점수덱에서는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다."));
       var row = el("div","tutorial-card-row");
       row.appendChild(cardEl({ id:"tut-prism", isPrism:true, value:7, color:null }, { cls:"tiny" }));
       wrap.appendChild(row);
@@ -2426,7 +2431,7 @@ var TUTORIAL_SLIDES = [
     title: "🏆 승리 조건",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","점수덱에 같은 색 5연속 숫자를 가장 먼저 완성하면 즉시 승리합니다.<br>아무도 완성하지 못한 채 중앙 덱이 모두 소진되면 무승부로 게임이 끝납니다."));
+      wrap.appendChild(el("p","tutorial-text","점수덱에 같은 색 5연속 숫자를 가장 먼저 완성하면 즉시 승리합니다.<br>중앙 덱이 다 떨어진 뒤 모두가 더 가져올 카드가 없어 연달아 패스하면 무승부로 끝납니다."));
       return wrap;
     }
   }
@@ -2438,6 +2443,7 @@ function openTutorialModal(){
   var backdrop = el("div","modal-backdrop");
   var box = el("div","modal-box tutorial-box");
   var closeX = el("button","icon-btn tutorial-close","✖");
+  closeX.title = "닫기";
   closeX.addEventListener("click", function(){ closeModal(); });
   var titleEl = el("h2","");
   var bodyHost = el("div","");
@@ -2623,6 +2629,7 @@ $("start-settings-btn").addEventListener("click", function(){
   openSettingsModal();
 });
 $("tutorial-btn").addEventListener("click", function(){
+  unlockAudio();
   sfxSelect();
   openTutorialModal();
 });
