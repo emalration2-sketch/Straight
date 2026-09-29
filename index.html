@@ -394,6 +394,93 @@ var CARD_BACK_PRESETS = [
   { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal" },
   { id:"ripple", name:"리플", cls:"pattern-ripple" }
 ];
+
+/* ---------------- progress / unlocks ---------------- */
+
+var UNLOCK_STARTER_AVATARS = ["허니뱅","고양이 예언자"];
+var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag"];
+
+var UNLOCK_MILESTONES = [
+  { winsRequired:1,  gamesRequired:3,   kind:"avatar",  id:"avatar:바코드 라이언", label:"바코드 라이언" },
+  { winsRequired:2,  gamesRequired:6,   kind:"avatar",  id:"avatar:메가블록",     label:"메가블록" },
+  { winsRequired:3,  gamesRequired:9,   kind:"pattern", id:"pattern:argyle",     label:"아가일" },
+  { winsRequired:5,  gamesRequired:15,  kind:"avatar",  id:"avatar:카이저 핑",    label:"카이저 핑" },
+  { winsRequired:8,  gamesRequired:24,  kind:"pattern", id:"pattern:diamond",    label:"다이아몬드" },
+  { winsRequired:12, gamesRequired:36,  kind:"avatar",  id:"avatar:매드독",      label:"매드독" },
+  { winsRequired:18, gamesRequired:54,  kind:"pattern", id:"pattern:honeycomb",  label:"허니콤" },
+  { winsRequired:25, gamesRequired:75,  kind:"avatar",  id:"avatar:크러셔 루",   label:"크러셔 루" },
+  { winsRequired:35, gamesRequired:105, kind:"pattern", id:"pattern:diagonal",   label:"다이애그널" },
+  { winsRequired:50, gamesRequired:150, kind:"avatar",  id:"avatar:스파크 렉스", label:"스파크 렉스" },
+  { winsRequired:65, gamesRequired:195, kind:"pattern", id:"pattern:ripple",     label:"리플" }
+];
+
+function loadStats(){
+  try{
+    var raw = localStorage.getItem("straightStats");
+    if(!raw) return { wins:0, games:0 };
+    var parsed = JSON.parse(raw);
+    return { wins:parsed.wins||0, games:parsed.games||0 };
+  }catch(e){ return { wins:0, games:0 }; }
+}
+function saveStats(stats){
+  try{ localStorage.setItem("straightStats", JSON.stringify(stats)); }catch(e){}
+}
+function loadUnlocksRaw(){
+  try{
+    var raw = localStorage.getItem("straightUnlocks");
+    return raw===null ? null : JSON.parse(raw);
+  }catch(e){ return null; }
+}
+function saveUnlocks(list){
+  try{ localStorage.setItem("straightUnlocks", JSON.stringify(list)); }catch(e){}
+}
+function isExistingPlayer(){
+  try{
+    var keys = ["straightClientId","straightNickname","straightCardTheme","straightArtPreset","straightAiDifficulty"];
+    for(var i=0;i<keys.length;i++){ if(localStorage.getItem(keys[i])!==null) return true; }
+    return false;
+  }catch(e){ return false; }
+}
+function initUnlocksIfNeeded(){
+  var existing = loadUnlocksRaw();
+  if(existing!==null) return existing;
+  var initial = isExistingPlayer() ? UNLOCK_MILESTONES.map(function(m){ return m.id; }) : [];
+  saveUnlocks(initial);
+  return initial;
+}
+function isAvatarUnlocked(name, unlocks){
+  if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
+  return unlocks.indexOf("avatar:"+name)!==-1;
+}
+function isPatternUnlocked(id, unlocks){
+  if(UNLOCK_STARTER_PATTERNS.indexOf(id)!==-1) return true;
+  return unlocks.indexOf("pattern:"+id)!==-1;
+}
+function checkUnlocks(stats, unlocks){
+  var updated = unlocks.slice();
+  var newly = [];
+  UNLOCK_MILESTONES.forEach(function(m){
+    if(updated.indexOf(m.id)!==-1) return;
+    if(stats.wins>=m.winsRequired || stats.games>=m.gamesRequired){
+      updated.push(m.id);
+      newly.push(m);
+    }
+  });
+  return { updated:updated, newly:newly };
+}
+function recordGameResult(won){
+  var stats = loadStats();
+  stats.games++;
+  if(won) stats.wins++;
+  saveStats(stats);
+  var result = checkUnlocks(stats, straightUnlocks);
+  straightUnlocks = result.updated;
+  saveUnlocks(straightUnlocks);
+  return result.newly;
+}
+
+var straightUnlocks = initUnlocksIfNeeded();
+
 var backPresetIndex = 0;
 try{
   var savedBack = localStorage.getItem("straightArtPreset");
