@@ -722,6 +722,41 @@ var BORDER_PRESETS = [
   { id:"heart", name:"하트", cls:"border-heart" }
 ];
 
+function getActiveTitle(){
+  try{ return localStorage.getItem("straightActiveTitle"); }catch(e){ return null; }
+}
+function setActiveTitle(id){
+  try{ localStorage.setItem("straightActiveTitle", id||""); }catch(e){}
+}
+function getActiveBorder(){
+  try{ return localStorage.getItem("straightActiveBorder"); }catch(e){ return null; }
+}
+function setActiveBorder(id){
+  try{ localStorage.setItem("straightActiveBorder", id||""); }catch(e){}
+}
+function activeTitleLabel(){
+  var id = getActiveTitle();
+  if(!id) return null;
+  if(!isTitleUnlocked(id, straightUnlocks)) return null;
+  for(var i=0;i<TITLE_PRESETS.length;i++){ if(TITLE_PRESETS[i].id===id) return TITLE_PRESETS[i].name; }
+  return null;
+}
+function activeBorderCls(){
+  var id = getActiveBorder();
+  if(!id) return null;
+  if(!isBorderUnlocked(id, straightUnlocks)) return null;
+  for(var i=0;i<BORDER_PRESETS.length;i++){ if(BORDER_PRESETS[i].id===id) return BORDER_PRESETS[i].cls; }
+  return null;
+}
+function nameWithTitle(name){
+  var t = activeTitleLabel();
+  return t ? (name+" 〈"+t+"〉") : name;
+}
+function avatarWithBorderHTML(avatarInner){
+  var cls = activeBorderCls();
+  return cls ? ("<span class=\"border-ring "+cls+"\">"+avatarInner+"</span>") : avatarInner;
+}
+
 function findMilestoneByLabel(kind, label){
   for(var i=0;i<UNLOCK_MILESTONES.length;i++){
     var m = UNLOCK_MILESTONES[i];
@@ -1350,7 +1385,7 @@ var avatarGrid = $("avatar-grid");
 CHARACTERS.forEach(function(ch){
   var unlocked = isAvatarUnlocked(ch.name, straightUnlocks);
   var b = el("button","avatar-btn"+(unlocked?"":" locked"));
-  b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+"</span>";
+  b.innerHTML = avatarWithBorderHTML("<span>"+avatarIconHTML(ch)+"</span>")+"<span class=\"nm\">"+nameWithTitle(ch.name)+"</span>";
   if(!unlocked){
     b.title = unlockHintTextFor("avatar", ch.name);
     b.appendChild(el("span","lock-hint", unlockHintShortFor("avatar", ch.name)));
@@ -1608,7 +1643,9 @@ function runOrderCutscene(){
   players.forEach(function(p, i){
     setTimeout(function(){
       var row = el("div","order-row");
-      row.innerHTML = "<span>"+p.avatar+" "+p.name+"</span><span>🎲 "+draws[i]+"</span>";
+      var pAvatar = p.isAI ? p.avatar : avatarWithBorderHTML(p.avatar);
+      var pName = p.isAI ? p.name : nameWithTitle(p.name);
+      row.innerHTML = "<span>"+pAvatar+" "+pName+"</span><span>🎲 "+draws[i]+"</span>";
       orderList.appendChild(row);
       if(i===players.length-1){
         setTimeout(function(){ finalizeOrder(players, draws); }, 500);
@@ -1624,7 +1661,10 @@ function finalizeOrder(players, draws){
 
   var summary = el("div","order-row");
   summary.style.background = "rgba(236,73,153,.18)";
-  summary.innerHTML = "<b>선공: "+players[order[0]].avatar+" "+players[order[0]].name+"</b>";
+  var firstPlayer = players[order[0]];
+  var firstAvatar = firstPlayer.isAI ? firstPlayer.avatar : avatarWithBorderHTML(firstPlayer.avatar);
+  var firstName = firstPlayer.isAI ? firstPlayer.name : nameWithTitle(firstPlayer.name);
+  summary.innerHTML = "<b>선공: "+firstAvatar+" "+firstName+"</b>";
   $("order-list").appendChild(summary);
 
   $("order-start-btn").classList.remove("hidden");
@@ -1893,7 +1933,7 @@ function spawnConfetti(){
 
 function showWinScreen(player, straight){
   var reason = COLOR_NAMES[straight.color]+" 스트레이트 ("+straightRangeLabel(straight)+") 완성!";
-  $("win-title").innerHTML = player.avatar+" "+player.name+" 승리!";
+  $("win-title").innerHTML = avatarWithBorderHTML(player.avatar)+" "+nameWithTitle(player.name)+" 승리!";
   $("win-reason").textContent = "🎉 스트레이트! · "+reason;
   switchScreen("win");
   var emojiEl = document.querySelector(".win-emoji");
