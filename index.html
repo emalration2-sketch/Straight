@@ -239,6 +239,15 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .win-emoji.bounce-in{animation:trophyBounce .7s cubic-bezier(.34,1.56,.64,1);}
 .unlock-toast{margin-top:10px;padding:8px 14px;border-radius:10px;background:rgba(255,215,107,.15);border:1px solid var(--accent);color:var(--accent);font-size:12.5px;font-weight:700;line-height:1.5;}
 .unlock-toast.hidden{display:none;}
+.achv-list{width:100%;max-width:420px;max-height:60vh;overflow-y:auto;display:flex;flex-direction:column;gap:6px;padding:4px;}
+.achv-group-title{font-size:12px;font-weight:700;color:var(--muted);margin:10px 0 2px;}
+.achv-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;background:var(--panel2);}
+.achv-row.locked{opacity:.55;}
+.achv-preview{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:18px;border-radius:50%;}
+.achv-title-chip{font-size:10px;background:rgba(255,215,107,.18);color:var(--accent);width:auto;padding:0 6px;border-radius:8px;}
+.achv-info{flex:1;min-width:0;}
+.achv-label{font-size:13px;font-weight:700;margin:0;}
+.achv-cond{font-size:11px;color:var(--muted);margin:1px 0 0;}
 @keyframes trophyBounce{0%{transform:scale(0) rotate(-20deg);opacity:0;}60%{transform:scale(1.15) rotate(8deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
 .confetti-piece{position:fixed;top:-20px;opacity:.95;pointer-events:none;z-index:99997;animation:confettiFall linear forwards;}
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(112vh) rotate(720deg);opacity:.25;}}
@@ -253,9 +262,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
       <div class="title-sub">(STRAIGHT!)</div>
       <div class="title-by">by. PixelRooM</div>
     </div>
-    <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
+    <div style="display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;">
       <button class="btn primary big" id="start-btn">게임 시작</button>
       <button class="icon-btn" id="tutorial-btn" title="튜토리얼">📖</button>
+      <button class="icon-btn" id="achievements-btn" title="업적">🏆</button>
+      <button class="icon-btn" id="collection-btn" title="수집품">🎒</button>
       <button class="icon-btn" id="start-settings-btn" title="설정">⚙️</button>
     </div>
   </div>
@@ -380,6 +391,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <p class="sub" id="win-reason"></p>
     <div class="unlock-toast hidden" id="unlock-toast"></div>
     <button class="btn primary big" id="restart-btn">다시하기</button>
+  </div>
+
+  <div class="screen hidden" id="screen-achievements">
+    <h1 style="font-size:20px;">🏆 업적</h1>
+    <div class="achv-list" id="achv-list"></div>
+    <button class="btn" id="achv-back-btn">← 뒤로</button>
   </div>
 
 </div>
@@ -808,7 +825,7 @@ function $(id){ return document.getElementById(id); }
 function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 function switchScreen(name){
-  ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win"].forEach(function(s){
+  ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win","achievements"].forEach(function(s){
     $("screen-"+s).classList.toggle("hidden", s!==name);
   });
 }
@@ -2555,6 +2572,56 @@ document.addEventListener("click", function(e){
   }
 });
 
+function milestonePreviewHTML(m){
+  if(m.kind==="avatar"){
+    var ch = null;
+    for(var i=0;i<CHARACTERS.length;i++){ if(CHARACTERS[i].name===m.label){ ch=CHARACTERS[i]; break; } }
+    return "<span class=\"achv-preview\">"+(ch?avatarIconHTML(ch):"❓")+"</span>";
+  }
+  if(m.kind==="pattern"){
+    var preset = null;
+    for(var j=0;j<CARD_BACK_PRESETS.length;j++){ if(CARD_BACK_PRESETS[j].name===m.label){ preset=CARD_BACK_PRESETS[j]; break; } }
+    return "<span class=\"achv-preview pattern-preview "+(preset?preset.cls:"")+"\"></span>";
+  }
+  if(m.kind==="border"){
+    var b = null;
+    for(var k=0;k<BORDER_PRESETS.length;k++){ if(BORDER_PRESETS[k].name===m.label){ b=BORDER_PRESETS[k]; break; } }
+    return "<span class=\"achv-preview border-ring "+(b?b.cls:"")+"\"></span>";
+  }
+  return "<span class=\"achv-preview achv-title-chip\">"+m.label+"</span>";
+}
+function achievementGroupLabel(id){
+  if(id.indexOf("win:")===0) return "🏆 승리 트랙";
+  if(id.indexOf("games:")===0) return "🎮 판 수 트랙";
+  if(id.indexOf("misc:")===0) return "✨ 기타 미션";
+  return "📖 튜토리얼";
+}
+function renderAchievementsScreen(){
+  var host = $("achv-list");
+  host.innerHTML = "";
+  var stats = loadStats();
+  var groups = {};
+  var order = [];
+  UNLOCK_MILESTONES.forEach(function(m){
+    var g = achievementGroupLabel(m.id);
+    if(!groups[g]){ groups[g]=[]; order.push(g); }
+    groups[g].push(m);
+  });
+  order.forEach(function(g){
+    host.appendChild(el("div","achv-group-title", g));
+    groups[g].forEach(function(m){
+      var unlocked = straightUnlocks.indexOf(m.id)!==-1;
+      var row = el("div","achv-row"+(unlocked?"":" locked"));
+      row.appendChild(el("div","", milestonePreviewHTML(m)));
+      var info = el("div","achv-info");
+      info.appendChild(el("p","achv-label", m.label));
+      info.appendChild(el("p","achv-cond", unlocked ? "달성" : m.hint(stats)+" 남음"));
+      row.appendChild(info);
+      host.appendChild(row);
+    });
+  });
+}
+
 var TUTORIAL_SLIDES = [
   {
     title: "🎯 목표",
@@ -2831,6 +2898,15 @@ $("tutorial-btn").addEventListener("click", function(){
   unlockAudio();
   sfxSelect();
   openTutorialModal();
+});
+$("achievements-btn").addEventListener("click", function(){
+  sfxSelect();
+  renderAchievementsScreen();
+  switchScreen("achievements");
+});
+$("achv-back-btn").addEventListener("click", function(){
+  sfxSelect();
+  switchScreen("start");
 });
 
 $("sync-btn").addEventListener("click", function(){
