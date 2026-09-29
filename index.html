@@ -62,6 +62,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .avatar-btn{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:28px;background:var(--panel);border-radius:14px;padding:10px 6px;border:2px solid transparent;cursor:pointer;}
 .avatar-btn .nm{font-size:10.5px;color:var(--muted);white-space:nowrap;}
 .avatar-btn.selected{border-color:gold;box-shadow:0 0 12px 2px rgba(255,215,0,.6);}
+.avatar-btn.locked{position:relative;cursor:not-allowed;}
+.avatar-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:13px;}
+.avatar-btn.locked > :not(.lock-hint){opacity:.42;filter:grayscale(.7);}
+.lock-hint{font-size:9px;line-height:1.2;color:var(--text);font-weight:700;white-space:nowrap;}
 
 /* count select */
 .count-row{display:flex;gap:10px;}
@@ -185,16 +189,29 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.68);display:flex;align-items:center;justify-content:center;pointer-events:auto;padding:20px;}
 .modal-box{background:var(--panel);border-radius:16px;padding:18px;max-width:92vw;max-height:85vh;overflow-y:auto;box-shadow:0 10px 40px rgba(0,0,0,.6);}
 .modal-box h2{margin:0 0 8px;font-size:17px;color:var(--pink);}
+.tutorial-box{max-width:340px;text-align:center;position:relative;}
+.tutorial-close{position:absolute;top:8px;right:8px;width:28px;height:28px;font-size:14px;}
+.tutorial-slide-body{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
+.tutorial-text{font-size:13px;line-height:1.55;color:var(--text);text-align:left;}
+.tutorial-card-row{display:flex;align-items:center;gap:6px;justify-content:center;flex-wrap:wrap;}
+.tutorial-arrow{font-size:18px;color:var(--muted);}
+.tutorial-dots{display:flex;gap:6px;justify-content:center;margin:10px 0;}
+.tutorial-dot{width:7px;height:7px;border-radius:50%;background:rgba(var(--line-rgb),.3);}
+.tutorial-dot.active{background:var(--accent);}
+.tutorial-nav{display:flex;gap:8px;justify-content:center;}
 .modal-actions{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap;}
 .settings-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px;border-bottom:1px solid rgba(var(--line-rgb),.15);font-size:13px;min-width:220px;}
 .settings-track-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:5px 0 2px;}
 .swatch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:5px 0 2px;}
 .swatch-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 4px;border-radius:10px;background:var(--panel2);border:2px solid transparent;color:var(--text);cursor:pointer;}
 .swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
+.swatch-btn.locked{position:relative;cursor:not-allowed;}
+.swatch-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:12px;}
+.swatch-btn.locked > :not(.lock-hint){opacity:.42;filter:grayscale(.7);}
 .pattern-name{font-size:10.5px;text-align:center;line-height:1.2;}
 .section-label{font-size:11.5px;color:var(--muted);font-weight:700;padding:9px 2px 2px;}
-.theme-dots{display:flex;gap:3px;flex-shrink:0;}
 .theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(var(--line-rgb),.4);flex-shrink:0;}
+.theme-dot-single{width:20px;height:20px;}
 .theme-name{flex:1;text-align:left;}
 .nickname-input{background:var(--panel2);border:1px solid rgba(var(--line-rgb),.2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;width:120px;text-align:right;}
 
@@ -204,6 +221,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
 .win-emoji{font-size:60px;}
 .win-emoji.bounce-in{animation:trophyBounce .7s cubic-bezier(.34,1.56,.64,1);}
+.unlock-toast{margin-top:10px;padding:8px 14px;border-radius:10px;background:rgba(255,215,107,.15);border:1px solid var(--accent);color:var(--accent);font-size:12.5px;font-weight:700;line-height:1.5;}
+.unlock-toast.hidden{display:none;}
 @keyframes trophyBounce{0%{transform:scale(0) rotate(-20deg);opacity:0;}60%{transform:scale(1.15) rotate(8deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
 .confetti-piece{position:fixed;top:-20px;opacity:.95;pointer-events:none;z-index:99997;animation:confettiFall linear forwards;}
 @keyframes confettiFall{0%{transform:translateY(0) rotate(0deg);opacity:1;}100%{transform:translateY(112vh) rotate(720deg);opacity:.25;}}
@@ -220,6 +239,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     </div>
     <div style="display:flex;gap:10px;align-items:center;justify-content:center;">
       <button class="btn primary big" id="start-btn">게임 시작</button>
+      <button class="icon-btn" id="tutorial-btn" title="튜토리얼">📖</button>
       <button class="icon-btn" id="start-settings-btn" title="설정">⚙️</button>
     </div>
   </div>
@@ -276,7 +296,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <h1 style="font-size:20px;">플레이 인원 선택</h1>
     <p class="sub">부족한 인원은 AI가 대신 플레이합니다 · 인원수만큼 색상이 사용됩니다</p>
     <div class="count-row" id="count-row"></div>
-    <p class="sub" style="margin-top:14px;font-size:11px;">AI 난이도</p>
+    <p class="sub" style="margin-top:14px;">AI 난이도</p>
     <div class="count-row" id="difficulty-row"></div>
     <button class="btn primary big" id="count-next-btn" disabled>다음</button>
     <button class="btn" id="count-back-btn">← 뒤로</button>
@@ -342,6 +362,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div class="win-emoji">🏆</div>
     <h1 id="win-title" style="font-size:24px;"></h1>
     <p class="sub" id="win-reason"></p>
+    <div class="unlock-toast hidden" id="unlock-toast"></div>
     <button class="btn primary big" id="restart-btn">다시하기</button>
   </div>
 
@@ -394,6 +415,105 @@ var CARD_BACK_PRESETS = [
   { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal" },
   { id:"ripple", name:"리플", cls:"pattern-ripple" }
 ];
+
+/* ---------------- progress / unlocks ---------------- */
+
+var UNLOCK_STARTER_AVATARS = ["허니뱅","고양이 예언자"];
+var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag"];
+
+var UNLOCK_MILESTONES = [
+  { winsRequired:1,  gamesRequired:3,   kind:"avatar",  id:"avatar:바코드 라이언", label:"바코드 라이언" },
+  { winsRequired:2,  gamesRequired:6,   kind:"avatar",  id:"avatar:메가블록",     label:"메가블록" },
+  { winsRequired:3,  gamesRequired:9,   kind:"pattern", id:"pattern:argyle",     label:"아가일" },
+  { winsRequired:5,  gamesRequired:15,  kind:"avatar",  id:"avatar:카이저 핑",    label:"카이저 핑" },
+  { winsRequired:8,  gamesRequired:24,  kind:"pattern", id:"pattern:diamond",    label:"다이아몬드" },
+  { winsRequired:12, gamesRequired:36,  kind:"avatar",  id:"avatar:매드독",      label:"매드독" },
+  { winsRequired:18, gamesRequired:54,  kind:"pattern", id:"pattern:honeycomb",  label:"허니콤" },
+  { winsRequired:25, gamesRequired:75,  kind:"avatar",  id:"avatar:크러셔 루",   label:"크러셔 루" },
+  { winsRequired:35, gamesRequired:105, kind:"pattern", id:"pattern:diagonal",   label:"다이애그널" },
+  { winsRequired:50, gamesRequired:150, kind:"avatar",  id:"avatar:스파크 렉스", label:"스파크 렉스" },
+  { winsRequired:65, gamesRequired:195, kind:"pattern", id:"pattern:ripple",     label:"리플" }
+];
+
+function loadStats(){
+  try{
+    var raw = localStorage.getItem("straightStats");
+    if(!raw) return { wins:0, games:0 };
+    var parsed = JSON.parse(raw);
+    return { wins:parsed.wins||0, games:parsed.games||0 };
+  }catch(e){ return { wins:0, games:0 }; }
+}
+function saveStats(stats){
+  try{ localStorage.setItem("straightStats", JSON.stringify(stats)); }catch(e){}
+}
+function loadUnlocksRaw(){
+  try{
+    var raw = localStorage.getItem("straightUnlocks");
+    if(raw===null) return null;
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  }catch(e){ return null; }
+}
+function saveUnlocks(list){
+  try{ localStorage.setItem("straightUnlocks", JSON.stringify(list)); }catch(e){}
+}
+function isExistingPlayer(){
+  try{
+    var keys = ["straightClientId","straightNickname","straightCardTheme","straightArtPreset","straightAiDifficulty"];
+    for(var i=0;i<keys.length;i++){ if(localStorage.getItem(keys[i])!==null) return true; }
+    return false;
+  }catch(e){ return false; }
+}
+function initUnlocksIfNeeded(){
+  var existing = loadUnlocksRaw();
+  if(existing!==null) return existing;
+  var initial = isExistingPlayer() ? UNLOCK_MILESTONES.map(function(m){ return m.id; }) : [];
+  saveUnlocks(initial);
+  return initial;
+}
+function isAvatarUnlocked(name, unlocks){
+  if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
+  return unlocks.indexOf("avatar:"+name)!==-1;
+}
+function isPatternUnlocked(id, unlocks){
+  if(UNLOCK_STARTER_PATTERNS.indexOf(id)!==-1) return true;
+  return unlocks.indexOf("pattern:"+id)!==-1;
+}
+function checkUnlocks(stats, unlocks){
+  var updated = unlocks.slice();
+  var newly = [];
+  UNLOCK_MILESTONES.forEach(function(m){
+    if(updated.indexOf(m.id)!==-1) return;
+    if(stats.wins>=m.winsRequired || stats.games>=m.gamesRequired){
+      updated.push(m.id);
+      newly.push(m);
+    }
+  });
+  return { updated:updated, newly:newly };
+}
+function recordGameResult(won){
+  var stats = loadStats();
+  stats.games++;
+  if(won) stats.wins++;
+  saveStats(stats);
+  var result = checkUnlocks(stats, loadUnlocksRaw() || straightUnlocks);
+  straightUnlocks = result.updated;
+  saveUnlocks(straightUnlocks);
+  return result.newly;
+}
+
+var pendingUnlocks = [];
+function maybeRecordLocalGameResult(won){
+  if(state.statsRecorded) return;
+  state.statsRecorded = true;
+  pendingUnlocks = recordGameResult(won);
+}
+
+// Invariant: must run before getClientId() writes straightClientId — otherwise every
+// brand-new visitor already has straightClientId set by the time isExistingPlayer() runs
+// and gets misclassified as an existing player (fully unlocked) instead of a new one.
+var straightUnlocks = initUnlocksIfNeeded();
+
 var backPresetIndex = 0;
 try{
   var savedBack = localStorage.getItem("straightArtPreset");
@@ -729,7 +849,6 @@ var state = {
   colors: [],
   turnOrder: [],
   currentTurnPos: 0,
-  bonusCaptureFor: null,
   gameOver: false,
   animating: false,
   selectedHandIdx: null,
@@ -739,6 +858,7 @@ var state = {
   mpRoomCode: null,
   mpMaxPlayers: 4,
   winnerIndex: null,
+  statsRecorded: false,
   winnerStraight: null,
   ceremonyShown: false,
   ceremonyPlaying: false,
@@ -861,10 +981,12 @@ function applyRemoteRoomState(data){
   if(state.gameOver && !wasOver && !state.ceremonyShown){
     state.ceremonyShown = true;
     if(state.isDraw){
+      maybeRecordLocalGameResult(false);
       setTimeout(showDrawScreen, 800);
     } else {
       var winner = state.players[state.winnerIndex];
       if(winner && state.winnerStraight){
+        maybeRecordLocalGameResult(state.winnerIndex===state.myIndex);
         playWinCeremony(state.winnerIndex, state.winnerStraight, function(){
           showWinScreen(winner, state.winnerStraight);
         });
@@ -894,7 +1016,7 @@ function maybeDriveAi(idx, delay){
 function createRoom(maxPlayers, cb){
   ensureFirebase().then(function(){
     var code = genRoomCode();
-    var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[], captureStreak:0 };
+    var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
     var roomData = {
       code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
@@ -927,7 +1049,7 @@ function joinRoom(code, cb){
         return;
       }
       if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
-      var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[], captureStreak:0 };
+      var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
       var newPlayers = data.players.concat([me]);
       fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
         state.mpRoomCode = code;
@@ -1017,7 +1139,7 @@ function startOnlineGame(){
     var ch;
     do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(usedNames[ch.name]);
     usedNames[ch.name]=true;
-    lobbyPlayers.push({ clientId:null, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[], captureStreak:0 });
+    lobbyPlayers.push({ clientId:null, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
   }
 
   var colors = colorsForCount(lobbyPlayers.length);
@@ -1042,7 +1164,7 @@ function startOnlineGame(){
   state.isDraw = false;
   state.turnSeq = 0;
   state.noProgressStreak = 0;
-  state.bonusCaptureFor = null;
+  state.statsRecorded = false;
   state.aiDifficulty = chosenAiDifficulty;
   aiDriveGuard = {};
   state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
@@ -1060,17 +1182,43 @@ function leaveRoom(){
 
 /* ---------------- avatar / count / start flow ---------------- */
 
+function findMilestone(id){
+  for(var i=0;i<UNLOCK_MILESTONES.length;i++){ if(UNLOCK_MILESTONES[i].id===id) return UNLOCK_MILESTONES[i]; }
+  return null;
+}
+function unlockHintText(id){
+  var m = findMilestone(id);
+  if(!m) return "";
+  var stats = loadStats();
+  var remainWins = Math.max(0, m.winsRequired - stats.wins);
+  var remainGames = Math.max(0, m.gamesRequired - stats.games);
+  return "🔒 승리 "+remainWins+"회 또는 플레이 "+remainGames+"판 후 해금";
+}
+function unlockHintShort(id){
+  var m = findMilestone(id);
+  if(!m) return "";
+  var stats = loadStats();
+  return Math.max(0, m.winsRequired - stats.wins)+"승 또는 "+Math.max(0, m.gamesRequired - stats.games)+"판";
+}
+
 var avatarGrid = $("avatar-grid");
 CHARACTERS.forEach(function(ch){
-  var b = el("button","avatar-btn");
+  var unlocked = isAvatarUnlocked(ch.name, straightUnlocks);
+  var b = el("button","avatar-btn"+(unlocked?"":" locked"));
   b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+"</span>";
-  b.addEventListener("click", function(){
-    sfxSelect();
-    Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
-    b.classList.add("selected");
-    chosenCharacter = ch;
-    $("avatar-next-btn").disabled = false;
-  });
+  if(!unlocked){
+    b.title = unlockHintText("avatar:"+ch.name);
+    b.appendChild(el("span","lock-hint", unlockHintShort("avatar:"+ch.name)));
+    b.disabled = true;
+  } else {
+    b.addEventListener("click", function(){
+      sfxSelect();
+      Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
+      b.classList.add("selected");
+      chosenCharacter = ch;
+      $("avatar-next-btn").disabled = false;
+    });
+  }
   avatarGrid.appendChild(b);
 });
 
@@ -1301,13 +1449,13 @@ function runOrderCutscene(){
   $("order-start-btn").classList.add("hidden");
 
   var players = [];
-  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[], captureStreak:0 });
+  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] });
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
     do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(used[ch.name]);
     used[ch.name]=true;
-    players.push({ idx:i, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[], captureStreak:0 });
+    players.push({ idx:i, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
   }
 
   var draws = players.map(function(){ return 1+Math.floor(Math.random()*10); });
@@ -1361,7 +1509,7 @@ function startGame(players, order){
   state.isDraw = false;
   state.turnSeq = 0;
   state.noProgressStreak = 0;
-  state.bonusCaptureFor = null;
+  state.statsRecorded = false;
   aiDriveGuard = {};
   clearSelectionState();
 
@@ -1399,7 +1547,6 @@ function currentPlayerIdx(){ return state.turnOrder[state.currentTurnPos]; }
 function clearSelectionState(){
   state.selectedHandIdx = null;
   state.mode = "idle";
-  closeModal();
 }
 
 function endTurn(){
@@ -1470,12 +1617,12 @@ function declareDraw(){
   pushLog("🤝 중앙 덱이 모두 소진되어 무승부로 게임이 종료되었습니다.");
   render();
   pushRoomState();
+  maybeRecordLocalGameResult(false);
   setTimeout(showDrawScreen, 1000);
 }
 
 function passWithEmptyDeck(player){
   pushLog(player.name+"가 뽑을 카드가 없어 턴을 넘겼습니다.");
-  player.captureStreak = 0;
   state.noProgressStreak++;
   if(state.noProgressStreak >= state.turnOrder.length){
     declareDraw();
@@ -1485,12 +1632,29 @@ function passWithEmptyDeck(player){
   endTurn();
 }
 
+function renderUnlockToast(){
+  var toast = $("unlock-toast");
+  if(pendingUnlocks.length===0){
+    toast.classList.add("hidden");
+    toast.innerHTML = "";
+    return;
+  }
+  var lines = pendingUnlocks.map(function(m){
+    var kindLabel = m.kind==="avatar" ? "새 아바타" : "새 카드 뒷면";
+    return "🎉 "+kindLabel+" 해금: "+m.label;
+  });
+  toast.innerHTML = lines.join("<br>");
+  toast.classList.remove("hidden");
+  pendingUnlocks = [];
+}
+
 function showDrawScreen(){
   var emojiEl = document.querySelector(".win-emoji");
   if(emojiEl) emojiEl.textContent = "🤝";
   $("win-title").innerHTML = "무승부";
   $("win-reason").textContent = "중앙 덱이 모두 소진되어 승부를 가리지 못했습니다.";
   switchScreen("win");
+  renderUnlockToast();
 }
 
 function checkWin(playerIdx){
@@ -1504,6 +1668,7 @@ function checkWin(playerIdx){
     clearTurnTimer();
     render();
     pushRoomState();
+    maybeRecordLocalGameResult(playerIdx===state.myIndex);
     playWinCeremony(playerIdx, straight, function(){
       showWinScreen(player, straight);
     });
@@ -1584,6 +1749,7 @@ function showWinScreen(player, straight){
     emojiEl.classList.add("bounce-in");
   }
   spawnConfetti();
+  renderUnlockToast();
 }
 
 $("restart-btn").addEventListener("click", function(){ location.reload(); });
@@ -1696,12 +1862,12 @@ function playCaptureAnimation(opts, onComplete){
 
 /* ---------------- eat / exchange execution ---------------- */
 
-function doEat(playerIdx, handIdx, floorIdx, isBonusCapture){
+function doEat(playerIdx, handIdx, floorIdx){
   var floorCoin = state.floor[floorIdx];
-  finishEat(playerIdx, handIdx, floorIdx, floorCoin, isBonusCapture);
+  finishEat(playerIdx, handIdx, floorIdx, floorCoin);
 }
 
-function finishEat(playerIdx, handIdx, floorIdx, capturedCoin, isBonusCapture){
+function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
   var player = state.players[playerIdx];
   var handCoin = player.hand[handIdx];
   state.animating = true;
@@ -1721,51 +1887,16 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin, isBonusCapture){
     state.noProgressStreak = 0;
     state.animating = false;
     clearSelectionState();
-    if(!isBonusCapture){
-      player.captureStreak = (player.captureStreak||0) + 1;
-    }
     render();
     if(checkWin(playerIdx)) return;
-
-    if(!isBonusCapture && player.captureStreak===2 && findValidCaptures(player.hand, state.floor).length>0){
-      state.bonusCaptureFor = playerIdx;
-      pushLog("🔥 "+player.name+" 콤보! 보너스 캡처 기회를 얻었습니다.");
-      sfxJoker();
-      render();
-      pushRoomState();
-      if(player.isAI){
-        setTimeout(function(){ aiBonusCapture(playerIdx); }, 700);
-      }
-      return;
-    }
     endTurn();
   });
 }
 
-function aiBonusCapture(playerIdx){
-  state.bonusCaptureFor = null;
-  var player = state.players[playerIdx];
-  var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
-  var options = findValidCaptures(player.hand, state.floor);
-  var pick = chooseAiCapture(options, state.aiDifficulty || "normal", player, opponents);
-  if(pick){
-    doEat(playerIdx, pick.hi, pick.fi, true);
-  } else {
-    endTurn();
-  }
-}
-
 function drawTwoAndEndTurn(){
   if(state.animating || !isHumanTurn()) return;
-  var wasBonus = state.bonusCaptureFor===state.myIndex;
-  state.bonusCaptureFor = null;
   var player = state.players[state.myIndex];
   clearSelectionState();
-  if(wasBonus){
-    pushLog(player.name+"가 보너스 캡처를 포기하고 턴을 마쳤습니다.");
-    endTurn();
-    return;
-  }
   var n = Math.min(2, state.centerDeck.length);
   if(n<=0){
     passWithEmptyDeck(player);
@@ -1779,7 +1910,6 @@ function drawTwoAndEndTurn(){
     pushLog(player.name+"가 중앙 덱에서 "+n+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
     render();
-    player.captureStreak = 0;
     endTurn();
   });
 }
@@ -1888,7 +2018,6 @@ function aiTakeTurn(playerIdx){
     pushLog(player.name+"가 중앙 덱에서 "+n2+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
     render();
-    player.captureStreak = 0;
     endTurn();
   });
 }
@@ -1942,10 +2071,6 @@ function renderInstruction(){
     if(state.animating){ bar.textContent = "카드가 이동 중입니다..."; return; }
     var cur = state.players[currentPlayerIdx()];
     bar.innerHTML = (cur ? cur.avatar+" "+cur.name : "상대") + "의 턴입니다...";
-    return;
-  }
-  if(state.bonusCaptureFor === state.myIndex && state.mode==="idle"){
-    bar.innerHTML = "🔥 콤보! 보너스 캡처 기회입니다. 손패를 클릭하거나 [2장 뽑고 턴 종료]로 넘어가세요.";
     return;
   }
   switch(state.mode){
@@ -2032,7 +2157,7 @@ function renderHand(){
     wrap.appendChild(d);
   });
 
-  $("exchange-btn").innerHTML = (state.bonusCaptureFor===state.myIndex) ? "🏳️ 보너스 포기" : "🃏 2장 뽑고<br>턴 종료";
+  $("exchange-btn").innerHTML = "🃏 2장 뽑고<br>턴 종료";
   $("exchange-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("sort-hand-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("cancel-action-btn").classList.toggle("hidden", state.mode==="idle" || state.animating);
@@ -2119,12 +2244,10 @@ function onFloorTargetClick(fi){
   var player = state.players[state.myIndex];
   var handCoin = player.hand[handIdx];
   var floorCoin = state.floor[fi];
-  var isBonus = state.bonusCaptureFor===state.myIndex;
 
   if(state.mode==="eat-target"){
     if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
-    state.bonusCaptureFor = null;
-    doEat(state.myIndex, handIdx, fi, isBonus);
+    doEat(state.myIndex, handIdx, fi);
   }
 }
 
@@ -2212,10 +2335,9 @@ function buildRulebookPanel(){
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
     "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 K로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 K를 가져올 수 있습니다.</li>"+
-    "<li><b>프리즘카드</b>: 색상 없이 숫자 7 고정인 특수 카드입니다. 손패의 아무 7로나 캡처할 수 있고, 점수덱에 있을 때는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다.</li>"+
+    "<li><b>프리즘카드</b>: 색상 없이 숫자 7 고정인 특수 카드로, 모든 색의 7로 취급됩니다. 바닥의 프리즘은 7 이상인 아무 색 카드로 가져올 수 있고, 손패의 프리즘으로는 7 이하인 아무 색 카드를 가져올 수 있습니다(바닥 A 제외). 점수덱에서는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
     "<li><b>손패 조커</b>: 캡처에는 쓸 수 없습니다. 대신 내 턴이 끝나기 전까지 언제든 점수덱에 내려놓을 수 있고(턴을 소모하지 않음), 내려놓은 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
-    "<li><b>콤보 보너스</b>: 드로우 없이 캡처를 2턴 연속 성공하면 그 턴에 한해 보너스 캡처 기회를 한 번 더 얻습니다 (턴당 최대 1회, 무한 연쇄 아님).</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
     "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
@@ -2234,6 +2356,144 @@ document.addEventListener("click", function(e){
     rulebookPanel.classList.remove("force-open");
   }
 });
+
+var TUTORIAL_SLIDES = [
+  {
+    title: "🎯 목표",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 A, 2~10, J, Q, K 순서이고, A는 10-J-Q-K-A처럼 맨 위에도 이어집니다."));
+      var row = el("div","tutorial-card-row");
+      [3,4,5,6,7].forEach(function(v){
+        row.appendChild(cardEl({ id:"tut-goal-"+v, color:"PINK", value:v }, { cls:"tiny" }));
+      });
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "🔄 턴마다 할 일",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","내 턴에는 둘 중 하나를 합니다.<br>① 손패 카드로 바닥 카드를 <b>가져오기(캡처)</b> — 가져온 카드는 내 점수덱으로 가고, 사용한 손패 카드는 그 자리 바닥에 남습니다.<br>② 가져올 카드가 없으면 중앙 덱에서 <b>2장 뽑기</b>"));
+      return wrap;
+    }
+  },
+  {
+    title: "🎨 색상 + 숫자 매칭",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","손패 카드가 바닥 카드와 <b>같은 색이면서 숫자가 같거나 높으면</b> 가져올 수 있습니다.<br>숫자가 정확히 같으면 색이 달라도 가져올 수 있습니다.<br>단, 바닥의 A는 A 또는 같은 색 K로만 가져올 수 있고, 손패의 A로는 같은 색 K도 가져올 수 있습니다."));
+      var row = el("div","tutorial-card-row");
+      row.appendChild(cardEl({ id:"tut-match-hand", color:"BLUE", value:9 }, { cls:"tiny" }));
+      row.appendChild(el("span","tutorial-arrow","→"));
+      row.appendChild(cardEl({ id:"tut-match-floor", color:"BLUE", value:6 }, { cls:"tiny" }));
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "🌈 프리즘카드",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","색이 없는 특수 카드로 숫자는 항상 7이며, 모든 색의 7로 취급됩니다.<br>바닥의 프리즘은 7 이상인 아무 색 카드로 가져올 수 있고, 손패의 프리즘으로는 7 이하인 아무 색 카드를 가져올 수 있습니다(바닥 A 제외).<br>점수덱에서는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다."));
+      var row = el("div","tutorial-card-row");
+      row.appendChild(cardEl({ id:"tut-prism", isPrism:true, value:7, color:null }, { cls:"tiny" }));
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "🃏 조커 사용법",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","조커는 캡처에는 쓸 수 없습니다.<br>대신 내 턴에 언제든(턴을 소모하지 않고) 점수덱에 내려놓을 수 있고, 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.<br>손패에서 조커를 누르면 점수덱이 반짝이고, 그 자리를 누르면 내려놓습니다."));
+      var row = el("div","tutorial-card-row");
+      row.appendChild(cardEl({ id:"tut-joker", isJoker:true }, { cls:"tiny" }));
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "⚠️ 바닥 조커 특수 규칙",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","바닥에 놓인 조커는 손패의 <b>A</b>로만 가져올 수 있습니다."));
+      var row = el("div","tutorial-card-row");
+      row.appendChild(cardEl({ id:"tut-floorjoker-a", color:"YELLOW", value:1 }, { cls:"tiny" }));
+      row.appendChild(el("span","tutorial-arrow","→"));
+      row.appendChild(cardEl({ id:"tut-floorjoker-j", isJoker:true }, { cls:"tiny" }));
+      wrap.appendChild(row);
+      return wrap;
+    }
+  },
+  {
+    title: "🏆 승리 조건",
+    build: function(){
+      var wrap = el("div","tutorial-slide-body");
+      wrap.appendChild(el("p","tutorial-text","점수덱에 같은 색 5연속 숫자를 가장 먼저 완성하면 즉시 승리합니다.<br>중앙 덱이 다 떨어진 뒤 모두가 더 가져올 카드가 없어 연달아 패스하면 무승부로 끝납니다."));
+      return wrap;
+    }
+  }
+];
+
+function openTutorialModal(){
+  closeModal();
+  var slideIdx = 0;
+  var backdrop = el("div","modal-backdrop");
+  var box = el("div","modal-box tutorial-box");
+  var closeX = el("button","icon-btn tutorial-close","✖");
+  closeX.title = "닫기";
+  closeX.addEventListener("click", function(){ closeModal(); });
+  var titleEl = el("h2","");
+  var bodyHost = el("div","");
+  var dotsRow = el("div","tutorial-dots");
+  var dots = TUTORIAL_SLIDES.map(function(){
+    var d = el("span","tutorial-dot");
+    dotsRow.appendChild(d);
+    return d;
+  });
+  var navRow = el("div","tutorial-nav");
+  var prevBtn = el("button","btn","← 이전");
+  var nextBtn = el("button","btn primary","다음 →");
+  var startBtn = el("button","btn primary hidden","🎮 시작하기");
+
+  function renderSlide(){
+    var slide = TUTORIAL_SLIDES[slideIdx];
+    titleEl.textContent = slide.title;
+    bodyHost.innerHTML = "";
+    bodyHost.appendChild(slide.build());
+    dots.forEach(function(d,i){ d.classList.toggle("active", i===slideIdx); });
+    prevBtn.disabled = slideIdx===0;
+    var isLast = slideIdx===TUTORIAL_SLIDES.length-1;
+    nextBtn.classList.toggle("hidden", isLast);
+    startBtn.classList.toggle("hidden", !isLast);
+  }
+
+  prevBtn.addEventListener("click", function(){
+    if(slideIdx>0){ slideIdx--; sfxSelect(); renderSlide(); }
+  });
+  nextBtn.addEventListener("click", function(){
+    if(slideIdx<TUTORIAL_SLIDES.length-1){ slideIdx++; sfxSelect(); renderSlide(); }
+  });
+  startBtn.addEventListener("click", function(){
+    closeModal();
+    $("start-btn").click();
+  });
+  navRow.appendChild(prevBtn);
+  navRow.appendChild(nextBtn);
+  navRow.appendChild(startBtn);
+
+  box.appendChild(closeX);
+  box.appendChild(titleEl);
+  box.appendChild(bodyHost);
+  box.appendChild(dotsRow);
+  box.appendChild(navRow);
+  backdrop.appendChild(box);
+  backdrop.addEventListener("click", function(e){ if(e.target===backdrop) closeModal(); });
+  tooltipLayer.appendChild(backdrop);
+  renderSlide();
+}
 
 function openSettingsModal(){
   closeModal();
@@ -2277,13 +2537,9 @@ function openSettingsModal(){
   var cardThemeRow = el("div","swatch-grid");
   CARD_THEMES.forEach(function(theme, i){
     var tb = el("button","swatch-btn"+(i===cardThemeIndex?" primary":""));
-    var dots = el("span","theme-dots");
-    ["PINK","BLUE","YELLOW","GREEN"].forEach(function(c){
-      var dot = el("span","theme-dot");
-      dot.style.background = theme.colors[c];
-      dots.appendChild(dot);
-    });
-    tb.appendChild(dots);
+    var dot = el("span","theme-dot theme-dot-single");
+    dot.style.background = theme.bg;
+    tb.appendChild(dot);
     tb.appendChild(el("span","pattern-name", theme.name));
     tb.addEventListener("click", function(){
       setCardTheme(i);
@@ -2297,16 +2553,23 @@ function openSettingsModal(){
   var artLabel = el("div","section-label","🎨 카드 뒷면");
   var artRow = el("div","swatch-grid");
   CARD_BACK_PRESETS.forEach(function(preset, i){
-    var pb = el("button","swatch-btn"+(i===backPresetIndex?" primary":""));
+    var unlocked = isPatternUnlocked(preset.id, straightUnlocks);
+    var pb = el("button","swatch-btn"+(i===backPresetIndex?" primary":"")+(unlocked?"":" locked"));
     var preview = el("span","pattern-preview "+preset.cls);
     pb.appendChild(preview);
     pb.appendChild(el("span","pattern-name", preset.name));
-    pb.addEventListener("click", function(){
-      setBackPreset(i);
-      Array.prototype.forEach.call(artRow.children, function(c){ c.classList.remove("primary"); });
-      pb.classList.add("primary");
-      sfxSelect();
-    });
+    if(!unlocked){
+      pb.title = unlockHintText("pattern:"+preset.id);
+      pb.appendChild(el("span","lock-hint", unlockHintShort("pattern:"+preset.id)));
+      pb.disabled = true;
+    } else {
+      pb.addEventListener("click", function(){
+        setBackPreset(i);
+        Array.prototype.forEach.call(artRow.children, function(c){ c.classList.remove("primary"); });
+        pb.classList.add("primary");
+        sfxSelect();
+      });
+    }
     artRow.appendChild(pb);
   });
 
@@ -2364,6 +2627,11 @@ $("settings-btn").addEventListener("click", function(){
 $("start-settings-btn").addEventListener("click", function(){
   unlockAudio();
   openSettingsModal();
+});
+$("tutorial-btn").addEventListener("click", function(){
+  unlockAudio();
+  sfxSelect();
+  openTutorialModal();
 });
 
 $("sync-btn").addEventListener("click", function(){
