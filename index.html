@@ -428,7 +428,9 @@ function saveStats(stats){
 function loadUnlocksRaw(){
   try{
     var raw = localStorage.getItem("straightUnlocks");
-    return raw===null ? null : JSON.parse(raw);
+    if(raw===null) return null;
+    var parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
   }catch(e){ return null; }
 }
 function saveUnlocks(list){
