@@ -193,8 +193,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
 .pattern-name{font-size:10.5px;text-align:center;line-height:1.2;}
 .section-label{font-size:11.5px;color:var(--muted);font-weight:700;padding:9px 2px 2px;}
-.theme-dots{display:flex;gap:3px;flex-shrink:0;}
 .theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(var(--line-rgb),.4);flex-shrink:0;}
+.theme-dot-single{width:20px;height:20px;}
 .theme-name{flex:1;text-align:left;}
 .nickname-input{background:var(--panel2);border:1px solid rgba(var(--line-rgb),.2);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;width:120px;text-align:right;}
 
@@ -276,7 +276,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <h1 style="font-size:20px;">플레이 인원 선택</h1>
     <p class="sub">부족한 인원은 AI가 대신 플레이합니다 · 인원수만큼 색상이 사용됩니다</p>
     <div class="count-row" id="count-row"></div>
-    <p class="sub" style="margin-top:14px;font-size:11px;">AI 난이도</p>
+    <p class="sub" style="margin-top:14px;">AI 난이도</p>
     <div class="count-row" id="difficulty-row"></div>
     <button class="btn primary big" id="count-next-btn" disabled>다음</button>
     <button class="btn" id="count-back-btn">← 뒤로</button>
@@ -729,7 +729,6 @@ var state = {
   colors: [],
   turnOrder: [],
   currentTurnPos: 0,
-  bonusCaptureFor: null,
   gameOver: false,
   animating: false,
   selectedHandIdx: null,
@@ -894,7 +893,7 @@ function maybeDriveAi(idx, delay){
 function createRoom(maxPlayers, cb){
   ensureFirebase().then(function(){
     var code = genRoomCode();
-    var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[], captureStreak:0 };
+    var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
     var roomData = {
       code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
@@ -927,7 +926,7 @@ function joinRoom(code, cb){
         return;
       }
       if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
-      var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[], captureStreak:0 };
+      var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
       var newPlayers = data.players.concat([me]);
       fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
         state.mpRoomCode = code;
@@ -1017,7 +1016,7 @@ function startOnlineGame(){
     var ch;
     do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(usedNames[ch.name]);
     usedNames[ch.name]=true;
-    lobbyPlayers.push({ clientId:null, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[], captureStreak:0 });
+    lobbyPlayers.push({ clientId:null, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
   }
 
   var colors = colorsForCount(lobbyPlayers.length);
@@ -1042,7 +1041,6 @@ function startOnlineGame(){
   state.isDraw = false;
   state.turnSeq = 0;
   state.noProgressStreak = 0;
-  state.bonusCaptureFor = null;
   state.aiDifficulty = chosenAiDifficulty;
   aiDriveGuard = {};
   state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
@@ -1301,13 +1299,13 @@ function runOrderCutscene(){
   $("order-start-btn").classList.add("hidden");
 
   var players = [];
-  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[], captureStreak:0 });
+  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), isAI:false, hand:[], score:[] });
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
     do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(used[ch.name]);
     used[ch.name]=true;
-    players.push({ idx:i, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[], captureStreak:0 });
+    players.push({ idx:i, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
   }
 
   var draws = players.map(function(){ return 1+Math.floor(Math.random()*10); });
@@ -1361,7 +1359,6 @@ function startGame(players, order){
   state.isDraw = false;
   state.turnSeq = 0;
   state.noProgressStreak = 0;
-  state.bonusCaptureFor = null;
   aiDriveGuard = {};
   clearSelectionState();
 
@@ -1399,7 +1396,6 @@ function currentPlayerIdx(){ return state.turnOrder[state.currentTurnPos]; }
 function clearSelectionState(){
   state.selectedHandIdx = null;
   state.mode = "idle";
-  closeModal();
 }
 
 function endTurn(){
@@ -1475,7 +1471,6 @@ function declareDraw(){
 
 function passWithEmptyDeck(player){
   pushLog(player.name+"가 뽑을 카드가 없어 턴을 넘겼습니다.");
-  player.captureStreak = 0;
   state.noProgressStreak++;
   if(state.noProgressStreak >= state.turnOrder.length){
     declareDraw();
@@ -1696,12 +1691,12 @@ function playCaptureAnimation(opts, onComplete){
 
 /* ---------------- eat / exchange execution ---------------- */
 
-function doEat(playerIdx, handIdx, floorIdx, isBonusCapture){
+function doEat(playerIdx, handIdx, floorIdx){
   var floorCoin = state.floor[floorIdx];
-  finishEat(playerIdx, handIdx, floorIdx, floorCoin, isBonusCapture);
+  finishEat(playerIdx, handIdx, floorIdx, floorCoin);
 }
 
-function finishEat(playerIdx, handIdx, floorIdx, capturedCoin, isBonusCapture){
+function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
   var player = state.players[playerIdx];
   var handCoin = player.hand[handIdx];
   state.animating = true;
@@ -1721,51 +1716,16 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin, isBonusCapture){
     state.noProgressStreak = 0;
     state.animating = false;
     clearSelectionState();
-    if(!isBonusCapture){
-      player.captureStreak = (player.captureStreak||0) + 1;
-    }
     render();
     if(checkWin(playerIdx)) return;
-
-    if(!isBonusCapture && player.captureStreak===2 && findValidCaptures(player.hand, state.floor).length>0){
-      state.bonusCaptureFor = playerIdx;
-      pushLog("🔥 "+player.name+" 콤보! 보너스 캡처 기회를 얻었습니다.");
-      sfxJoker();
-      render();
-      pushRoomState();
-      if(player.isAI){
-        setTimeout(function(){ aiBonusCapture(playerIdx); }, 700);
-      }
-      return;
-    }
     endTurn();
   });
 }
 
-function aiBonusCapture(playerIdx){
-  state.bonusCaptureFor = null;
-  var player = state.players[playerIdx];
-  var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
-  var options = findValidCaptures(player.hand, state.floor);
-  var pick = chooseAiCapture(options, state.aiDifficulty || "normal", player, opponents);
-  if(pick){
-    doEat(playerIdx, pick.hi, pick.fi, true);
-  } else {
-    endTurn();
-  }
-}
-
 function drawTwoAndEndTurn(){
   if(state.animating || !isHumanTurn()) return;
-  var wasBonus = state.bonusCaptureFor===state.myIndex;
-  state.bonusCaptureFor = null;
   var player = state.players[state.myIndex];
   clearSelectionState();
-  if(wasBonus){
-    pushLog(player.name+"가 보너스 캡처를 포기하고 턴을 마쳤습니다.");
-    endTurn();
-    return;
-  }
   var n = Math.min(2, state.centerDeck.length);
   if(n<=0){
     passWithEmptyDeck(player);
@@ -1779,7 +1739,6 @@ function drawTwoAndEndTurn(){
     pushLog(player.name+"가 중앙 덱에서 "+n+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
     render();
-    player.captureStreak = 0;
     endTurn();
   });
 }
@@ -1888,7 +1847,6 @@ function aiTakeTurn(playerIdx){
     pushLog(player.name+"가 중앙 덱에서 "+n2+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
     render();
-    player.captureStreak = 0;
     endTurn();
   });
 }
@@ -1942,10 +1900,6 @@ function renderInstruction(){
     if(state.animating){ bar.textContent = "카드가 이동 중입니다..."; return; }
     var cur = state.players[currentPlayerIdx()];
     bar.innerHTML = (cur ? cur.avatar+" "+cur.name : "상대") + "의 턴입니다...";
-    return;
-  }
-  if(state.bonusCaptureFor === state.myIndex && state.mode==="idle"){
-    bar.innerHTML = "🔥 콤보! 보너스 캡처 기회입니다. 손패를 클릭하거나 [2장 뽑고 턴 종료]로 넘어가세요.";
     return;
   }
   switch(state.mode){
@@ -2032,7 +1986,7 @@ function renderHand(){
     wrap.appendChild(d);
   });
 
-  $("exchange-btn").innerHTML = (state.bonusCaptureFor===state.myIndex) ? "🏳️ 보너스 포기" : "🃏 2장 뽑고<br>턴 종료";
+  $("exchange-btn").innerHTML = "🃏 2장 뽑고<br>턴 종료";
   $("exchange-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("sort-hand-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("cancel-action-btn").classList.toggle("hidden", state.mode==="idle" || state.animating);
@@ -2119,12 +2073,10 @@ function onFloorTargetClick(fi){
   var player = state.players[state.myIndex];
   var handCoin = player.hand[handIdx];
   var floorCoin = state.floor[fi];
-  var isBonus = state.bonusCaptureFor===state.myIndex;
 
   if(state.mode==="eat-target"){
     if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
-    state.bonusCaptureFor = null;
-    doEat(state.myIndex, handIdx, fi, isBonus);
+    doEat(state.myIndex, handIdx, fi);
   }
 }
 
@@ -2215,7 +2167,6 @@ function buildRulebookPanel(){
     "<li><b>프리즘카드</b>: 색상 없이 숫자 7 고정인 특수 카드입니다. 손패의 아무 7로나 캡처할 수 있고, 점수덱에 있을 때는 검사 중인 모든 색의 7 자리로 동시에 인정됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
     "<li><b>손패 조커</b>: 캡처에는 쓸 수 없습니다. 대신 내 턴이 끝나기 전까지 언제든 점수덱에 내려놓을 수 있고(턴을 소모하지 않음), 내려놓은 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
-    "<li><b>콤보 보너스</b>: 드로우 없이 캡처를 2턴 연속 성공하면 그 턴에 한해 보너스 캡처 기회를 한 번 더 얻습니다 (턴당 최대 1회, 무한 연쇄 아님).</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
     "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
@@ -2277,13 +2228,9 @@ function openSettingsModal(){
   var cardThemeRow = el("div","swatch-grid");
   CARD_THEMES.forEach(function(theme, i){
     var tb = el("button","swatch-btn"+(i===cardThemeIndex?" primary":""));
-    var dots = el("span","theme-dots");
-    ["PINK","BLUE","YELLOW","GREEN"].forEach(function(c){
-      var dot = el("span","theme-dot");
-      dot.style.background = theme.colors[c];
-      dots.appendChild(dot);
-    });
-    tb.appendChild(dots);
+    var dot = el("span","theme-dot theme-dot-single");
+    dot.style.background = theme.bg;
+    tb.appendChild(dot);
     tb.appendChild(el("span","pattern-name", theme.name));
     tb.addEventListener("click", function(){
       setCardTheme(i);
