@@ -1572,7 +1572,8 @@ function renderLobby(data){
   data.players.forEach(function(p){
     var row = el("div","order-row");
     row.style.opacity = "1";
-    var label = p.avatarPicked ? (p.avatar+" "+p.name) : "⏳ 캐릭터 선택 중...";
+    var isMe = p.clientId===myClientId;
+    var label = p.avatarPicked ? ((isMe ? avatarWithBorderHTML(p.avatar) : p.avatar)+" "+(isMe ? nameWithTitle(p.name) : p.name)) : "⏳ 캐릭터 선택 중...";
     row.innerHTML = "<span>"+label+(p.clientId===data.hostClientId?" 👑":"")+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
     list.appendChild(row);
   });
