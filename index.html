@@ -704,7 +704,7 @@ try{
   var savedBack = localStorage.getItem("straightArtPreset");
   if(savedBack!==null){
     var backIdx = CARD_BACK_PRESETS.findIndex(function(p){ return p.id===savedBack; });
-    if(backIdx>=0) backPresetIndex = backIdx;
+    if(backIdx>=0 && isPatternUnlocked(CARD_BACK_PRESETS[backIdx].id, straightUnlocks)) backPresetIndex = backIdx;
   }
 }catch(e){}
 
@@ -875,6 +875,18 @@ function findMilestoneByLabel(kind, label){
     if(m.kind===kind && m.label===label) return m;
   }
   return null;
+}
+function milestoneSortKey(kind, label){
+  for(var i=0;i<UNLOCK_MILESTONES.length;i++){
+    var m = UNLOCK_MILESTONES[i];
+    if(m.kind===kind && m.label===label) return i;
+  }
+  return -1;
+}
+function sortCollectionItems(items, kind){
+  return items.slice().sort(function(a,b){
+    return milestoneSortKey(kind, a.name) - milestoneSortKey(kind, b.name);
+  });
 }
 function isAvatarUnlocked(name, unlocks){
   if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
@@ -1163,7 +1175,7 @@ var state = {
 var chosenCharacter = null;
 try{
   var savedDefaultAvatar = localStorage.getItem("straightDefaultAvatar");
-  if(savedDefaultAvatar){
+  if(savedDefaultAvatar && isAvatarUnlocked(savedDefaultAvatar, straightUnlocks)){
     for(var _dai=0;_dai<CHARACTERS.length;_dai++){ if(CHARACTERS[_dai].name===savedDefaultAvatar){ chosenCharacter = CHARACTERS[_dai]; break; } }
   }
 }catch(e){}
@@ -2697,23 +2709,27 @@ var COLLECTION_TABS = [
 var collectionActiveTab = "avatar";
 function collectionItemsFor(kind){
   if(kind==="avatar"){
-    return CHARACTERS.map(function(ch){
+    var avatarItems = CHARACTERS.map(function(ch){
       return { id:"avatar:"+ch.name, name:ch.name, unlocked:isAvatarUnlocked(ch.name, straightUnlocks), preview:"<span class=\"achv-preview\">"+avatarIconHTML(ch)+"</span>" };
     });
+    return sortCollectionItems(avatarItems, "avatar");
   }
   if(kind==="pattern"){
-    return CARD_BACK_PRESETS.map(function(p, i){
+    var patternItems = CARD_BACK_PRESETS.map(function(p, i){
       return { id:"pattern:"+p.id, idx:i, name:p.name, unlocked:isPatternUnlocked(p.id, straightUnlocks), preview:"<span class=\"achv-preview pattern-preview "+p.cls+"\"></span>" };
     });
+    return sortCollectionItems(patternItems, "pattern");
   }
   if(kind==="title"){
-    return TITLE_PRESETS.map(function(t){
+    var titleItems = TITLE_PRESETS.map(function(t){
       return { id:t.id, name:t.name, unlocked:isTitleUnlocked(t.id, straightUnlocks), preview:"<span class=\"achv-preview achv-title-chip\">"+t.name+"</span>" };
     });
+    return sortCollectionItems(titleItems, "title");
   }
-  return BORDER_PRESETS.map(function(b){
+  var borderItems = BORDER_PRESETS.map(function(b){
     return { id:b.id, name:b.name, unlocked:isBorderUnlocked(b.id, straightUnlocks), preview:"<span class=\"achv-preview border-ring "+b.cls+"\"></span>" };
   });
+  return sortCollectionItems(borderItems, "border");
 }
 function collectionItemDetailText(kind, name){
   var m = findMilestoneByLabel(kind, name);
