@@ -542,40 +542,6 @@ function loadUnlocksRaw(){
 function saveUnlocks(list){
   try{ localStorage.setItem("straightUnlocks", JSON.stringify(list)); }catch(e){}
 }
-function isExistingPlayer(){
-  try{
-    // straightClientId is included again here: initUnlocksIfNeeded() only ever consults
-    // isExistingPlayer() on a save's true first-ever load (once straightUnlocks exists,
-    // even as [], initUnlocksIfNeeded() short-circuits before reaching this check on every
-    // later load). getClientId() itself isn't called until well after
-    // migrateOldUnlocksIfNeeded()/initUnlocksIfNeeded() run, so straightClientId is never
-    // yet written the first time this function runs — its presence here is therefore
-    // still a reliable signal of a pre-existing save, same as the other keys below.
-    var keys = ["straightNickname","straightCardTheme","straightArtPreset","straightAiDifficulty","straightClientId"];
-    for(var i=0;i<keys.length;i++){ if(localStorage.getItem(keys[i])!==null) return true; }
-    return false;
-  }catch(e){ return false; }
-}
-function initUnlocksIfNeeded(){
-  var existing = loadUnlocksRaw();
-  // Once straightUnlocks has been initialized (even as [] for a brand-new player), it is
-  // the source of truth for that save's progress on every subsequent load — do NOT
-  // re-run the existing-player migration below. Re-checking isExistingPlayer() on every
-  // load was a serious bug: a genuinely new player only has to set any one casual setting
-  // (AI difficulty, card theme, card back, nickname) and then reload/restart — something
-  // that happens on literally every "다시하기" click — and this branch would silently
-  // bulldoze their real partial progress by force-merging every milestone id into it.
-  // The full-unlock grandfather merge below must only ever run once, on the very first
-  // load for a save that has no straightUnlocks key at all.
-  if(existing!==null) return existing;
-  var allIds = UNLOCK_MILESTONES.map(function(m){ return m.id; });
-  if(isExistingPlayer()){
-    saveUnlocks(allIds.slice());
-    return allIds.slice();
-  }
-  saveUnlocks([]);
-  return [];
-}
 function checkUnlocks(stats, unlocks){
   var updated = unlocks.slice();
   var newly = [];
@@ -588,51 +554,32 @@ function checkUnlocks(stats, unlocks){
   });
   return { updated:updated, newly:newly };
 }
+// Every milestone's check(stats) reads only real, currently-tracked stat fields
+// (wins/games/streaks/etc.), so this always grants exactly what current progress
+// justifies — nothing is ever unlocked without its condition being genuinely met.
+function deriveUnlocksFromStats(){
+  var result = checkUnlocks(loadStats(), []);
+  saveUnlocks(result.updated);
+  return result.updated;
+}
+function initUnlocksIfNeeded(){
+  var existing = loadUnlocksRaw();
+  if(existing!==null) return existing;
+  return deriveUnlocksFromStats();
+}
 
-// Migrates saves from the OLD 11-entry unlock scheme (ids like "avatar:메가블록",
-// "pattern:argyle") that shipped in a previous, already-live version, into the NEW
-// 31-entry "win:N"/"games:N"/"misc:<slug>" scheme this branch introduces. Without this,
-// any player (including the game's own owner) who played under the old scheme has a
-// straightUnlocks array full of ids the new scheme doesn't recognize, and appears almost
-// entirely locked. Must run exactly once per browser, and must run BEFORE
-// initUnlocksIfNeeded() reads straightUnlocks.
-var UNLOCK_SCHEMA_VERSION = "2";
+// Old saves carry ids from a since-replaced 11-entry unlock scheme (e.g.
+// "avatar:메가블록", "pattern:argyle") that mean nothing under the current
+// "win:N"/"games:N"/"misc:<slug>" scheme. Rather than guess a 1:1 id mapping (which
+// previously granted a few specific rewards unconditionally, regardless of whether
+// their real condition was met), re-derive the unlock set strictly from the player's
+// actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
+// reads straightUnlocks.
+var UNLOCK_SCHEMA_VERSION = "3";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
-    var raw = localStorage.getItem("straightUnlocks");
-    if(raw===null){
-      localStorage.setItem("straightUnlocksVer", UNLOCK_SCHEMA_VERSION);
-      return;
-    }
-    var oldList;
-    try{ oldList = JSON.parse(raw); }catch(e){ oldList = null; }
-    if(!Array.isArray(oldList)){
-      localStorage.setItem("straightUnlocksVer", UNLOCK_SCHEMA_VERSION);
-      return;
-    }
-    var migrated;
-    if(oldList.length>=11){
-      migrated = UNLOCK_MILESTONES.map(function(m){ return m.id; });
-    } else {
-      var OLD_TO_NEW = {
-        "avatar:메가블록": "win:300",
-        "avatar:카이저 핑": "win:500",
-        "avatar:크러셔 루": "win:200",
-        "pattern:argyle": "games:50",
-        "pattern:diamond": "games:200"
-      };
-      migrated = [];
-      oldList.forEach(function(oldId){
-        if(OLD_TO_NEW[oldId]) migrated.push(OLD_TO_NEW[oldId]);
-        else if(oldId==="pattern:diagonal") migrated.push("pattern:diagonal");
-      });
-      migrated.push("win:30");
-    }
-    var result = checkUnlocks(loadStats(), migrated);
-    var deduped = [];
-    result.updated.forEach(function(id){ if(deduped.indexOf(id)===-1) deduped.push(id); });
-    saveUnlocks(deduped);
+    if(localStorage.getItem("straightUnlocks")!==null) deriveUnlocksFromStats();
     localStorage.setItem("straightUnlocksVer", UNLOCK_SCHEMA_VERSION);
   }catch(e){}
 }
@@ -692,10 +639,6 @@ function maybeRecordLocalGameResult(outcome, meta){
 
 // migrateOldUnlocksIfNeeded() must run before initUnlocksIfNeeded() reads straightUnlocks,
 // so that a player carrying an old-scheme save gets rewritten to the new scheme first.
-// Both, in turn, must run before getClientId() (below, in the multiplayer section) writes
-// straightClientId for the very first time on a truly brand-new browser — otherwise
-// isExistingPlayer() would misclassify a real new player as an existing one. That ordering
-// holds: getClientId() isn't called until much later in the file, well after this point.
 migrateOldUnlocksIfNeeded();
 var straightUnlocks = initUnlocksIfNeeded();
 
