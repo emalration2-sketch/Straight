@@ -40,6 +40,7 @@ html,body{
   padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 16px);
 }
 .hidden{display:none !important;}
+#screen-collection{justify-content:flex-start;padding-top:calc(env(safe-area-inset-top) + 28px);}
 h1{font-size:clamp(22px,5vw,40px);margin:0;letter-spacing:1px;}
 h1 span{color:var(--pink);}
 p.sub{color:var(--muted);font-size:13px;margin:0;}
@@ -68,19 +69,20 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .my-equip-summary{display:flex;align-items:center;justify-content:center;gap:6px;margin:4px 0;font-size:12px;color:var(--muted);}
 .my-equip-summary.hidden{display:none;}
 .my-equip-ring{width:24px;height:24px;}
-.border-ring{position:relative;display:inline-flex;}
-.border-silver{border:5px groove #b8bcc4;border-radius:50%;}
-.border-rainbow{border-width:4px;border-style:solid;border-radius:50%;border-top-color:#d4537e;border-right-color:#7f77dd;border-bottom-color:#33d6c0;border-left-color:#f6a83c;}
-.border-trophy{border:4px double #f6a83c;border-radius:50%;}
+.border-ring{position:relative;display:inline-flex;border-radius:50%;}
+.name-tag-border{position:relative;display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:1px 9px;}
+.border-silver{border:5px groove #b8bcc4;}
+.border-rainbow{border-width:4px;border-style:solid;border-top-color:#d4537e;border-right-color:#7f77dd;border-bottom-color:#33d6c0;border-left-color:#f6a83c;}
+.border-trophy{border:4px double #f6a83c;}
 .border-trophy::after{content:"";position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:#f6a83c;}
-.border-flame{border:3px solid #d85a30;border-radius:50%;}
+.border-flame{border:3px solid #d85a30;}
 .border-flame::before{content:"🔥";position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:14px;line-height:1;}
-.border-heart{border:3px solid #d4537e;border-radius:50%;}
+.border-heart{border:3px solid #d4537e;}
 .border-heart::after{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:#ff8fb3;}
-.border-gold{border:4px solid #ffd447;border-radius:50%;}
-.border-mint{border:4px double #33e6c0;border-radius:50%;}
-.border-dashed{border:3px dashed #7f9cff;border-radius:50%;}
-.border-stars{border:3px solid #2a2c42;border-radius:50%;}
+.border-gold{border:4px solid #ffd447;}
+.border-mint{border:4px double #33e6c0;}
+.border-dashed{border:3px dashed #7f9cff;}
+.border-stars{border:3px solid #2a2c42;}
 .border-stars::before,.border-stars::after{content:"★";position:absolute;font-size:8px;color:#ffe66d;line-height:1;}
 .border-stars::before{top:-6px;left:18%;}
 .border-stars::after{top:-1px;right:6%;}
@@ -247,15 +249,14 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .achv-title-chip{font-size:10px;background:rgba(255,215,107,.18);color:var(--accent);width:auto;padding:3px 8px;border-radius:8px;white-space:nowrap;}
 .coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
 .coll-tab{font-size:12px;padding:6px 12px;}
-.coll-grid{width:100%;max-width:480px;max-height:55vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:8px;padding:4px;}
-.coll-item{background:var(--panel2);border-radius:10px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;}
+.coll-grid{width:100%;max-width:480px;max-height:62vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:8px;padding:4px;}
+.coll-item{background:var(--panel2);border-radius:10px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;}
 .coll-item.locked{opacity:.45;}
 .coll-item.equipped{border:2px solid var(--accent);}
-.coll-item-preview{min-height:36px;display:flex;align-items:center;justify-content:center;}
+.coll-item-preview{min-height:32px;display:flex;align-items:center;justify-content:center;}
 .coll-item-name{font-size:11.5px;font-weight:700;margin:0;min-height:14px;}
 .coll-item-state{font-size:10px;color:var(--muted);margin:0;}
 .coll-item-detail{font-size:9.5px;color:var(--muted);margin:0;text-align:center;line-height:1.3;}
-.coll-item-detail.hidden{display:none;}
 .coll-equip-btn{font-size:10.5px;padding:5px 10px;border-radius:8px;}
 @keyframes trophyBounce{0%{transform:scale(0) rotate(-20deg);opacity:0;}60%{transform:scale(1.15) rotate(8deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
 .confetti-piece{position:fixed;top:-20px;opacity:.95;pointer-events:none;z-index:99997;animation:confettiFall linear forwards;}
@@ -862,9 +863,10 @@ function nameWithTitle(name){
   var t = activeTitleLabel();
   return t ? (name+" 〈"+t+"〉") : name;
 }
-function avatarWithBorderHTML(avatarInner){
+function nameTagHTML(avatarInner, nameInner){
   var cls = activeBorderCls();
-  return cls ? ("<span class=\"border-ring "+cls+"\">"+avatarInner+"</span>") : avatarInner;
+  var inner = avatarInner+" "+nameInner;
+  return cls ? ("<span class=\"name-tag-border "+cls+"\">"+inner+"</span>") : inner;
 }
 
 function findMilestoneByLabel(kind, label){
@@ -1492,6 +1494,7 @@ function leaveRoom(){
 function renderAvatarGrid(){
   var avatarGrid = $("avatar-grid");
   avatarGrid.innerHTML = "";
+  $("avatar-next-btn").disabled = !chosenCharacter;
   CHARACTERS.forEach(function(ch){
     var unlocked = isAvatarUnlocked(ch.name, straightUnlocks);
     var b = el("button","avatar-btn"+(unlocked?"":" locked"));
@@ -1702,7 +1705,7 @@ function renderLobby(data){
     var row = el("div","order-row");
     row.style.opacity = "1";
     var isMe = p.clientId===myClientId;
-    var label = p.avatarPicked ? ((isMe ? avatarWithBorderHTML(p.avatar) : p.avatar)+" "+(isMe ? nameWithTitle(p.name) : p.name)) : "⏳ 캐릭터 선택 중...";
+    var label = p.avatarPicked ? (isMe ? nameTagHTML(p.avatar, nameWithTitle(p.name)) : (p.avatar+" "+p.name)) : "⏳ 캐릭터 선택 중...";
     row.innerHTML = "<span>"+label+(p.clientId===data.hostClientId?" 👑":"")+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
     list.appendChild(row);
   });
@@ -1773,9 +1776,8 @@ function runOrderCutscene(){
   players.forEach(function(p, i){
     setTimeout(function(){
       var row = el("div","order-row");
-      var pAvatar = p.isAI ? p.avatar : avatarWithBorderHTML(p.avatar);
-      var pName = p.isAI ? p.name : nameWithTitle(p.name);
-      row.innerHTML = "<span>"+pAvatar+" "+pName+"</span><span>🎲 "+draws[i]+"</span>";
+      var pTag = p.isAI ? (p.avatar+" "+p.name) : nameTagHTML(p.avatar, nameWithTitle(p.name));
+      row.innerHTML = "<span>"+pTag+"</span><span>🎲 "+draws[i]+"</span>";
       orderList.appendChild(row);
       if(i===players.length-1){
         setTimeout(function(){ finalizeOrder(players, draws); }, 500);
@@ -1792,9 +1794,8 @@ function finalizeOrder(players, draws){
   var summary = el("div","order-row");
   summary.style.background = "rgba(236,73,153,.18)";
   var firstPlayer = players[order[0]];
-  var firstAvatar = firstPlayer.isAI ? firstPlayer.avatar : avatarWithBorderHTML(firstPlayer.avatar);
-  var firstName = firstPlayer.isAI ? firstPlayer.name : nameWithTitle(firstPlayer.name);
-  summary.innerHTML = "<b>선공: "+firstAvatar+" "+firstName+"</b>";
+  var firstTag = firstPlayer.isAI ? (firstPlayer.avatar+" "+firstPlayer.name) : nameTagHTML(firstPlayer.avatar, nameWithTitle(firstPlayer.name));
+  summary.innerHTML = "<b>선공: "+firstTag+"</b>";
   $("order-list").appendChild(summary);
 
   $("order-start-btn").classList.remove("hidden");
@@ -2065,7 +2066,8 @@ function spawnConfetti(){
 function showWinScreen(player, straight){
   var reason = COLOR_NAMES[straight.color]+" 스트레이트 ("+straightRangeLabel(straight)+") 완성!";
   var isMe = player===state.players[state.myIndex];
-  $("win-title").innerHTML = (isMe ? avatarWithBorderHTML(player.avatar) : player.avatar)+" "+(isMe ? nameWithTitle(player.name) : player.name)+" 승리!";
+  var winTag = isMe ? nameTagHTML(player.avatar, nameWithTitle(player.name)) : (player.avatar+" "+player.name);
+  $("win-title").innerHTML = winTag+" 승리!";
   $("win-reason").textContent = "🎉 스트레이트! · "+reason;
   switchScreen("win");
   var emojiEl = document.querySelector(".win-emoji");
@@ -2746,8 +2748,10 @@ function renderCollectionScreen(){
     var card = el("div","coll-item"+(it.unlocked?"":" locked")+(isEquipped?" equipped":""));
     card.appendChild(el("div","coll-item-preview", it.preview));
     card.appendChild(el("p","coll-item-name", tab==="title" ? "" : it.name));
-    var detailP = el("p","coll-item-detail hidden");
-    card.appendChild(detailP);
+    if(!it.unlocked){
+      card.appendChild(el("p","coll-item-state","🔒 미보유"));
+    }
+    card.appendChild(el("p","coll-item-detail", collectionItemDetailText(tab, it.name)));
     if(it.unlocked){
       var btn = el("button","btn coll-equip-btn"+(isEquipped?" primary":""), isEquipped?"장착 중":"장착");
       btn.addEventListener("click", function(e){
@@ -2760,18 +2764,7 @@ function renderCollectionScreen(){
         renderCollectionScreen();
       });
       card.appendChild(btn);
-    } else {
-      card.appendChild(el("p","coll-item-state","🔒 미보유"));
     }
-    card.addEventListener("click", function(){
-      var wasHidden = detailP.classList.contains("hidden");
-      var all = grid.querySelectorAll(".coll-item-detail");
-      for(var i=0;i<all.length;i++){ all[i].classList.add("hidden"); }
-      if(wasHidden){
-        detailP.textContent = collectionItemDetailText(tab, it.name);
-        detailP.classList.remove("hidden");
-      }
-    });
     grid.appendChild(card);
   });
 }
