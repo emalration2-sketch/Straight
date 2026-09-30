@@ -175,9 +175,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
 .score-area{flex:1;background:rgba(var(--line-rgb),.04);border-radius:12px;padding:5px;overflow:hidden;display:flex;flex-direction:column;gap:4px;min-width:0;}
 .hand-actions{display:flex;flex-direction:row;gap:4px;flex-shrink:0;}
-.hand-actions .btn{flex:1;font-size:13px;padding:10px 5px;border-radius:10px;line-height:1.15;min-width:0;}
-.btn.exchange-big{flex:1.25;font-size:13px;font-weight:800;padding:10px 5px;border-radius:10px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
+.hand-actions .btn{flex:1;font-size:12px;padding:9px 4px;border-radius:10px;line-height:1.35;min-width:0;text-align:center;word-break:keep-all;}
+.btn.exchange-big{flex:1.25;font-size:12px;font-weight:800;padding:9px 4px;border-radius:10px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
 .btn.exchange-big:active{transform:scale(.95);}
+.sort-btn-inner{display:inline-flex;align-items:center;justify-content:center;gap:5px;}
 .score-body{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;overflow:hidden;border-radius:10px;}
 .score-body.bank-target{cursor:pointer;animation:bankGlow 1s ease-in-out infinite;}
 @keyframes bankGlow{0%,100%{box-shadow:0 0 0 2px var(--accent);}50%{box-shadow:0 0 16px 6px var(--accent);}}
@@ -263,8 +264,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
 .win-emoji{font-size:60px;}
 .win-emoji.bounce-in{animation:trophyBounce .7s cubic-bezier(.34,1.56,.64,1);}
-.unlock-toast{margin-top:10px;padding:8px 14px;border-radius:10px;background:rgba(255,215,107,.15);border:1px solid var(--accent);color:var(--accent);font-size:12.5px;font-weight:700;line-height:1.5;}
-.unlock-toast.hidden{display:none;}
+.unlock-popup{position:fixed;top:calc(env(safe-area-inset-top) + 14px);left:50%;transform:translateX(-50%) translateY(-14px);opacity:0;background:var(--panel);border:1px solid var(--accent);border-radius:12px;padding:10px 16px;color:var(--accent);font-size:12.5px;font-weight:700;line-height:1.5;text-align:center;max-width:min(90vw,360px);box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:99998;pointer-events:none;transition:opacity .25s,transform .25s;}
+.unlock-popup.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .achv-preview{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:18px;border-radius:50%;}
 .achv-title-chip{font-size:10px;background:rgba(255,215,107,.18);color:var(--accent);width:auto;padding:3px 8px;border-radius:8px;white-space:nowrap;}
 .coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
@@ -405,8 +406,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
         <div class="score-area" id="score-area">
           <div class="score-body" id="score-body"></div>
           <div class="hand-actions">
-            <button class="btn exchange-big" id="exchange-btn">🃏 2장 뽑고<br>턴 종료</button>
-            <button class="btn" id="sort-hand-btn">↕ 정렬</button>
+            <button class="btn exchange-big" id="exchange-btn">2장 뽑고<br>턴 종료</button>
+            <button class="btn" id="sort-hand-btn"><span class="sort-btn-inner"><span>↕</span><span>정렬</span></span></button>
             <button class="btn hidden" id="cancel-action-btn">✖ 취소</button>
           </div>
         </div>
@@ -422,7 +423,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div class="win-emoji">🏆</div>
     <h1 id="win-title" style="font-size:24px;"></h1>
     <p class="sub" id="win-reason"></p>
-    <div class="unlock-toast hidden" id="unlock-toast"></div>
     <button class="btn primary big" id="restart-btn">다시하기</button>
   </div>
 
@@ -629,6 +629,7 @@ function recordGameResult(outcome, meta){
   var result = checkUnlocks(stats, loadUnlocksRaw() || straightUnlocks);
   straightUnlocks = result.updated;
   saveUnlocks(straightUnlocks);
+  showUnlockPopup(result.newly);
   return result.newly;
 }
 function bumpStatAndCheck(field, delta){
@@ -638,7 +639,7 @@ function bumpStatAndCheck(field, delta){
   var result = checkUnlocks(stats, loadUnlocksRaw() || straightUnlocks);
   straightUnlocks = result.updated;
   saveUnlocks(straightUnlocks);
-  pendingUnlocks = pendingUnlocks.concat(result.newly);
+  showUnlockPopup(result.newly);
 }
 function recordTutorialDone(){
   var stats = loadStats();
@@ -648,14 +649,27 @@ function recordTutorialDone(){
   var result = checkUnlocks(stats, loadUnlocksRaw() || straightUnlocks);
   straightUnlocks = result.updated;
   saveUnlocks(straightUnlocks);
-  pendingUnlocks = pendingUnlocks.concat(result.newly);
+  showUnlockPopup(result.newly);
 }
 
-var pendingUnlocks = [];
+var UNLOCK_KIND_LABELS = { avatar:"새 아바타", pattern:"새 카드 뒷면", title:"새 칭호", border:"새 테두리" };
+function showUnlockPopup(newly){
+  if(!newly || newly.length===0) return;
+  var lines = newly.map(function(m){
+    return "🎉 "+(UNLOCK_KIND_LABELS[m.kind]||"새 보상")+" 해금: "+m.label;
+  });
+  var toast = el("div","unlock-popup", lines.join("<br>"));
+  document.body.appendChild(toast);
+  requestAnimationFrame(function(){ toast.classList.add("show"); });
+  setTimeout(function(){
+    toast.classList.remove("show");
+    setTimeout(function(){ toast.remove(); }, 300);
+  }, 3200);
+}
 function maybeRecordLocalGameResult(outcome, meta){
   if(state.statsRecorded) return;
   state.statsRecorded = true;
-  pendingUnlocks = pendingUnlocks.concat(recordGameResult(outcome, meta));
+  recordGameResult(outcome, meta);
 }
 
 // migrateOldUnlocksIfNeeded() must run before initUnlocksIfNeeded() reads straightUnlocks,
@@ -1488,10 +1502,7 @@ function renderAvatarGrid(){
       if(chosenCharacter && chosenCharacter.name===ch.name) b.classList.add("selected");
       b.addEventListener("click", function(){
         sfxSelect();
-        Array.prototype.forEach.call(avatarGrid.children, function(c){ c.classList.remove("selected"); });
-        b.classList.add("selected");
-        chosenCharacter = ch;
-        $("avatar-next-btn").disabled = false;
+        setDefaultAvatar(ch.name);
       });
     }
     avatarGrid.appendChild(b);
@@ -1569,6 +1580,10 @@ var countRow = $("count-row");
 
 $("count-next-btn").addEventListener("click", function(){
   sfxSelect();
+  if(chosenCharacter){
+    runOrderCutscene();
+    return;
+  }
   renderMyEquipSummary();
   renderAvatarGrid();
   switchScreen("avatar");
@@ -1931,30 +1946,12 @@ function passWithEmptyDeck(player){
   endTurn();
 }
 
-function renderUnlockToast(){
-  var toast = $("unlock-toast");
-  if(pendingUnlocks.length===0){
-    toast.classList.add("hidden");
-    toast.innerHTML = "";
-    return;
-  }
-  var unlockKindLabels = { avatar:"새 아바타", pattern:"새 카드 뒷면", title:"새 칭호", border:"새 테두리" };
-  var lines = pendingUnlocks.map(function(m){
-    var kindLabel = unlockKindLabels[m.kind] || "새 보상";
-    return "🎉 "+kindLabel+" 해금: "+m.label;
-  });
-  toast.innerHTML = lines.join("<br>");
-  toast.classList.remove("hidden");
-  pendingUnlocks = [];
-}
-
 function showDrawScreen(){
   var emojiEl = document.querySelector(".win-emoji");
   if(emojiEl) emojiEl.textContent = "🤝";
   $("win-title").innerHTML = "무승부";
   $("win-reason").textContent = "중앙 덱이 모두 소진되어 승부를 가리지 못했습니다.";
   switchScreen("win");
-  renderUnlockToast();
 }
 
 function checkWin(playerIdx){
@@ -2061,7 +2058,6 @@ function showWinScreen(player, straight){
     emojiEl.classList.add("bounce-in");
   }
   spawnConfetti();
-  renderUnlockToast();
 }
 
 $("restart-btn").addEventListener("click", function(){ location.reload(); });
@@ -2479,7 +2475,7 @@ function renderHand(){
     wrap.appendChild(d);
   });
 
-  $("exchange-btn").innerHTML = "🃏 2장 뽑고<br>턴 종료";
+  $("exchange-btn").innerHTML = "2장 뽑고<br>턴 종료";
   $("exchange-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("sort-hand-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("cancel-action-btn").classList.toggle("hidden", state.mode==="idle" || state.animating);
