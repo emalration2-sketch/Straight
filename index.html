@@ -1154,7 +1154,8 @@ var state = {
   ceremonyPlaying: false,
   isDraw: false,
   turnSeq: 0,
-  noProgressStreak: 0
+  stagnantTurns: 0,
+  floorResetStreak: 0
 };
 
 var chosenCharacter = null;
@@ -1204,7 +1205,8 @@ function pushRoomState(){
     turnOrder: state.turnOrder,
     currentTurnPos: state.currentTurnPos,
     turnSeq: state.turnSeq,
-    noProgressStreak: state.noProgressStreak,
+    stagnantTurns: state.stagnantTurns,
+    floorResetStreak: state.floorResetStreak,
     gameOver: state.gameOver,
     winnerIndex: state.winnerIndex,
     winnerStraight: state.winnerStraight,
@@ -1259,7 +1261,8 @@ function applyRemoteRoomState(data){
   state.turnOrder = data.turnOrder || [];
   state.currentTurnPos = data.currentTurnPos || 0;
   state.turnSeq = data.turnSeq || 0;
-  state.noProgressStreak = data.noProgressStreak || 0;
+  state.stagnantTurns = data.stagnantTurns || 0;
+  state.floorResetStreak = data.floorResetStreak || 0;
   state.gameOver = !!data.gameOver;
   state.winnerIndex = data.winnerIndex;
   state.winnerStraight = data.winnerStraight;
@@ -1469,7 +1472,8 @@ function startOnlineGame(){
   state.ceremonyPlaying = false;
   state.isDraw = false;
   state.turnSeq = 0;
-  state.noProgressStreak = 0;
+  state.stagnantTurns = 0;
+  state.floorResetStreak = 0;
   state.statsRecorded = false;
   state.aiDifficulty = chosenAiDifficulty;
   aiDriveGuard = {};
@@ -1822,7 +1826,8 @@ function startGame(players, order){
   state.ceremonyPlaying = false;
   state.isDraw = false;
   state.turnSeq = 0;
-  state.noProgressStreak = 0;
+  state.stagnantTurns = 0;
+  state.floorResetStreak = 0;
   state.statsRecorded = false;
   aiDriveGuard = {};
   clearSelectionState();
@@ -1866,6 +1871,13 @@ function clearSelectionState(){
 function endTurn(){
   clearSelectionState();
   clearTurnTimer();
+  if(!state.gameOver && state.stagnantTurns >= state.turnOrder.length){
+    if(state.floor.length + state.centerDeck.length === 0 || state.floorResetStreak >= 3){
+      declareDraw();
+      return;
+    }
+    resetFloor();
+  }
   state.currentTurnPos = (state.currentTurnPos+1) % state.turnOrder.length;
   state.turnSeq++;
   render();
@@ -1920,6 +1932,21 @@ function startTurnTimer(){
   }, 1000);
 }
 
+// A full rotation with no captures means every floor card is currently stuck (nobody
+// holds a matching card for any of them). Rather than let the game grind toward a draw,
+// sweep the floor back into the center deck, reshuffle, and deal a fresh 8 — mirroring
+// how a real card game handles a dead board. No cards are lost, just recycled, so this
+// doesn't accelerate how fast the deck empties in a healthy game.
+function resetFloor(){
+  var recycled = state.floor.splice(0, state.floor.length);
+  state.centerDeck = shuffle(state.centerDeck.concat(recycled));
+  var n = Math.min(8, state.centerDeck.length);
+  state.floor = state.centerDeck.splice(0, n);
+  state.stagnantTurns = 0;
+  state.floorResetStreak = (state.floorResetStreak||0) + 1;
+  pushLog("🔄 바닥 카드가 오래 정체되어 새로 섞어 깔았습니다!");
+}
+
 /* ---------------- win check ---------------- */
 function declareDraw(){
   state.gameOver = true;
@@ -1937,11 +1964,7 @@ function declareDraw(){
 
 function passWithEmptyDeck(player){
   pushLog(player.name+"가 뽑을 카드가 없어 턴을 넘겼습니다.");
-  state.noProgressStreak++;
-  if(state.noProgressStreak >= state.turnOrder.length){
-    declareDraw();
-    return;
-  }
+  state.stagnantTurns++;
   render();
   endTurn();
 }
@@ -2193,7 +2216,8 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     player.hand.splice(handIdx,1);
     state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, color:handCoin.color, value:handCoin.value, isPrism:handCoin.isPrism };
     pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
-    state.noProgressStreak = 0;
+    state.stagnantTurns = 0;
+    state.floorResetStreak = 0;
     state.animating = false;
     clearSelectionState();
     render();
@@ -2218,6 +2242,7 @@ function drawTwoAndEndTurn(){
     player.hand = player.hand.concat(drawn);
     pushLog(player.name+"가 중앙 덱에서 "+n+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
+    state.stagnantTurns++;
     render();
     endTurn();
   });
@@ -2327,6 +2352,7 @@ function aiTakeTurn(playerIdx){
     player.hand = player.hand.concat(drawn);
     pushLog(player.name+"가 중앙 덱에서 "+n2+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
+    state.stagnantTurns++;
     render();
     endTurn();
   });
