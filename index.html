@@ -250,12 +250,18 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.joker,.card.prism{background:linear-gradient(135deg,#ff6b6b,#ffd76b 25%,#4ce0a0 50%,#33d6c0 75%,#7f77dd);color:#241f3d;border-color:rgba(255,255,255,.7);}
 /* Reset card: deep teal with a cyan ring — reads as an "action" card, distinct from the
    rainbow joker/prism and from every suit color. */
-.card.reset{background:radial-gradient(circle at 50% 38%,#4fe3d6 0,#1e9aa6 42%,#16406a 100%);border-color:#bff7f2;color:#fff;flex-direction:column;gap:0;}
-.reset-icon{position:relative;z-index:2;font-size:1em;line-height:1;font-weight:900;text-shadow:0 1px 3px rgba(10,30,60,.6);}
-.reset-label{position:relative;z-index:2;font-size:.36em;font-weight:800;letter-spacing:.5px;margin-top:2px;opacity:.95;}
+/* Reset card = bomb: dark card with a warm glow behind a white-outlined bomb, so it
+   can't be mistaken for any suit color (pink/blue/yellow/green) or the rainbow joker. */
+.card.reset{background:radial-gradient(circle at 50% 40%,rgba(255,150,70,.85) 0,rgba(255,110,50,.35) 38%,rgba(255,110,50,0) 62%),linear-gradient(160deg,#43325a,#1c1726);border-color:#ffb057;color:#fff;flex-direction:column;gap:0;}
+.reset-bomb{position:relative;z-index:2;width:1.95em;height:1.95em;display:block;margin-top:-.1em;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));}
+.card.tiny .reset-bomb,.card.opp .reset-bomb{width:1.5em;height:1.5em;}
+.reset-bomb .spark{transform-origin:28.6px 5.8px;animation:bombSpark .9s ease-in-out infinite alternate;}
+@keyframes bombSpark{from{opacity:.75;transform:scale(.85);}to{opacity:1;transform:scale(1.1);}}
+@media (prefers-reduced-motion: reduce){.reset-bomb .spark{animation:none;}}
+.reset-label{position:relative;z-index:2;font-size:.36em;font-weight:800;letter-spacing:.5px;margin-top:1px;color:#ffd9b0;}
 .card.hand .reset-label{font-size:.5em;}
-.floor-board.reset-mode{border-color:rgba(79,227,214,.85);background:rgba(79,227,214,.07);}
-.card.reset-target{box-shadow:0 0 0 2px rgba(79,227,214,.85),0 3px 6px rgba(0,0,0,.45);}
+.floor-board.reset-mode{border-color:rgba(255,154,61,.85);background:rgba(255,154,61,.07);}
+.card.reset-target{box-shadow:0 0 0 2px rgba(255,154,61,.85),0 3px 6px rgba(0,0,0,.45);}
 .joker-star{position:relative;z-index:2;font-size:.78em;line-height:1;color:#fff;text-shadow:0 1px 2px rgba(36,31,61,.55);}
 .card.tiny .joker-star,.card.opp .joker-star{font-size:.85em;}
 /* Armed joker: same lift as a selected card plus a white/gold double ring and one slow
@@ -1169,8 +1175,11 @@ function sfxLose(){
   tone(147, 0.7, { vol:0.09, delay:0.6, attack:0.03 });
 }
 function sfxReset(){
-  noiseHit(0.45, { freq:600, to:5000, q:0.9, vol:0.12, attack:0.08 });
-  [523,659,784,1047].forEach(function(f,i){ tone(f, 0.16, { type:"triangle", vol:0.06, delay:0.12+i*0.05 }); });
+  // fuse hiss → low boom with a noise burst → cards scattering
+  noiseHit(0.22, { freq:5000, q:2, vol:0.05, attack:0.05 });
+  tone(140, 0.5, { vol:0.22, slide:38, delay:0.2 });
+  noiseHit(0.5, { filter:"lowpass", freq:2400, to:200, q:0.7, vol:0.22, delay:0.2 });
+  noiseHit(0.35, { freq:900, to:4200, q:1, vol:0.07, delay:0.45 });
 }
 function sfxReveal(){ tone(1319, 0.12, { vol:0.08 }); tone(1760, 0.2, { vol:0.06, delay:0.06 }); }
 
@@ -2739,7 +2748,7 @@ function useResetCard(playerIdx, handIdx, cb){
     render();
     animateDrawFromDeck(n, $("floor-board"), function(){
       state.floor = fresh;
-      pushLog(player.name+"가 🔄 리셋 카드를 사용해 바닥 카드를 전부 새로 깔았습니다!");
+      pushLog(player.name+"가 💣 리셋 카드를 사용해 바닥 카드를 전부 새로 깔았습니다!");
       state.animating = false;
       render();
       pushRoomState();
@@ -2867,6 +2876,15 @@ function aiTakeTurn(playerIdx){
 
 /* ---------------- rendering ---------------- */
 
+var BOMB_SVG = "<svg class=\"reset-bomb\" viewBox=\"0 0 32 32\" aria-hidden=\"true\">"+
+  "<rect x=\"17.6\" y=\"8.4\" width=\"6\" height=\"4.6\" rx=\"1\" transform=\"rotate(45 20.6 10.7)\" fill=\"#8a8da3\" stroke=\"#fff\" stroke-width=\"1\"/>"+
+  "<circle cx=\"14\" cy=\"19\" r=\"9.5\" fill=\"#23222e\" stroke=\"#fff\" stroke-width=\"1.4\"/>"+
+  "<circle cx=\"10.6\" cy=\"15.6\" r=\"2.6\" fill=\"#fff\" opacity=\".45\"/>"+
+  "<path d=\"M22.6 8.4C24.4 5.2 26.8 4.6 28.4 6\" stroke=\"#e8c27a\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\"/>"+
+  "<g class=\"spark\"><circle cx=\"28.6\" cy=\"5.8\" r=\"2\" fill=\"#ffd23f\"/>"+
+  "<path d=\"M28.6 1.4v1.6M28.6 8.6v1.6M24.2 5.8h1.6M31.4 5.8h1.6M25.6 2.8l1.1 1.1M30.5 7.7l1.1 1.1M31.6 2.8l-1.1 1.1\" stroke=\"#ff8a3d\" stroke-width=\"1.2\" stroke-linecap=\"round\"/></g>"+
+  "</svg>";
+
 function cardEl(coin, opts){
   opts = opts||{};
   var d = el("div", "card"+(opts.cls?(" "+opts.cls):""));
@@ -2878,7 +2896,7 @@ function cardEl(coin, opts){
   if(coin && coin.id!==undefined) d.dataset.cid = coin.id;
   if(coin.isReset){
     d.classList.add("reset");
-    d.appendChild(el("span","reset-icon","↻"));
+    d.insertAdjacentHTML("beforeend", BOMB_SVG);
     if(!/tiny|opp/.test(opts.cls||"")) d.appendChild(el("span","reset-label","리셋"));
   } else if(coin.isJoker){
     d.classList.add("joker");
@@ -2963,7 +2981,7 @@ function renderInstruction(){
   switch(state.mode){
     case "eat-target": bar.textContent = "🎯 가져올 바닥 카드를 고르세요"; break;
     case "joker-choice": bar.textContent = "★ 바닥 카드 아무거나, 또는 점수덱에 보관"; break;
-    case "reset-choice": bar.textContent = "↻ 바닥판을 누르면 바닥 카드를 전부 새로 깝니다"; break;
+    case "reset-choice": bar.textContent = "💣 바닥판을 누르면 바닥 카드를 전부 새로 깝니다"; break;
     default: bar.textContent = "✋ 손패를 골라 바닥 카드를 가져오세요";
   }
 }
