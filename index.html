@@ -167,7 +167,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .rulebook-panel ul{margin:0;padding-left:16px;font-size:11.5px;line-height:1.55;}
 .rulebook-panel li{margin-bottom:5px;}
 
-.opponents-row{width:100%;height:19vh;min-height:76px;display:flex;gap:5px;justify-content:center;flex-shrink:0;padding:1px;}
+.opponents-row{width:100%;height:clamp(70px,15vh,124px);display:flex;gap:5px;justify-content:center;flex-shrink:0;padding:1px;}
 .opponent-card{flex:1 1 0;display:flex;flex-direction:column;background:var(--panel);border:2px solid transparent;border-radius:10px;padding:3px 5px;min-width:0;max-width:280px;overflow:hidden;}
 .opponent-card.active{border-color:var(--accent);}
 .opponent-card:only-child{max-width:210px;align-self:flex-start;}
@@ -177,10 +177,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .opp-hand-stack .card.opp-back{width:16px;}
 .opp-hand-stack .card.opp-back:not(:first-child){margin-left:-8px;}
 .opp-score-wrap{display:flex;gap:2px;flex-wrap:wrap;align-content:flex-start;width:100%;flex:1;min-height:0;overflow:hidden;justify-content:flex-start;}
+/* Short screens: the "N장" pill already says the hand size, so drop the card-back strip
+   and give the row's height to the score cards. */
+@media (max-height:720px){.opp-hand-stack{display:none;}.opp-score-wrap{margin-top:3px;}}
 
 
-.board-row{width:100%;flex:1;display:flex;align-items:center;justify-content:center;gap:14px;min-height:0;padding:2px 0;}
-.deck-stack{display:flex;flex-direction:column;align-items:center;gap:14px;flex-shrink:0;}
+.board-row{width:100%;flex:1 1 0;display:flex;align-items:center;justify-content:center;gap:12px;min-height:0;padding:2px 0;}
+.deck-stack{display:flex;flex-direction:column;align-items:center;gap:10px;flex-shrink:0;}
 .deck-visual{position:relative;width:var(--card-w);height:var(--card-h);}
 .deck-visual .layer{position:absolute;inset:0;border-radius:11px;background:radial-gradient(circle at 50% 42%,rgba(255,215,107,.28),transparent 58%),linear-gradient(160deg,#3a3070,#1a1535);border:2px solid rgba(255,215,107,.45);box-shadow:0 3px 8px rgba(0,0,0,.4);}
 .deck-visual .layer:nth-child(1){transform:translate(6px,6px) rotate(4deg);opacity:.7;}
@@ -191,16 +194,17 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .deck-label-k{font-size:9.5px;font-weight:700;color:var(--muted);}
 .deck-label b{font-family:var(--font-display);font-weight:400;font-size:20px;line-height:1;color:var(--text);}
 
-.floor-board{display:grid;grid-template-columns:repeat(4, var(--card-w));grid-template-rows:repeat(2, var(--card-h));gap:7px;background:rgba(var(--line-rgb),.04);border:1px solid rgba(var(--line-rgb),.12);border-radius:16px;padding:9px;flex-shrink:0;}
+.floor-board{display:grid;grid-template-columns:repeat(4, var(--card-w));grid-template-rows:repeat(2, var(--card-h));gap:7px;background:rgba(var(--line-rgb),.04);border:1.5px solid rgba(var(--line-rgb),.12);border-radius:16px;padding:8px;flex-shrink:0;transition:border-color .2s,background-color .2s;}
+.floor-board.joker-mode{border-color:rgba(255,215,107,.7);background:rgba(255,215,107,.06);}
 .floor-slot{display:flex;align-items:center;justify-content:center;position:relative;}
 .floor-slot.impact .card{animation:impactPulse .22s ease;}
 @keyframes impactPulse{0%{transform:scale(1);}50%{transform:scale(1.22);}100%{transform:scale(1);}}
 .floor-slot.impact::after{content:"";position:absolute;inset:-6px;border-radius:16px;background:var(--accent);opacity:0;animation:impactRing .22s ease;pointer-events:none;}
 @keyframes impactRing{0%{opacity:.55;}100%{opacity:0;}}
 
-.bottom-area{width:100%;height:29vh;min-height:132px;display:flex;gap:5px;flex-shrink:0;}
-.hand-area{flex:1.5;display:flex;flex-direction:column;min-width:0;background:rgba(var(--line-rgb),.03);border-radius:12px;padding:5px;}
-.my-tag-bar{flex-shrink:0;display:flex;justify-content:center;padding:2px 0 5px;font-size:11px;}
+.bottom-area{width:100%;height:clamp(150px,30vh,300px);display:flex;gap:5px;flex-shrink:0;}
+.hand-area{flex:1.5;display:flex;flex-direction:column;min-width:0;min-height:0;background:rgba(var(--line-rgb),.03);border-radius:12px;padding:5px;}
+.my-tag-bar{flex-shrink:0;display:flex;justify-content:center;padding:1px 0 4px;font-size:11px;}
 .my-tag-bar .name-tag{font-size:12px;}
 .my-tag-bar .name-tag-avatar{width:22px;height:22px;font-size:13px;}
 .hand-coins{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:min-content;gap:5px;align-content:center;justify-items:center;overflow-y:auto;padding:2px;}
@@ -212,17 +216,21 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .btn.exchange-big:active{transform:scale(.95);}
 .sort-btn-inner{display:inline-flex;align-items:center;justify-content:center;gap:5px;}
 .score-body{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;overflow:hidden;border-radius:10px;}
-.score-body.bank-target{cursor:pointer;animation:bankGlow 1s ease-in-out infinite;}
-@keyframes bankGlow{0%,100%{box-shadow:0 0 0 2px var(--accent);}50%{box-shadow:0 0 16px 6px var(--accent);}}
+.score-body.bank-target{cursor:pointer;position:relative;background:rgba(255,215,107,.07);box-shadow:inset 0 0 0 1.5px rgba(255,215,107,.75);}
+.bank-hint{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:999px;background:var(--accent);color:#241f3d;font-size:11.5px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.35);}
 .score-flow{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;gap:3px;overflow:hidden;min-height:0;}
 .score-total{font-size:11.5px;font-weight:800;flex-shrink:0;color:var(--accent);}
 
 .log-row{display:flex;gap:6px;width:100%;flex-shrink:0;}
 .status-panel{flex:1;min-width:0;display:flex;flex-direction:column;background:var(--panel);border:1.5px solid rgba(var(--line-rgb),.16);border-radius:12px;overflow:hidden;}
 .status-panel.my-turn{border-color:var(--accent);}
-.instruction-bar{flex-shrink:0;font-size:12.5px;font-weight:800;line-height:1.35;color:var(--text);background:rgba(var(--line-rgb),.06);padding:6px 10px;text-align:center;}
+.instruction-bar{flex-shrink:0;font-size:12px;font-weight:800;line-height:1.35;color:var(--text);background:rgba(var(--line-rgb),.06);padding:5px 10px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .status-panel.my-turn .instruction-bar{background:rgba(255,215,107,.18);}
-.log-panel{flex:1;min-width:0;height:7vh;min-height:34px;overflow-y:auto;font-size:11px;padding:4px 10px;line-height:1.45;color:var(--muted);text-align:center;}
+/* flex:none + fixed height: as a flex:1 child of a column with no definite height, the
+   log would grow to fit every line and push the board up into the hand area. */
+.log-panel{flex:none;min-width:0;height:34px;overflow-y:auto;scrollbar-width:none;font-size:11px;padding:2px 10px;line-height:15px;color:var(--muted);text-align:center;}
+.log-panel::-webkit-scrollbar{display:none;}
+.log-panel div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .log-panel div:first-child{color:var(--text);font-weight:700;}
 .log-emoji-btn{flex-shrink:0;width:42px;border-radius:12px;background:var(--panel2);border:1.5px solid rgba(var(--line-rgb),.16);font-size:19px;color:var(--text);cursor:pointer;}
 
@@ -235,20 +243,25 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 }
 .card.tiny{width:calc(var(--card-w)*0.55);height:calc(var(--card-h)*0.55);font-size:calc(var(--card-w)*0.26);border-width:1.5px;border-radius:6px;}
 .card.mini-back{width:calc(var(--card-w)*0.6);height:calc(var(--card-h)*0.6);border-radius:6px;}
-.card.hand{width:100%;max-width:66px;aspect-ratio:1/1.4;height:auto;font-size:clamp(13px,4.1vw,19px);border-radius:9px;border-width:1.5px;}
+.card.hand{width:100%;max-width:var(--hand-w,66px);aspect-ratio:1/1.4;height:auto;font-size:clamp(13px,4.1vw,19px);border-radius:9px;border-width:1.5px;}
 .card.opp{width:25px;height:35px;font-size:12px;border-width:1px;border-radius:5px;cursor:default;flex-shrink:0;}
 .card.opp-back{width:16px;height:23px;border-radius:4px;border-width:1px;cursor:default;flex-shrink:0;}
 .card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
 .card.joker,.card.prism{background:linear-gradient(135deg,#ff6b6b,#ffd76b 25%,#4ce0a0 50%,#33d6c0 75%,#7f77dd);color:#241f3d;border-color:rgba(255,255,255,.7);}
-.card.joker{font-size:calc(var(--card-w) * 0.42);}
-.card.joker-armed{transform:translateY(-10px);outline:3px solid #ffd76b;outline-offset:2px;animation:jokerArmed 1.2s linear infinite;z-index:3;}
-@keyframes jokerArmed{0%{outline-color:#ff6b6b;transform:translateY(-10px) rotate(-3deg);}25%{outline-color:#ffd76b;}50%{outline-color:#4ce0a0;transform:translateY(-10px) rotate(3deg);}75%{outline-color:#33d6c0;}100%{outline-color:#7f77dd;transform:translateY(-10px) rotate(-3deg);}}
-.card.joker-target{outline:2.5px dashed #ffd76b;outline-offset:3px;animation:jokerTarget 1.2s linear infinite;}
-@keyframes jokerTarget{0%{outline-color:#ff6b6b;}25%{outline-color:#ffd76b;}50%{outline-color:#4ce0a0;}75%{outline-color:#33d6c0;}100%{outline-color:#7f77dd;}}
+.joker-star{position:relative;z-index:2;font-size:.78em;line-height:1;color:#fff;text-shadow:0 1px 2px rgba(36,31,61,.55);}
+.card.tiny .joker-star,.card.opp .joker-star{font-size:.85em;}
+/* Armed joker: same lift as a selected card plus a white/gold double ring and one slow
+   light sweep — no rotation, so the card never slides out from under the finger. */
+.card.joker-armed{transform:translateY(-8px);box-shadow:0 0 0 2.5px #fff,0 0 0 5px var(--accent),0 6px 14px rgba(0,0,0,.5);z-index:3;overflow:hidden;}
+.card.joker-armed::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);background-size:250% 100%;animation:jokerSweep 1.8s ease-in-out infinite;}
+@keyframes jokerSweep{0%{background-position:130% 0;}60%,100%{background-position:-30% 0;}}
+.card.joker-target{box-shadow:0 0 0 2px rgba(255,215,107,.85),0 3px 6px rgba(0,0,0,.45);}
+.card.joker-target:hover{transform:translateY(-3px);}
+@media (prefers-reduced-motion: reduce){.card.joker-armed::after{animation:none;opacity:0;}}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
-.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-luna::after,.pattern-solar::after,.pattern-hologram::after,.pattern-royal::after,.pattern-cosmic::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-polka::after,.pattern-solar::after,.pattern-hologram::after,.pattern-royal::after,.pattern-cosmic::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:14px 14px;background-position:0 0,7px 7px;}
@@ -256,7 +269,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
 .pattern-diagonal::after{background-image:linear-gradient(135deg,transparent 0 50%,rgba(0,0,0,.18) 50% 100%);}
 .pattern-ripple::after{background-image:repeating-radial-gradient(circle at 25% 30%,transparent 0 5px,rgba(0,0,0,.14) 5px 6px);}
-.pattern-luna::after{background-image:radial-gradient(circle at 63% 37%,rgba(20,14,46,.45) 0 3.1px,transparent 3.4px),radial-gradient(circle at 50% 50%,rgba(255,246,205,.55) 0 4px,transparent 4.3px),radial-gradient(rgba(255,255,255,.55) 0.8px,transparent 1px);background-size:18px 18px,18px 18px,9px 9px;background-position:0 0,0 0,4px 13px;}
+.pattern-polka::after{background-image:radial-gradient(rgba(0,0,0,.16) 1.6px,transparent 1.9px),radial-gradient(rgba(0,0,0,.16) 1.6px,transparent 1.9px);background-size:12px 12px;background-position:0 0,6px 6px;}
 .pattern-solar::after{background-image:radial-gradient(circle,rgba(255,226,120,.6) 0 2.6px,transparent 2.9px),radial-gradient(circle,transparent 0 3.6px,rgba(255,226,120,.32) 3.8px 4.4px,transparent 4.6px),repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,226,120,.2) 0 12deg,transparent 12deg 45deg);background-size:20px 20px;}
 .pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.5) 15% 19%, transparent 19% 45%, rgba(255,255,255,.35) 45% 48%, transparent 48% 75%, rgba(255,255,255,.45) 75% 78%, transparent 78% 100%);}
 .pattern-royal::after{background-image:linear-gradient(45deg,rgba(246,168,60,.55) 25%,transparent 25%,transparent 75%,rgba(246,168,60,.55) 75%),linear-gradient(45deg,rgba(246,168,60,.55) 25%,transparent 25%,transparent 75%,rgba(246,168,60,.55) 75%),radial-gradient(rgba(255,215,107,.7) 1.3px, transparent 1.5px);background-size:14px 14px,14px 14px,14px 14px;background-position:0 0,7px 7px,3.5px 3.5px;}
@@ -557,7 +570,7 @@ var CARD_BACK_PRESETS = [
   { id:"honeycomb", name:"허니콤", cls:"pattern-honeycomb" },
   { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal" },
   { id:"ripple", name:"리플", cls:"pattern-ripple" },
-  { id:"luna", name:"루나", cls:"pattern-luna" },
+  { id:"polka", name:"폴카", cls:"pattern-polka" },
   { id:"solar", name:"솔라", cls:"pattern-solar" },
   { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
   { id:"royal", name:"로열", cls:"pattern-royal" },
@@ -582,7 +595,7 @@ var UNLOCK_MILESTONES = [
   { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
   { id:"win:1000", kind:"avatar",  label:"폭스트릭",       check:function(s){ return s.wins>=1000; }, detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
 
-  { id:"games:10",   kind:"pattern", label:"루나",     check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
+  { id:"games:10",   kind:"pattern", label:"폴카",     check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
   { id:"games:20",   kind:"title",   label:"카드 산책러",   check:function(s){ return s.games>=20; },   detail:function(s){ return "플레이 "+Math.min(s.games,20)+"/20판"; } },
   { id:"games:30",   kind:"pattern", label:"솔라",   check:function(s){ return s.games>=30; },   detail:function(s){ return "플레이 "+Math.min(s.games,30)+"/30판"; } },
   { id:"games:50",   kind:"pattern", label:"아가일",   check:function(s){ return s.games>=50; },   detail:function(s){ return "플레이 "+Math.min(s.games,50)+"/50판"; } },
@@ -1054,103 +1067,277 @@ function unlockAudio(){
   if(audioCtx && audioCtx.state==="suspended"){ audioCtx.resume(); }
 }
 
-function beep(freq, duration, type, gainVal, delay){
-  if(!sfxOn || !audioCtx) return;
-  var t0 = audioCtx.currentTime + (delay||0);
-  var osc = audioCtx.createOscillator();
-  var gain = audioCtx.createGain();
-  osc.type = type||"sine";
-  osc.frequency.setValueAtTime(freq, t0);
-  gain.gain.setValueAtTime(0.0001, t0);
-  gain.gain.linearRampToValueAtTime(gainVal||0.14, t0+0.012);
-  gain.gain.exponentialRampToValueAtTime(0.0001, t0+duration);
-  osc.connect(gain);
-  gain.connect(audioCtx.destination);
-  osc.start(t0);
-  osc.stop(t0+duration+0.03);
+// All one-shot effects go through a soft compressor so stacked sounds (capture chime +
+// card slap) never clip on phone speakers.
+var sfxOut = null;
+function sfxBus(){
+  if(!sfxOut){
+    sfxOut = audioCtx.createDynamicsCompressor();
+    sfxOut.threshold.value = -16; sfxOut.ratio.value = 4;
+    sfxOut.connect(audioCtx.destination);
+  }
+  return sfxOut;
 }
 
-function sfxSelect(){ beep(720, 0.06, "square", 0.08); }
-function sfxInvalid(){ beep(140, 0.16, "sawtooth", 0.1); }
-function sfxCapture(){ beep(520, 0.09, "triangle", 0.16); beep(780, 0.12, "triangle", 0.14, 0.06); }
-function sfxDraw(){ if(!sfxOn || !audioCtx) return; var t0=audioCtx.currentTime; var osc=audioCtx.createOscillator(); var gain=audioCtx.createGain(); osc.type="triangle"; osc.frequency.setValueAtTime(340,t0); osc.frequency.exponentialRampToValueAtTime(180,t0+0.16); gain.gain.setValueAtTime(0.0001,t0); gain.gain.linearRampToValueAtTime(0.1,t0+0.02); gain.gain.exponentialRampToValueAtTime(0.0001,t0+0.18); osc.connect(gain); gain.connect(audioCtx.destination); osc.start(t0); osc.stop(t0+0.2); }
-function sfxJoker(){ beep(660,0.1,"sine",0.13); beep(880,0.1,"sine",0.13,0.09); beep(1100,0.14,"sine",0.13,0.18); }
-function sfxTurn(){ beep(500,0.08,"sine",0.1); beep(700,0.1,"sine",0.1,0.09); }
-function sfxTick(){ beep(900,0.05,"square",0.07); }
-function sfxTimeout(){ beep(220,0.22,"sawtooth",0.14); beep(160,0.28,"sawtooth",0.12,0.12); }
-function sfxWin(){ [523,659,784,1047].forEach(function(f,i){ beep(f,0.28,"triangle",0.16,i*0.14); }); }
-function sfxLose(){ [392,349,311,262].forEach(function(f,i){ beep(f,0.32,"triangle",0.13,i*0.18); }); }
-function sfxReveal(){ beep(880, 0.09, "sine", 0.12); }
+var noiseBuf = null;
+function noiseBuffer(){
+  if(!noiseBuf){
+    var len = audioCtx.sampleRate;
+    noiseBuf = audioCtx.createBuffer(1, len, audioCtx.sampleRate);
+    var d = noiseBuf.getChannelData(0);
+    for(var i=0;i<len;i++) d[i] = Math.random()*2-1;
+  }
+  return noiseBuf;
+}
+
+// tone(freq, dur, {type, vol, delay, slide, attack}) — one enveloped oscillator.
+function tone(freq, duration, o){
+  if(!sfxOn || !audioCtx) return;
+  o = o||{};
+  var t0 = audioCtx.currentTime + (o.delay||0);
+  var osc = audioCtx.createOscillator();
+  var g = audioCtx.createGain();
+  osc.type = o.type||"sine";
+  osc.frequency.setValueAtTime(freq, t0);
+  if(o.slide) osc.frequency.exponentialRampToValueAtTime(o.slide, t0+duration);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(o.vol||0.1, t0+(o.attack||0.006));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+duration);
+  osc.connect(g); g.connect(sfxBus());
+  osc.start(t0); osc.stop(t0+duration+0.03);
+}
+
+// noiseHit(dur, {freq, to, q, vol, delay, filter}) — filtered noise for card slaps/swishes.
+function noiseHit(duration, o){
+  if(!sfxOn || !audioCtx) return;
+  o = o||{};
+  var t0 = audioCtx.currentTime + (o.delay||0);
+  var src = audioCtx.createBufferSource();
+  src.buffer = noiseBuffer();
+  var f = audioCtx.createBiquadFilter();
+  f.type = o.filter||"bandpass";
+  f.frequency.setValueAtTime(o.freq||2000, t0);
+  if(o.to) f.frequency.exponentialRampToValueAtTime(o.to, t0+duration);
+  f.Q.value = o.q||0.8;
+  var g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(o.vol||0.1, t0+(o.attack||0.004));
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+duration);
+  src.connect(f); f.connect(g); g.connect(sfxBus());
+  src.start(t0, Math.random()*0.5); src.stop(t0+duration+0.03);
+}
+
+function beep(freq, duration, type, gainVal, delay){ tone(freq, duration, { type:type, vol:gainVal, delay:delay }); }
+
+function sfxSelect(){ noiseHit(0.035, { freq:3200, q:1.2, vol:0.05 }); tone(1180, 0.06, { type:"triangle", vol:0.06, slide:880 }); }
+function sfxInvalid(){ tone(233, 0.11, { type:"triangle", vol:0.12 }); tone(196, 0.18, { type:"triangle", vol:0.12, delay:0.1 }); }
+function sfxCapture(){
+  noiseHit(0.08, { freq:1600, q:0.7, vol:0.17 });
+  tone(784, 0.14, { type:"triangle", vol:0.1, delay:0.03 });
+  tone(1175, 0.28, { vol:0.09, delay:0.09 });
+  tone(1568, 0.3, { vol:0.045, delay:0.09 });
+}
+function sfxDraw(){
+  noiseHit(0.12, { freq:900, to:3800, q:1.1, vol:0.09 });
+  noiseHit(0.12, { freq:900, to:3800, q:1.1, vol:0.08, delay:0.13 });
+}
+function sfxJoker(){
+  [1047,1319,1568,2093].forEach(function(f,i){ tone(f, 0.2, { vol:0.065, delay:i*0.055 }); });
+  tone(2637, 0.4, { vol:0.03, delay:0.22, attack:0.03 });
+}
+function sfxTurn(){
+  tone(784, 0.35, { vol:0.085 }); tone(1568, 0.22, { vol:0.025 });
+  tone(1047, 0.5, { vol:0.085, delay:0.12 }); tone(2093, 0.3, { vol:0.025, delay:0.12 });
+}
+function sfxTick(){ tone(1400, 0.035, { vol:0.06 }); noiseHit(0.02, { freq:4000, vol:0.03 }); }
+function sfxTimeout(){ [523,392,262].forEach(function(f,i){ tone(f, i===2?0.4:0.2, { type:"triangle", vol:0.1, delay:i*0.14 }); }); }
+function sfxWin(){
+  [523,659,784,1047].forEach(function(f,i){ tone(f, 0.22, { type:"triangle", vol:0.11, delay:i*0.09 }); });
+  [1047,1319,1568].forEach(function(f){ tone(f, 0.9, { vol:0.055, delay:0.4, attack:0.02 }); });
+  [2093,2637,3136].forEach(function(f,i){ tone(f, 0.18, { vol:0.03, delay:0.5+i*0.07 }); });
+}
+function sfxLose(){
+  [440,349,294].forEach(function(f,i){ tone(f, 0.32, { type:"triangle", vol:0.1, delay:i*0.2 }); });
+  tone(147, 0.7, { vol:0.09, delay:0.6, attack:0.03 });
+}
+function sfxReveal(){ tone(1319, 0.12, { vol:0.08 }); tone(1760, 0.2, { vol:0.06, delay:0.06 }); }
 
 /* ---------------- background music ---------------- */
+// Notes are MIDI numbers (0 = rest), one per step. pads: one chord per bar. Drum strings
+// are per-step patterns ("x" = hit). swing lengthens even steps / shortens odd ones.
+function midiHz(m){ return 440*Math.pow(2,(m-69)/12); }
+
+// 프렐류드: the broken-chord figure of Bach's C major prelude (BWV 846, public domain),
+// each chord's 5 voices played as 0-1-2-3-4-2-3-4 twice per bar over a held bass.
+var PRELUDE_CHORDS = [
+  [60,64,67,72,76],[60,62,69,74,77],[59,62,67,74,77],[60,64,67,72,76],
+  [60,64,69,76,81],[60,62,66,69,74],[59,62,67,74,79],[59,60,64,67,72]
+];
+var PRELUDE_FIG = [0,1,2,3,4,2,3,4,0,1,2,3,4,2,3,4];
+function preludeMelody(){
+  var out = [];
+  PRELUDE_CHORDS.forEach(function(ch){ PRELUDE_FIG.forEach(function(k){ out.push(ch[k]); }); });
+  return out;
+}
+function preludeBass(){
+  var out = [];
+  PRELUDE_CHORDS.forEach(function(ch){ for(var i=0;i<16;i++) out.push(i===0 ? ch[0]-12 : 0); });
+  return out;
+}
+
 var BGM_TRACKS = [
   {
-    name: "모험",
-    stepMs: 280, melodyType: "triangle", bassType: "sine",
-    melody: [523,587,659,587, 523,494,523,659, 698,659,587,659, 523,494,440,494],
-    bass:   [131,131,165,165, 131,131,147,147, 175,175,165,165, 131,131,110,110]
-  },
-  {
-    name: "느긋",
-    stepMs: 380, melodyType: "sine", bassType: "sine",
-    melody: [440,523,440,392, 349,392,440,392, 440,523,587,523, 440,392,349,330],
-    bass:   [110,110,87,87, 87,87,110,110, 110,110,98,98, 87,87,82,82]
-  },
-  {
     name: "프렐류드",
-    stepMs: 240, melodyType: "triangle", bassType: "sine",
-    melody: [262,330,392,523, 330,392,523,330, 196,247,294,392, 247,294,392,247],
-    bass:   [131,131,131,131, 131,131,131,131, 98,98,98,98, 98,98,98,98]
+    stepSec: 0.15, barSteps: 16,
+    lead: { type:"triangle", vol:0.042, len:2.2 },
+    bassType: "sine", bassVol: 0.07, bassLen: 14,
+    melody: preludeMelody(),
+    bass: preludeBass()
+  },
+  {
+    name: "산책",
+    stepSec: 0.2, barSteps: 8, swing: 0.16,
+    lead: { type:"triangle", vol:0.05, len:0.9 },
+    bassType: "triangle", bassVol: 0.06, bassLen: 1.8,
+    melody: [69,72,76,0, 74,72,69,0,  67,71,74,0, 76,74,71,67,  65,69,72,76, 74,0,69,72,  71,0,67,64, 67,0,0,0,
+             69,72,76,0, 74,72,69,0,  67,71,74,0, 76,74,71,67,  65,69,72,76, 74,0,69,72,  76,74,72,71, 72,0,0,0],
+    bass:   [41,0,0,0, 48,0,0,0,  40,0,0,0, 47,0,0,0,  38,0,0,0, 45,0,0,0,  36,0,0,0, 43,0,0,0],
+    pads:   [[53,57,60,64],[52,55,59,62],[50,53,57,60],[48,52,55,59]],
+    padVol: 0.016,
+    kick: "x.......x.......",
+    hat:  "..x...x...x...x."
+  },
+  {
+    name: "축제",
+    stepSec: 0.14, barSteps: 8,
+    lead: { type:"square", vol:0.022, len:0.7 },
+    bassType: "triangle", bassVol: 0.065, bassLen: 0.8,
+    melody: [76,79,76,72, 74,76,79,0,  81,79,76,0, 72,74,76,0,  77,76,74,72, 69,72,74,0,  74,76,74,71, 67,0,71,74,
+             76,79,76,72, 74,76,79,81,  84,81,79,76, 79,0,76,0,  77,81,79,77, 76,74,72,74,  74,0,71,0, 72,0,0,0],
+    bass:   [48,0,55,0, 48,0,55,0,  45,0,52,0, 45,0,52,0,  41,0,48,0, 41,0,48,0,  43,0,50,0, 43,0,50,0],
+    pads:   [[60,64,67],[57,60,64],[53,57,60],[55,59,62]],
+    padVol: 0.012,
+    kick:  "x...x...",
+    snare: "..x...x.",
+    hat:   ".x.x.x.x"
   }
 ];
 var bgmTrackIndex = 0;
 var bgmPlaying = false;
 var bgmTimer = null;
 var bgmStep = 0;
+var bgmNextTime = 0;
 var bgmMasterGain = null;
+var bgmFilter = null;
+var bgmBus = null;
 
-function bgmNote(freq, t0, duration, type, gainScale){
-  if(!audioCtx) return;
+// Each start/track switch gets a fresh bus so notes already scheduled ahead for the old
+// track can be faded out instead of overlapping the new one.
+function bgmOutput(){
+  if(!bgmMasterGain){
+    bgmMasterGain = audioCtx.createGain();
+    bgmMasterGain.gain.value = 1;
+    bgmFilter = audioCtx.createBiquadFilter();
+    bgmFilter.type = "lowpass"; bgmFilter.frequency.value = 3200;
+    bgmFilter.connect(bgmMasterGain);
+    bgmMasterGain.connect(audioCtx.destination);
+  }
+  if(!bgmBus){
+    bgmBus = audioCtx.createGain();
+    bgmBus.gain.value = 1;
+    bgmBus.connect(bgmFilter);
+  }
+  return bgmBus;
+}
+function releaseBgmBus(){
+  if(!bgmBus || !audioCtx) return;
+  var old = bgmBus;
+  bgmBus = null;
+  old.gain.setTargetAtTime(0.0001, audioCtx.currentTime, 0.03);
+  setTimeout(function(){ try{ old.disconnect(); }catch(e){} }, 500);
+}
+
+function bgmNote(freq, t0, duration, type, vol, attack){
   var osc = audioCtx.createOscillator();
   var g = audioCtx.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(freq, t0);
   g.gain.setValueAtTime(0.0001, t0);
-  g.gain.linearRampToValueAtTime(0.055*gainScale, t0+0.02);
+  g.gain.linearRampToValueAtTime(vol, t0+(attack||0.015));
   g.gain.exponentialRampToValueAtTime(0.0001, t0+duration);
-  osc.connect(g);
-  g.connect(bgmMasterGain);
-  osc.start(t0);
-  osc.stop(t0+duration+0.02);
+  osc.connect(g); g.connect(bgmOutput());
+  osc.start(t0); osc.stop(t0+duration+0.02);
+}
+function bgmDrum(kind, t0){
+  if(kind==="kick"){
+    var osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+    osc.frequency.setValueAtTime(130, t0);
+    osc.frequency.exponentialRampToValueAtTime(48, t0+0.12);
+    g.gain.setValueAtTime(0.09, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+0.16);
+    osc.connect(g); g.connect(bgmOutput());
+    osc.start(t0); osc.stop(t0+0.18);
+    return;
+  }
+  var src = audioCtx.createBufferSource();
+  src.buffer = noiseBuffer();
+  var f = audioCtx.createBiquadFilter();
+  var g2 = audioCtx.createGain();
+  var dur = kind==="hat" ? 0.035 : 0.09;
+  f.type = kind==="hat" ? "highpass" : "bandpass";
+  f.frequency.value = kind==="hat" ? 7000 : 1800;
+  g2.gain.setValueAtTime(kind==="hat" ? 0.018 : 0.035, t0);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  src.connect(f); f.connect(g2); g2.connect(bgmOutput());
+  src.start(t0, Math.random()*0.5); src.stop(t0+dur+0.02);
 }
 
+function playBgmStep(track, step, t0){
+  var i = step % track.melody.length;
+  var m = track.melody[i];
+  if(m) bgmNote(midiHz(m), t0, track.stepSec*track.lead.len, track.lead.type, track.lead.vol);
+  var b = track.bass[step % track.bass.length];
+  if(b) bgmNote(midiHz(b), t0, track.stepSec*track.bassLen, track.bassType, track.bassVol);
+  if(track.pads && i % track.barSteps===0){
+    var chord = track.pads[(i/track.barSteps) % track.pads.length];
+    chord.forEach(function(n){ bgmNote(midiHz(n), t0, track.stepSec*track.barSteps*0.98, "sine", track.padVol, 0.25); });
+  }
+  ["kick","snare","hat"].forEach(function(kind){
+    var pat = track[kind];
+    if(pat && pat.charAt(step % pat.length)==="x") bgmDrum(kind, t0);
+  });
+}
+
+// Look-ahead scheduler: notes are placed on the audio clock a little ahead of time, so
+// timer jitter (busy main thread during card animations) no longer drags the beat.
 function scheduleBgmStep(){
   if(!bgmPlaying) return;
   var track = BGM_TRACKS[bgmTrackIndex];
-  if(bgmOn && audioCtx){
-    var t0 = audioCtx.currentTime;
-    bgmNote(track.melody[bgmStep % track.melody.length], t0, track.stepMs/1000*0.85, track.melodyType, 0.85);
-    if(bgmStep % 2 === 0) bgmNote(track.bass[bgmStep % track.bass.length], t0, track.stepMs/1000*0.9, track.bassType, 1);
+  if(audioCtx){
+    var now = audioCtx.currentTime;
+    if(bgmNextTime < now) bgmNextTime = now + 0.05;
+    while(bgmNextTime < now + 0.2){
+      if(bgmOn) playBgmStep(track, bgmStep, bgmNextTime);
+      var sw = track.swing ? (bgmStep%2===0 ? 1+track.swing : 1-track.swing) : 1;
+      bgmNextTime += track.stepSec*sw;
+      bgmStep++;
+    }
   }
-  bgmStep++;
-  bgmTimer = setTimeout(scheduleBgmStep, track.stepMs);
+  bgmTimer = setTimeout(scheduleBgmStep, 50);
 }
 
 function startBgm(){
   if(bgmPlaying || !audioCtx) return;
-  if(!bgmMasterGain){
-    bgmMasterGain = audioCtx.createGain();
-    bgmMasterGain.gain.value = 1;
-    bgmMasterGain.connect(audioCtx.destination);
-  }
   bgmPlaying = true;
   bgmStep = 0;
+  bgmNextTime = 0;
   scheduleBgmStep();
 }
 
 function stopBgm(){
   bgmPlaying = false;
   if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer = null; }
+  releaseBgmBus();
 }
 
 function duckBgm(duration){
@@ -1167,7 +1354,9 @@ function setBgmTrack(idx){
   bgmTrackIndex = idx;
   if(bgmPlaying){
     if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer=null; }
+    releaseBgmBus();
     bgmStep = 0;
+    bgmNextTime = 0;
     scheduleBgmStep();
   }
 }
@@ -1435,6 +1624,12 @@ window.addEventListener("focus", forceResync);
 function applyRemoteRoomState(data){
   if(state.ceremonyPlaying) return;
   var wasOver = state.gameOver;
+  // Hand order (정렬) and the current selection are local-only. Remember them by card id
+  // so a snapshot arriving mid-turn (an emoji, a write echo) can't reorder the hand under
+  // the finger or leave selectedHandIdx pointing at a different card.
+  var prevMe = state.players && state.players[state.myIndex];
+  var prevOrder = prevMe && prevMe.hand ? prevMe.hand.map(function(c){ return c.id; }) : [];
+  var prevSel = (prevMe && prevMe.hand && state.selectedHandIdx!==null && state.selectedHandIdx!==undefined && prevMe.hand[state.selectedHandIdx]) ? prevMe.hand[state.selectedHandIdx].id : null;
   state.players = data.players || [];
   state.floor = data.floor || [];
   state.centerDeck = data.centerDeck || [];
@@ -1453,6 +1648,22 @@ function applyRemoteRoomState(data){
   var idx = -1;
   for(var i=0;i<state.players.length;i++){ if(state.players[i].clientId===myClientId){ idx=i; break; } }
   state.myIndex = idx>=0 ? idx : 0;
+
+  var me = state.players[state.myIndex];
+  if(me && me.hand && prevOrder.length){
+    var rank = {};
+    prevOrder.forEach(function(id, k){ rank[id] = k; });
+    me.hand = me.hand.map(function(c, k){ return { c:c, k:(c.id in rank) ? rank[c.id] : 1000+k }; })
+      .sort(function(a,b){ return a.k-b.k; }).map(function(x){ return x.c; });
+  }
+  if(state.mode!=="idle"){
+    var selIdx = -1;
+    if(me && me.hand && prevSel!==null){
+      for(var s=0;s<me.hand.length;s++){ if(me.hand[s].id===prevSel){ selIdx=s; break; } }
+    }
+    if(selIdx>=0 && currentPlayerIdx()===state.myIndex) state.selectedHandIdx = selIdx;
+    else clearSelectionState();
+  }
 
   if($("screen-game").classList.contains("hidden")){
     switchScreen("game");
@@ -2591,7 +2802,7 @@ function cardEl(coin, opts){
   if(coin.isJoker){
     d.classList.add("joker");
     if(opts.wild) d.classList.add("wildfloor");
-    d.textContent = "★";
+    d.appendChild(el("span","joker-star","★"));
   } else {
     if(coin.isPrism){
       d.classList.add("prism");
@@ -2618,6 +2829,37 @@ function render(){
   renderInstruction();
   if(!turnTimerId) renderTurnTimer(null);
   $("sync-btn").classList.toggle("hidden", !isMultiplayer());
+  fitBoard();
+}
+
+// Size cards to the space actually left over (board row = whatever the fixed rows don't
+// take) instead of a flat vh value, so the floor can never spill into the hand area on
+// short screens. Floor: 2 rows of cards + padding/border/gap; width: deck column + 4.
+function fitBoard(){
+  var screen = $("screen-game");
+  var row = screen && screen.querySelector(".board-row");
+  if(!row || screen.classList.contains("hidden")) return;
+  var h = row.clientHeight - 4, w = row.clientWidth;
+  if(h<=0 || w<=0) return;
+  var byH = (h - 19 - 7) / 2 / 1.4;
+  var byW = (w - 12 - 19 - 21) / 5;
+  var cw = Math.max(28, Math.min(72, Math.floor(Math.min(byH, byW))));
+  screen.style.setProperty("--card-w", cw+"px");
+  screen.style.setProperty("--card-h", Math.round(cw*1.4)+"px");
+  var hand = $("hand-coins");
+  if(hand && hand.clientHeight>0){
+    var hw = Math.floor((hand.clientHeight - 4 - 5) / 2 / 1.4);
+    screen.style.setProperty("--hand-w", Math.max(30, Math.min(66, hw))+"px");
+  }
+}
+// The board row's height is independent of the card size (flex:1 1 0, fixed siblings),
+// so re-fitting on its resize can't feed back into another resize.
+if(window.ResizeObserver){
+  var fitObserver = new ResizeObserver(function(){ fitBoard(); });
+  fitObserver.observe(document.querySelector("#screen-game .board-row"));
+  fitObserver.observe($("hand-coins"));
+} else {
+  window.addEventListener("resize", fitBoard);
 }
 
 function renderMyTag(){
@@ -2638,9 +2880,9 @@ function renderInstruction(){
     return;
   }
   switch(state.mode){
-    case "eat-target": bar.textContent = "🎯 타겟이 될 바닥 카드를 선택하세요!"; break;
-    case "joker-choice": bar.textContent = "🌈 조커 발동! 바닥 카드를 아무거나 가져오거나, 점수덱에 내려놓으세요"; break;
-    default: bar.innerHTML = "✋ 행동을 선택하세요! 손패를 클릭하거나,<br>가져올 수 없으면 [2장 뽑고 턴 종료]를 누르세요.";
+    case "eat-target": bar.textContent = "🎯 가져올 바닥 카드를 고르세요"; break;
+    case "joker-choice": bar.textContent = "★ 바닥 카드 아무거나, 또는 점수덱에 보관"; break;
+    default: bar.textContent = "✋ 손패를 골라 바닥 카드를 가져오세요";
   }
 }
 
@@ -2684,6 +2926,7 @@ function renderOpponents(){
 function renderFloor(){
   var area = $("floor-board");
   area.innerHTML = "";
+  area.classList.toggle("joker-mode", isHumanTurn() && state.mode==="joker-choice");
   state.floor.forEach(function(fc, fi){
     var slot = el("div","floor-slot");
     var opts = { wild: fc.isJoker };
@@ -2730,7 +2973,8 @@ function renderHand(){
 function renderScore(){
   var area = $("score-body");
   area.innerHTML = "";
-  area.classList.toggle("bank-target", isHumanTurn() && state.mode==="joker-choice");
+  var banking = isHumanTurn() && state.mode==="joker-choice";
+  area.classList.toggle("bank-target", banking);
   var player = state.players[state.myIndex];
   var flow = el("div","score-flow");
   flow.id = "scoretotal-0";
@@ -2749,6 +2993,7 @@ function renderScore(){
     });
   });
   area.appendChild(flow);
+  if(banking) area.appendChild(el("div","bank-hint","★ 여기에 보관"));
 }
 
 /* ---------------- interaction handlers ---------------- */
@@ -2757,42 +3002,20 @@ function onHandClick(hi){
   if(state.animating || !isHumanTurn()) return;
   var player = state.players[state.myIndex];
   var coin = player.hand[hi];
+  if(!coin) return;
 
-  if(state.mode==="idle"){
-    if(coin.isJoker) sfxJoker(); else sfxSelect();
-    if(coin.isJoker){
-      state.selectedHandIdx = hi;
-      state.mode = "joker-choice";
-      render();
-    } else {
-      state.selectedHandIdx = hi;
-      state.mode = "eat-target";
-      render();
-    }
+  // Tapping the already-selected card deselects it. Any other tap switches straight to
+  // that card's mode — a joker tap used to be ignored while a number card was selected
+  // (and vice versa), which read as "the joker won't select".
+  if(state.mode!=="idle" && hi===state.selectedHandIdx){
+    clearSelectionState();
+    render();
     return;
   }
-
-  if(state.mode==="eat-target"){
-    if(hi===state.selectedHandIdx){
-      clearSelectionState();
-      render();
-    } else if(!coin.isJoker){
-      sfxSelect();
-      state.selectedHandIdx = hi;
-      render();
-    }
-  }
-
-  if(state.mode==="joker-choice"){
-    if(hi===state.selectedHandIdx){
-      clearSelectionState();
-      render();
-    } else if(coin.isJoker){
-      sfxSelect();
-      state.selectedHandIdx = hi;
-      render();
-    }
-  }
+  if(coin.isJoker) sfxJoker(); else sfxSelect();
+  state.selectedHandIdx = hi;
+  state.mode = coin.isJoker ? "joker-choice" : "eat-target";
+  render();
 }
 
 function onScoreBodyClick(){
