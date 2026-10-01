@@ -538,6 +538,9 @@ function ensureFirebase(){
     fbGetDoc = fsMod.getDoc;
     fbOnSnapshot = fsMod.onSnapshot;
     fbRunTransaction = fsMod.runTransaction;
+  }).catch(function(e){
+    fbReadyPromise = null;
+    throw e;
   });
   return fbReadyPromise;
 }
@@ -1294,7 +1297,7 @@ try{
 var chosenCount = null;
 var urlRoomCode = (new URLSearchParams(location.search)).get("room");
 var chosenNickname = null;
-try{ chosenNickname = localStorage.getItem("straightNickname") || null; }catch(e){}
+try{ chosenNickname = cleanText(localStorage.getItem("straightNickname") || "", 12) || null; }catch(e){}
 
 /* ---------------- multiplayer (Firebase) ---------------- */
 
@@ -1344,7 +1347,51 @@ function pushRoomState(){
   }).catch(function(e){ console.error("동기화 실패", e); });
 }
 
+// Room docs are writable by any client (there is no auth), so everything read back is
+// untrusted: it gets rendered with innerHTML on every player's screen. Normalize it at
+// this single entry point — avatars are rebuilt locally from a known character, titles
+// and borders must match a preset, cards are coerced to valid shapes, text loses markup.
+function cleanText(s, max){ return String(s==null?"":s).replace(/[<>&"'`]/g,"").slice(0, max); }
+function cleanCard(c){
+  if(!c || typeof c!=="object") return null;
+  var v = Number(c.value);
+  return { id:Number(c.id)||0, isJoker:!!c.isJoker, isPrism:!!c.isPrism,
+    color: ALL_COLORS.indexOf(c.color)!==-1 ? c.color : null,
+    value: c.isJoker ? null : (v>=1 && v<=10 ? v : 1) };
+}
+function cleanCards(list){ return Array.isArray(list) ? list.map(cleanCard).filter(Boolean) : []; }
+function cleanPlayer(p){
+  if(!p || typeof p!=="object") return null;
+  var ch = null;
+  for(var i=0;i<CHARACTERS.length;i++){ if(CHARACTERS[i].name===p.characterName){ ch=CHARACTERS[i]; break; } }
+  var out = Object.assign({}, p);
+  out.characterName = ch ? ch.name : null;
+  out.avatar = ch ? avatarIconHTML(ch) : (p.avatarPicked ? "❓" : null);
+  out.name = cleanText(p.name, 16);
+  out.title = TITLE_PRESETS.some(function(t){ return t.name===p.title; }) ? p.title : null;
+  out.border = BORDER_PRESETS.some(function(b){ return b.cls===p.border; }) ? p.border : null;
+  out.hand = cleanCards(p.hand);
+  out.score = cleanCards(p.score);
+  return out;
+}
+function sanitizeRoomData(data){
+  data.players = Array.isArray(data.players) ? data.players.map(cleanPlayer).filter(Boolean) : [];
+  data.floor = cleanCards(data.floor);
+  data.centerDeck = cleanCards(data.centerDeck);
+  data.colors = Array.isArray(data.colors) ? data.colors.filter(function(c){ return ALL_COLORS.indexOf(c)!==-1; }) : [];
+  data.prismRanks = Array.isArray(data.prismRanks) ? data.prismRanks.map(Number).filter(function(n){ return n>=1 && n<=10; }) : [];
+  data.log = Array.isArray(data.log) ? data.log.slice(0,30).map(function(m){ return String(m).slice(0,200); }) : [];
+  data.maxPlayers = Math.min(4, Math.max(2, Number(data.maxPlayers)||4));
+  var n = data.players.length;
+  data.turnOrder = Array.isArray(data.turnOrder) ? data.turnOrder.map(Number).filter(function(i){ return i>=0 && i<n; }) : [];
+  var ws = data.winnerStraight;
+  data.winnerStraight = (ws && typeof ws==="object" && ALL_COLORS.indexOf(ws.color)!==-1 && Number(ws.start)>=1 && Number(ws.start)<=6)
+    ? { color:ws.color, start:Number(ws.start) } : null;
+  return data;
+}
+
 function handleRoomSnapshot(data){
+  sanitizeRoomData(data);
   if(data.phase==="lobby"){
     state.players = data.players || [];
     state.mpMaxPlayers = data.maxPlayers;
@@ -1364,8 +1411,15 @@ function subscribeRoom(code){
   });
 }
 
+// onSnapshot already streams every change; this is only a catch-up after the tab was
+// backgrounded. Returning to the tab fires both "visibilitychange" and "focus", so
+// throttle to avoid paying for duplicate full-document reads.
+var lastResyncAt = 0;
 function forceResync(){
   if(!isMultiplayer() || !state.mpRoomCode || !fbDb) return;
+  var now = Date.now();
+  if(now - lastResyncAt < 3000) return;
+  lastResyncAt = now;
   fbGetDoc(fbDoc(fbDb,"rooms",state.mpRoomCode)).then(function(snap){
     if(!snap.exists()) return;
     handleRoomSnapshot(snap.data());
@@ -1522,7 +1576,7 @@ function pickAvatar(ch, cb){
 }
 
 function applyNickname(raw){
-  var nick = (raw||"").trim().slice(0,12);
+  var nick = cleanText((raw||"").trim(), 12);
   chosenNickname = nick || null;
   try{ localStorage.setItem("straightNickname", chosenNickname||""); }catch(e){}
   updateMyDisplayName();
@@ -1812,13 +1866,16 @@ $("lobby-copy-btn").addEventListener("click", function(){
   sfxSelect();
   var url = location.href.split("?")[0] + "?room=" + state.mpRoomCode;
   var text = "스트레이트! 같이 하자 🎴 방 코드: " + state.mpRoomCode + "\n" + url;
+  var showManual = function(){ window.prompt("아래 내용을 복사해서 친구에게 보내세요", text); };
   if(navigator.clipboard && navigator.clipboard.writeText){
     navigator.clipboard.writeText(text).then(function(){
       var btn = $("lobby-copy-btn");
       var old = btn.textContent;
       btn.textContent = "✅ 복사됨!";
       setTimeout(function(){ btn.textContent = old; }, 1500);
-    }).catch(function(){});
+    }).catch(showManual);
+  } else {
+    showManual();
   }
 });
 
@@ -1989,7 +2046,11 @@ function pushLog(msg){
 function renderLog(){
   var panel = $("log-panel");
   panel.innerHTML = "";
-  state.log.forEach(function(m){ panel.appendChild(el("div",null,m)); });
+  state.log.forEach(function(m){
+    var line = el("div");
+    line.textContent = m;
+    panel.appendChild(line);
+  });
 }
 
 /* ---------------- turn helpers ---------------- */

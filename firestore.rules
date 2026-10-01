@@ -1,0 +1,26 @@
+rules_version = '2';
+
+// The game has no sign-in, so these rules can't tell players apart. What they can do is
+// limit the blast radius: nobody can list/enumerate every room, rooms can't be deleted,
+// codes must look like real room codes, and a room can't grow past 4 players.
+// Deploy: Firebase console > Firestore Database > Rules > paste > Publish
+// (or `firebase deploy --only firestore:rules`).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /rooms/{code} {
+      allow get: if code.matches('^[A-HJ-NP-Z2-9]{5}$');
+      allow list: if false;
+      allow create: if code.matches('^[A-HJ-NP-Z2-9]{5}$')
+        && request.resource.data.phase == 'lobby'
+        && request.resource.data.players is list
+        && request.resource.data.players.size() <= 4;
+      allow update: if request.resource.data.players is list
+        && request.resource.data.players.size() <= 4
+        && request.resource.data.phase in ['lobby', 'playing'];
+      allow delete: if false;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
