@@ -248,6 +248,14 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.opp-back{width:16px;height:23px;border-radius:4px;border-width:1px;cursor:default;flex-shrink:0;}
 .card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
 .card.joker,.card.prism{background:linear-gradient(135deg,#ff6b6b,#ffd76b 25%,#4ce0a0 50%,#33d6c0 75%,#7f77dd);color:#241f3d;border-color:rgba(255,255,255,.7);}
+/* Reset card: deep teal with a cyan ring — reads as an "action" card, distinct from the
+   rainbow joker/prism and from every suit color. */
+.card.reset{background:radial-gradient(circle at 50% 38%,#4fe3d6 0,#1e9aa6 42%,#16406a 100%);border-color:#bff7f2;color:#fff;flex-direction:column;gap:0;}
+.reset-icon{position:relative;z-index:2;font-size:1em;line-height:1;font-weight:900;text-shadow:0 1px 3px rgba(10,30,60,.6);}
+.reset-label{position:relative;z-index:2;font-size:.36em;font-weight:800;letter-spacing:.5px;margin-top:2px;opacity:.95;}
+.card.hand .reset-label{font-size:.5em;}
+.floor-board.reset-mode{border-color:rgba(79,227,214,.85);background:rgba(79,227,214,.07);}
+.card.reset-target{box-shadow:0 0 0 2px rgba(79,227,214,.85),0 3px 6px rgba(0,0,0,.45);}
 .joker-star{position:relative;z-index:2;font-size:.78em;line-height:1;color:#fff;text-shadow:0 1px 2px rgba(36,31,61,.55);}
 .card.tiny .joker-star,.card.opp .joker-star{font-size:.85em;}
 /* Armed joker: same lift as a selected card plus a white/gold double ring and one slow
@@ -1160,6 +1168,10 @@ function sfxLose(){
   [440,349,294].forEach(function(f,i){ tone(f, 0.32, { type:"triangle", vol:0.1, delay:i*0.2 }); });
   tone(147, 0.7, { vol:0.09, delay:0.6, attack:0.03 });
 }
+function sfxReset(){
+  noiseHit(0.45, { freq:600, to:5000, q:0.9, vol:0.12, attack:0.08 });
+  [523,659,784,1047].forEach(function(f,i){ tone(f, 0.16, { type:"triangle", vol:0.06, delay:0.12+i*0.05 }); });
+}
 function sfxReveal(){ tone(1319, 0.12, { vol:0.08 }); tone(1760, 0.2, { vol:0.06, delay:0.06 }); }
 
 /* ---------------- background music ---------------- */
@@ -1222,7 +1234,7 @@ var BGM_TRACKS = [
     hat:   ".x.x.x.x"
   }
 ];
-var bgmTrackIndex = 0;
+var bgmTrackIndex = 1; // 산책
 var bgmPlaying = false;
 var bgmTimer = null;
 var bgmStep = 0;
@@ -1395,17 +1407,20 @@ function buildDeck(colors, prismRanks){
     }
   });
   for(var i=0;i<2;i++) deck.push({ id:id++, isJoker:true, color:null, value:null, isPrism:false });
+  // Reset cards: player count - 1 (2p=1, 3p=2, 4p=3; colors.length === player count).
+  for(var r=0;r<colors.length-1;r++) deck.push({ id:id++, isReset:true, isJoker:false, color:null, value:null, isPrism:false });
   return deck;
 }
 
 function coinLabel(coin){
+  if(coin.isReset) return "리셋 카드";
   if(coin.isJoker) return "조커";
   var v = rankLabel(coin.value);
   if(coin.isPrism) return "프리즘 "+v;
   return COLOR_NAMES[coin.color] + " " + v;
 }
 
-function pointValue(coin){ if(coin.isJoker) return 10; return coin.value===1 ? 1 : coin.value; }
+function pointValue(coin){ if(coin.isReset) return 0; if(coin.isJoker) return 10; return coin.value===1 ? 1 : coin.value; }
 
 function rankLabel(v){
   if(v===1) return "A";
@@ -1418,9 +1433,11 @@ function rankLabel(v){
    - same NUMBER beats regardless of color
    - prism cards (color:null) skip the color check entirely
    - otherwise same color required, and hand value >= floor value
+   - reset card: never captures from hand (it's used instead); on the floor any card takes it
 */
 function isValidEat(hand, floor){
-  if(hand.isJoker) return false;
+  if(hand.isJoker || hand.isReset) return false;
+  if(floor.isReset) return true;
   if(floor.isJoker) return hand.value === 1;
   if(hand.value === floor.value) return true;
   if(!hand.isPrism && !floor.isPrism && hand.color !== floor.color) return false;
@@ -1544,9 +1561,10 @@ function cleanText(s, max){ return String(s==null?"":s).replace(/[<>&"'`]/g,"").
 function cleanCard(c){
   if(!c || typeof c!=="object") return null;
   var v = Number(c.value);
-  return { id:Number(c.id)||0, isJoker:!!c.isJoker, isPrism:!!c.isPrism,
+  var special = !!c.isJoker || !!c.isReset;
+  return { id:Number(c.id)||0, isJoker:!!c.isJoker, isReset:!!c.isReset, isPrism:!!c.isPrism,
     color: ALL_COLORS.indexOf(c.color)!==-1 ? c.color : null,
-    value: c.isJoker ? null : (v>=1 && v<=10 ? v : 1) };
+    value: special ? null : (v>=1 && v<=10 ? v : 1) };
 }
 function cleanCards(list){ return Array.isArray(list) ? list.map(cleanCard).filter(Boolean) : []; }
 function cleanPlayer(p){
@@ -2591,7 +2609,7 @@ function playCaptureAnimation(opts, onComplete){
   function stageB(){
     floorCardEl.style.visibility = "hidden";
     var destEl;
-    if(opts.isHuman){ destEl = $("score-body"); }
+    if(opts.isHuman){ destEl = opts.capturedCoin.isReset ? $("hand-coins") : $("score-body"); }
     else { destEl = document.querySelector('.opponent-card[data-player-idx="'+opts.playerIdx+'"]'); }
     var destRect = destEl ? destEl.getBoundingClientRect() : floorRect;
     animateFly(floorRect, destRect, opts.capturedCoin, 380, onComplete);
@@ -2641,10 +2659,12 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     handCoin: handCoin,
     capturedCoin: capturedCoin
   }, function(){
-    player.score.push(capturedCoin);
-    if(capturedCoin.isPrism && playerIdx===state.myIndex) bumpStatAndCheck("prismBanked", 1);
     player.hand.splice(handIdx,1);
-    state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, color:handCoin.color, value:handCoin.value, isPrism:handCoin.isPrism };
+    // A reset card isn't a score card — taking it from the floor puts it in your hand to use later.
+    if(capturedCoin.isReset) player.hand.push(capturedCoin);
+    else player.score.push(capturedCoin);
+    if(capturedCoin.isPrism && playerIdx===state.myIndex) bumpStatAndCheck("prismBanked", 1);
+    state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, isReset:!!handCoin.isReset, color:handCoin.color, value:handCoin.value, isPrism:handCoin.isPrism };
     pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
     state.stagnantTurns = 0;
     state.floorResetStreak = 0;
@@ -2691,6 +2711,52 @@ function bankJoker(handIdx){
   checkWin(state.myIndex);
 }
 
+// Reset card: sweep every floor card back into the center deck, reshuffle, deal a fresh
+// floor, then shuffle the used reset card into the remaining deck (after the deal, so it
+// can't land straight back on the new floor). Like banking a joker, this is a free
+// action — the turn continues on the new floor.
+function useResetCard(playerIdx, handIdx, cb){
+  var player = state.players[playerIdx];
+  var card = player.hand[handIdx];
+  if(!card || !card.isReset) return;
+  player.hand.splice(handIdx, 1);
+  state.animating = true;
+  clearSelectionState();
+  render();
+  sfxReset();
+
+  var deckEl = $("deck-visual");
+  var deckRect = deckEl ? deckEl.getBoundingClientRect() : null;
+  var floorEls = document.querySelectorAll("#floor-board .card");
+  var pending = floorEls.length;
+  function swept(){
+    var recycled = state.floor.splice(0, state.floor.length);
+    state.centerDeck = shuffle(state.centerDeck.concat(recycled));
+    var n = Math.min(8, state.centerDeck.length);
+    var fresh = state.centerDeck.splice(0, n);
+    state.centerDeck.splice(Math.floor(Math.random()*(state.centerDeck.length+1)), 0, card);
+    state.stagnantTurns = 0;
+    render();
+    animateDrawFromDeck(n, $("floor-board"), function(){
+      state.floor = fresh;
+      pushLog(player.name+"가 🔄 리셋 카드를 사용해 바닥 카드를 전부 새로 깔았습니다!");
+      state.animating = false;
+      render();
+      pushRoomState();
+      if(cb) cb();
+    });
+  }
+  if(!deckRect || pending===0){ swept(); return; }
+  Array.prototype.forEach.call(floorEls, function(fe, k){
+    var rect = fe.getBoundingClientRect();
+    var coin = state.floor[k];
+    setTimeout(function(){
+      fe.style.visibility = "hidden";
+      animateFly(rect, deckRect, coin, 280, function(){ if(--pending===0) swept(); });
+    }, k*45);
+  });
+}
+
 /* ---------------- AI ---------------- */
 
 function findValidCaptures(hand, floor){
@@ -2714,7 +2780,10 @@ function colorProgress(score, color){
 
 function chooseAiCapture(options, difficulty, aiPlayer, opponents){
   if(options.length===0) return null;
-  function baseVal(o){ return pointValue(o.floor); }
+  // A floor reset card is worth grabbing over drawing, but less than a real score card.
+  // The small hand-value term makes ties (e.g. any card can take a reset) spend the
+  // cheapest card.
+  function baseVal(o){ return (o.floor.isReset ? 3 : pointValue(o.floor)) - pointValue(o.hand)*0.05; }
   if(difficulty==="easy"){
     var best=null;
     options.forEach(function(o){ var v=baseVal(o); if(!best||v>best.v) best={o:o,v:v}; });
@@ -2768,6 +2837,14 @@ function aiTakeTurn(playerIdx){
     return;
   }
 
+  // Nothing to take: spend a reset card (free action) and look at the fresh floor.
+  var resetIdx = -1;
+  player.hand.forEach(function(c,i){ if(c.isReset && resetIdx<0) resetIdx = i; });
+  if(resetIdx>=0 && state.centerDeck.length>0){
+    useResetCard(playerIdx, resetIdx, function(){ aiTakeTurn(playerIdx); });
+    return;
+  }
+
   var destEl = document.querySelector('.opponent-card[data-player-idx="'+playerIdx+'"]');
 
   var n2 = Math.min(2, state.centerDeck.length);
@@ -2799,7 +2876,11 @@ function cardEl(coin, opts){
     return d;
   }
   if(coin && coin.id!==undefined) d.dataset.cid = coin.id;
-  if(coin.isJoker){
+  if(coin.isReset){
+    d.classList.add("reset");
+    d.appendChild(el("span","reset-icon","↻"));
+    if(!/tiny|opp/.test(opts.cls||"")) d.appendChild(el("span","reset-label","리셋"));
+  } else if(coin.isJoker){
     d.classList.add("joker");
     if(opts.wild) d.classList.add("wildfloor");
     d.appendChild(el("span","joker-star","★"));
@@ -2882,6 +2963,7 @@ function renderInstruction(){
   switch(state.mode){
     case "eat-target": bar.textContent = "🎯 가져올 바닥 카드를 고르세요"; break;
     case "joker-choice": bar.textContent = "★ 바닥 카드 아무거나, 또는 점수덱에 보관"; break;
+    case "reset-choice": bar.textContent = "↻ 바닥판을 누르면 바닥 카드를 전부 새로 깝니다"; break;
     default: bar.textContent = "✋ 손패를 골라 바닥 카드를 가져오세요";
   }
 }
@@ -2927,13 +3009,18 @@ function renderFloor(){
   var area = $("floor-board");
   area.innerHTML = "";
   area.classList.toggle("joker-mode", isHumanTurn() && state.mode==="joker-choice");
+  area.classList.toggle("reset-mode", isHumanTurn() && state.mode==="reset-choice");
   state.floor.forEach(function(fc, fi){
     var slot = el("div","floor-slot");
     var opts = { wild: fc.isJoker };
     var jokerArmed = isHumanTurn() && state.mode==="joker-choice";
-    var canTarget = isHumanTurn() && (state.mode==="eat-target" || jokerArmed);
+    var resetArmed = isHumanTurn() && state.mode==="reset-choice";
+    var canTarget = isHumanTurn() && (state.mode==="eat-target" || jokerArmed || resetArmed);
     var valid = false;
-    if(jokerArmed){
+    if(resetArmed){
+      valid = true;
+      opts.cls = "reset-target";
+    } else if(jokerArmed){
       valid = true;
       opts.cls = "joker-target";
     } else if(canTarget){
@@ -2956,7 +3043,7 @@ function renderHand(){
   var player = state.players[state.myIndex];
   player.hand.forEach(function(hc, hi){
     var cls = "hand";
-    if(state.mode==="eat-target" && state.selectedHandIdx===hi) cls+=" selected";
+    if((state.mode==="eat-target" || state.mode==="reset-choice") && state.selectedHandIdx===hi) cls+=" selected";
     if(state.mode==="joker-choice" && state.selectedHandIdx===hi) cls+=" joker-armed";
     if(!isHumanTurn()) cls += " disabled";
     var d = cardEl(hc, { cls:cls.trim() });
@@ -3014,7 +3101,7 @@ function onHandClick(hi){
   }
   if(coin.isJoker) sfxJoker(); else sfxSelect();
   state.selectedHandIdx = hi;
-  state.mode = coin.isJoker ? "joker-choice" : "eat-target";
+  state.mode = coin.isJoker ? "joker-choice" : coin.isReset ? "reset-choice" : "eat-target";
   render();
 }
 
@@ -3032,6 +3119,10 @@ function onFloorTargetClick(fi){
   var handCoin = player.hand[handIdx];
   var floorCoin = state.floor[fi];
 
+  if(state.mode==="reset-choice" && handCoin && handCoin.isReset){
+    useResetCard(state.myIndex, handIdx);
+    return;
+  }
   if(state.mode==="eat-target"){
     if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
     doEat(state.myIndex, handIdx, fi);
@@ -3042,6 +3133,7 @@ function onFloorTargetClick(fi){
 
 function handSortKey(c){
   if(c.isJoker) return -1000;
+  if(c.isReset) return -900;
   return state.colors.indexOf(c.color)*100 + c.value;
 }
 function sortHand(){
@@ -3126,6 +3218,7 @@ function buildRulebookPanel(){
     "<li><b>오늘의 프리즘</b>: 매 게임 무작위로 숫자 2개가 뽑혀, 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 프리즘이 됩니다(카드 수는 그대로). 프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다. 이번 게임의 프리즘 숫자는 게임 시작 시 안내됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
     "<li><b>손패 조커</b>: 조커를 누르면 발동! 바닥 카드 아무거나 하나를 가져오거나, 점수덱에 내려놓을 수 있습니다(내려놓기는 턴을 소모하지 않음). 점수덱의 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
+    "<li><b>리셋 카드</b>: (인원수−1)장 등장 (2인 1장 · 3인 2장 · 4인 3장). 손패에서 누른 뒤 바닥판을 누르면 바닥 카드 전부가 중앙 덱으로 돌아가 섞이고 새 8장이 깔립니다. 사용한 리셋 카드는 중앙 덱에 다시 섞이며, 턴은 소모하지 않습니다. 바닥에 놓인 리셋 카드는 어떤 카드로든 가져올 수 있고, 가져오면 손패로 들어옵니다.</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
     "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
