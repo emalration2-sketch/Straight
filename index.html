@@ -167,19 +167,17 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .rulebook-panel ul{margin:0;padding-left:16px;font-size:11.5px;line-height:1.55;}
 .rulebook-panel li{margin-bottom:5px;}
 
-.opponents-row{width:100%;height:clamp(70px,15vh,124px);display:flex;gap:5px;justify-content:center;flex-shrink:0;padding:1px;}
-.opponent-card{flex:1 1 0;display:flex;flex-direction:column;background:var(--panel);border:2px solid transparent;border-radius:10px;padding:3px 5px;min-width:0;max-width:280px;overflow:hidden;}
+.opponents-row{width:100%;height:clamp(104px,19vh,176px);display:flex;gap:5px;justify-content:center;flex-shrink:0;padding:1px;}
+.opponent-card{flex:1 1 0;display:flex;flex-direction:column;gap:4px;background:var(--panel);border:2px solid transparent;border-radius:10px;padding:4px;min-width:0;max-width:280px;overflow:hidden;}
 .opponent-card.active{border-color:var(--accent);}
-.opponent-card:only-child{max-width:210px;align-self:flex-start;}
-.opp-head-row{display:flex;align-items:center;gap:4px;flex-shrink:0;line-height:1.2;padding-top:2px;}
-.opp-total{font-size:12px;color:var(--text);font-weight:800;white-space:nowrap;margin-left:auto;flex-shrink:0;background:rgba(var(--line-rgb),.08);border-radius:999px;padding:1px 8px;}
-.opp-hand-stack{display:flex;height:22px;align-items:center;flex-shrink:0;margin:2px 0;}
-.opp-hand-stack .card.opp-back{width:16px;}
-.opp-hand-stack .card.opp-back:not(:first-child){margin-left:-8px;}
-.opp-score-wrap{display:flex;gap:2px;flex-wrap:wrap;align-content:flex-start;width:100%;flex:1;min-height:0;overflow:hidden;justify-content:flex-start;}
-/* Short screens: the "N장" pill already says the hand size, so drop the card-back strip
-   and give the row's height to the score cards. */
-@media (max-height:720px){.opp-hand-stack{display:none;}.opp-score-wrap{margin-top:3px;}}
+.opponent-card:only-child{max-width:210px;}
+.opp-head-row{display:flex;align-items:center;flex-shrink:0;line-height:1.2;min-width:0;}
+.opp-head-row .name-tag{max-width:100%;}
+/* 3 opponents: columns are narrow, so the title badge yields its space to the nickname. */
+.opponents-row.many .name-tag-title{display:none;}
+.opponents-row.many .name-tag.compact{font-size:11px;gap:4px;padding-right:7px;}
+/* Score cards: 4 per row; --opp-w is fitted in fitBoard() so 3 rows always show. */
+.opp-score-wrap{display:grid;grid-template-columns:repeat(4,var(--opp-w,25px));grid-auto-rows:calc(var(--opp-w,25px)*1.4);gap:3px;align-content:start;width:100%;flex:1;min-height:0;overflow:hidden;}
 
 
 .board-row{width:100%;flex:1 1 0;display:flex;align-items:center;justify-content:center;gap:12px;min-height:0;padding:2px 0;}
@@ -196,18 +194,27 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
 .floor-board{display:grid;grid-template-columns:repeat(4, var(--card-w));grid-template-rows:repeat(2, var(--card-h));gap:7px;background:rgba(var(--line-rgb),.04);border:1.5px solid rgba(var(--line-rgb),.12);border-radius:16px;padding:8px;flex-shrink:0;transition:border-color .2s,background-color .2s;}
 .floor-board.joker-mode{border-color:rgba(255,215,107,.7);background:rgba(255,215,107,.06);}
+.floor-board{position:relative;}
+.floor-board.reset-mode{cursor:pointer;}
+/* Hint pill sitting on the board's bottom edge while a card is selected — the floor-side
+   counterpart of the score area's "여기에 보관". */
+.floor-hint{position:absolute;left:50%;bottom:-12px;transform:translateX(-50%);z-index:4;display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:999px;font-size:11.5px;font-weight:800;white-space:nowrap;pointer-events:none;box-shadow:0 2px 6px rgba(0,0,0,.35);background:var(--panel2);color:var(--text);border:1.5px solid rgba(var(--line-rgb),.25);}
+.floor-hint.joker{background:var(--accent);color:#241f3d;border-color:transparent;}
+.floor-hint.reset{background:#ff9a3d;color:#2a1405;border-color:transparent;}
 .floor-slot{display:flex;align-items:center;justify-content:center;position:relative;}
 .floor-slot.impact .card{animation:impactPulse .22s ease;}
 @keyframes impactPulse{0%{transform:scale(1);}50%{transform:scale(1.22);}100%{transform:scale(1);}}
 .floor-slot.impact::after{content:"";position:absolute;inset:-6px;border-radius:16px;background:var(--accent);opacity:0;animation:impactRing .22s ease;pointer-events:none;}
 @keyframes impactRing{0%{opacity:.55;}100%{opacity:0;}}
 
-.bottom-area{width:100%;height:clamp(150px,30vh,300px);display:flex;gap:5px;flex-shrink:0;}
+.bottom-area{width:100%;height:clamp(170px,34vh,330px);display:flex;gap:5px;flex-shrink:0;}
 .hand-area{flex:1.5;display:flex;flex-direction:column;min-width:0;min-height:0;background:rgba(var(--line-rgb),.03);border-radius:12px;padding:5px;}
 .my-tag-bar{flex-shrink:0;display:flex;justify-content:center;padding:1px 0 4px;font-size:11px;}
 .my-tag-bar .name-tag{font-size:12px;}
 .my-tag-bar .name-tag-avatar{width:22px;height:22px;font-size:13px;}
-.hand-coins{flex:1;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:min-content;gap:5px;align-content:center;justify-items:center;overflow-y:auto;padding:2px;}
+/* Padding leaves room for a selected card's lift (8px) + ring (5px): overflow-y:auto
+   clips at the padding box, so without it the edge cards' rings were cut off. */
+.hand-coins{flex:1;min-height:0;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:min-content;gap:5px;align-content:center;justify-items:center;overflow-y:auto;padding:13px 7px 6px;}
 
 .score-area{flex:1;background:rgba(var(--line-rgb),.04);border-radius:12px;padding:5px;overflow:hidden;display:flex;flex-direction:column;gap:4px;min-width:0;}
 .hand-actions{display:flex;flex-direction:row;gap:4px;flex-shrink:0;}
@@ -244,7 +251,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.tiny{width:calc(var(--card-w)*0.55);height:calc(var(--card-h)*0.55);font-size:calc(var(--card-w)*0.26);border-width:1.5px;border-radius:6px;}
 .card.mini-back{width:calc(var(--card-w)*0.6);height:calc(var(--card-h)*0.6);border-radius:6px;}
 .card.hand{width:100%;max-width:var(--hand-w,66px);aspect-ratio:1/1.4;height:auto;font-size:clamp(13px,4.1vw,19px);border-radius:9px;border-width:1.5px;}
-.card.opp{width:25px;height:35px;font-size:12px;border-width:1px;border-radius:5px;cursor:default;flex-shrink:0;}
+.card.opp{width:var(--opp-w,25px);height:calc(var(--opp-w,25px)*1.4);font-size:calc(var(--opp-w,25px)*0.48);border-width:1px;border-radius:5px;cursor:default;flex-shrink:0;}
 .card.opp-back{width:16px;height:23px;border-radius:4px;border-width:1px;cursor:default;flex-shrink:0;}
 .card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
 .card.joker,.card.prism{background:linear-gradient(135deg,#ff6b6b,#ffd76b 25%,#4ce0a0 50%,#33d6c0 75%,#7f77dd);color:#241f3d;border-color:rgba(255,255,255,.7);}
@@ -339,7 +346,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .win-emoji.bounce-in{animation:trophyBounce .7s cubic-bezier(.34,1.56,.64,1);}
 .win-emoji.droop{animation:loseDroop 1.4s ease both;}
 @keyframes loseDroop{0%{transform:translateY(-30px) scale(.6);opacity:0;}45%{transform:translateY(4px) scale(1.05);opacity:1;}70%{transform:translateY(0) rotate(-6deg);}100%{transform:translateY(6px) rotate(4deg);}}
-#win-title{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;}
+#win-title{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;}
 .win-word{font-family:var(--font-display);font-weight:400;font-size:34px;letter-spacing:1px;color:var(--pink);}
 #screen-win.lose .win-word{color:var(--muted);}
 .win-tag .name-tag{font-size:15px;}
@@ -2244,8 +2251,7 @@ function startGame(players, order){
   state.turnOrder = order;
   state.currentTurnPos = 0;
   state.floor = deck.splice(0,8);
-  players.forEach(function(p){ p.hand = deck.splice(0,8); p.score = []; });
-  state.centerDeck = deck;
+  players.forEach(function(p){ p.hand = deck.splice(0,8); p.score = []; });  state.centerDeck = deck;
   state.gameOver = false;
   state.animating = false;
   state.log = [];
@@ -2522,11 +2528,12 @@ function showWinScreen(player, straight){
   var isMe = player===state.players[state.myIndex];
   $("screen-win").classList.toggle("lose", !isMe);
   var tag = "<span class=\"win-tag\">"+playerTagHTML(player)+"</span>";
+  var myTag = "<span class=\"win-tag\">"+playerTagHTML(state.players[state.myIndex])+"</span>";
   if(isMe){
     $("win-title").innerHTML = tag+"<span class=\"win-word\">승리!</span>";
     $("win-reason").innerHTML = "";
   } else {
-    $("win-title").innerHTML = "<span class=\"win-word\">패배...</span>";
+    $("win-title").innerHTML = myTag+"<span class=\"win-word\">패배!</span>";
     $("win-reason").innerHTML = tag+"<span>님이 먼저 스트레이트를 완성했어요</span>";
   }
   switchScreen("win");
@@ -2940,23 +2947,40 @@ function fitBoard(){
   if(!row || screen.classList.contains("hidden")) return;
   var h = row.clientHeight - 4, w = row.clientWidth;
   if(h<=0 || w<=0) return;
-  var byH = (h - 19 - 7) / 2 / 1.4;
+  // -12: room under the board for the floor hint pill. Capped at 62 so the floor doesn't
+  // dominate the screen; the opponent row and hand get the spare height instead.
+  var byH = (h - 19 - 7 - 12) / 2 / 1.4;
   var byW = (w - 12 - 19 - 21) / 5;
-  var cw = Math.max(28, Math.min(72, Math.floor(Math.min(byH, byW))));
+  var cw = Math.max(28, Math.min(62, Math.floor(Math.min(byH, byW))));
   screen.style.setProperty("--card-w", cw+"px");
   screen.style.setProperty("--card-h", Math.round(cw*1.4)+"px");
+  // Hand: size cards so every row shows without scrolling up to 3 rows (12 cards);
+  // a 4th row scrolls. 2 rows minimum so the cards don't balloon with a small hand.
   var hand = $("hand-coins");
   if(hand && hand.clientHeight>0){
-    var hw = Math.floor((hand.clientHeight - 4 - 5) / 2 / 1.4);
-    screen.style.setProperty("--hand-w", Math.max(30, Math.min(66, hw))+"px");
+    var me = state.players && state.players[state.myIndex];
+    var n = me && me.hand ? me.hand.length : 8;
+    var rows = Math.min(3, Math.max(2, Math.ceil(n/4)));
+    var hcs = getComputedStyle(hand);
+    var innerH = hand.clientHeight - parseFloat(hcs.paddingTop) - parseFloat(hcs.paddingBottom);
+    var innerW = hand.clientWidth - parseFloat(hcs.paddingLeft) - parseFloat(hcs.paddingRight);
+    var hw = Math.floor(Math.min((innerH - (rows-1)*5) / rows / 1.4, (innerW - 15) / 4));
+    screen.style.setProperty("--hand-w", Math.max(26, Math.min(66, hw))+"px");
+  }
+  // Opponent score cards: 4 per row, 3 rows visible.
+  var wrap = screen.querySelector(".opp-score-wrap");
+  if(wrap && wrap.clientHeight>0){
+    var ow = Math.floor(Math.min((wrap.clientWidth - 9) / 4, (wrap.clientHeight - 6) / 3 / 1.4, 34));
+    screen.style.setProperty("--opp-w", Math.max(14, ow)+"px");
   }
 }
-// The board row's height is independent of the card size (flex:1 1 0, fixed siblings),
-// so re-fitting on its resize can't feed back into another resize.
+// The observed boxes' sizes don't depend on the card sizes they drive (flex:1 1 0 /
+// fixed siblings / fixed grid tracks), so re-fitting can't feed back into another resize.
 if(window.ResizeObserver){
   var fitObserver = new ResizeObserver(function(){ fitBoard(); });
   fitObserver.observe(document.querySelector("#screen-game .board-row"));
   fitObserver.observe($("hand-coins"));
+  fitObserver.observe($("opponents-row"));
 } else {
   window.addEventListener("resize", fitBoard);
 }
@@ -2989,20 +3013,16 @@ function renderInstruction(){
 function renderOpponents(){
   var row = $("opponents-row");
   row.innerHTML = "";
+  row.classList.toggle("many", state.players.length>=4);
   state.players.forEach(function(p, i){
     if(i===state.myIndex) return;
     var card = el("div","opponent-card"+(currentPlayerIdx()===i?" active":""));
     card.setAttribute("data-player-idx", i);
 
+    // Hand size isn't shown (not needed to play), so the tag gets the full width and the
+    // score cards get the height.
     var headRow = el("div","opp-head-row");
     headRow.innerHTML = playerTagHTML(p, "compact");
-    headRow.appendChild(el("div","opp-total", p.hand.length+"장"));
-
-    var handStack = el("div","opp-hand-stack");
-    var backCount = Math.min(p.hand.length, 8);
-    for(var k=0;k<backCount;k++){
-      handStack.appendChild(cardEl(null, { cls:"opp-back", faceDown:true }));
-    }
 
     var scoreWrap = el("div","opp-score-wrap");
     p.score.filter(function(c){ return c.isJoker; }).forEach(function(c){
@@ -3017,7 +3037,6 @@ function renderOpponents(){
     });
 
     card.appendChild(headRow);
-    card.appendChild(handStack);
     card.appendChild(scoreWrap);
     row.appendChild(card);
   });
@@ -3047,12 +3066,22 @@ function renderFloor(){
       if(!valid) opts.cls = "disabled";
     }
     var d = cardEl(fc, opts);
-    if(canTarget && valid){
+    // Reset mode is handled by the board-level click below (one handler, so a card tap
+    // can't fire the reset twice).
+    if(canTarget && valid && !resetArmed){
       d.addEventListener("click", function(){ onFloorTargetClick(fi); });
     }
     slot.appendChild(d);
     area.appendChild(slot);
   });
+
+  var hintMode = isHumanTurn() ? state.mode : "idle";
+  area.onclick = hintMode==="reset-choice" ? function(){ onFloorTargetClick(0); } : null;
+  var hint = null;
+  if(hintMode==="eat-target") hint = el("div","floor-hint","🎯 가져올 카드를 고르세요");
+  else if(hintMode==="joker-choice") hint = el("div","floor-hint joker","★ 아무 카드나 가져오기");
+  else if(hintMode==="reset-choice") hint = el("div","floor-hint reset","💣 바닥판을 누르면 리셋");
+  if(hint) area.appendChild(hint);
 }
 
 function renderHand(){
