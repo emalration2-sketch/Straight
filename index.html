@@ -75,7 +75,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .avatar-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:560px;}
 .avatar-btn{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:28px;background:var(--panel);border-radius:14px;padding:10px 6px;border:2px solid transparent;cursor:pointer;}
 .avatar-btn .nm{font-size:10.5px;color:var(--muted);white-space:nowrap;}
-.avatar-btn.selected{border-color:gold;box-shadow:0 0 12px 2px rgba(255,215,0,.6);}
+.avatar-btn.selected{border-color:gold;box-shadow:0 0 0 3px rgba(255,215,0,.85);}
 .avatar-btn.locked{position:relative;cursor:not-allowed;}
 .avatar-btn.locked::after{content:"🔒";position:absolute;top:4px;right:6px;font-size:13px;}
 .avatar-btn.locked > *{opacity:.42;filter:grayscale(.7);}
@@ -259,7 +259,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
    rainbow joker/prism and from every suit color. */
 /* Reset card = bomb: dark card with a warm glow behind a white-outlined bomb, so it
    can't be mistaken for any suit color (pink/blue/yellow/green) or the rainbow joker. */
-.card.reset{background:radial-gradient(circle at 50% 40%,rgba(255,150,70,.85) 0,rgba(255,110,50,.35) 38%,rgba(255,110,50,0) 62%),linear-gradient(160deg,#43325a,#1c1726);border-color:#ffb057;color:#fff;flex-direction:column;gap:0;}
+.card.reset{background:linear-gradient(172deg,#4a3552 0%,#2a1f33 52%,#6a2e1c 100%);border-color:#ffb057;color:#fff;flex-direction:column;gap:0;}
 .reset-bomb{position:relative;z-index:2;width:1.95em;height:1.95em;display:block;margin-top:-.1em;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45));}
 .card.tiny .reset-bomb,.card.opp .reset-bomb{width:1.5em;height:1.5em;}
 .reset-bomb .spark{transform-origin:28.6px 5.8px;animation:bombSpark .9s ease-in-out infinite alternate;}
