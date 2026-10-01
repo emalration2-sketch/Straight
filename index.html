@@ -302,7 +302,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.disabled{opacity:.45;filter:grayscale(.75) brightness(.55);cursor:default;pointer-events:none;}
 .card.flying{pointer-events:none;box-shadow:0 10px 24px rgba(0,0,0,.55);}
 .card.win-highlight{animation:winGlow .6s ease-in-out infinite;z-index:5;}
-@keyframes winGlow{0%,100%{box-shadow:0 0 0 2px var(--accent);transform:scale(1);}50%{box-shadow:0 0 14px 5px var(--accent);transform:scale(1.18);}}
+@keyframes winGlow{0%,100%{box-shadow:0 0 0 2px var(--accent),0 3px 6px rgba(0,0,0,.45);transform:scale(1);}50%{box-shadow:0 0 0 4px var(--accent),0 8px 14px rgba(0,0,0,.5);transform:scale(1.18);}}
 
 /* tooltip / modal layer */
 #tooltip-layer{position:fixed;inset:0;z-index:99999;pointer-events:none;}
