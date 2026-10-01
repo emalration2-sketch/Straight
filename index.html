@@ -203,8 +203,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.opp{width:25px;height:35px;font-size:12px;border-width:1px;border-radius:5px;cursor:default;flex-shrink:0;}
 .card.opp-back{width:16px;height:23px;border-radius:4px;border-width:1px;cursor:default;flex-shrink:0;}
 .card.selected{transform:translateY(-8px);box-shadow:0 0 0 3px var(--accent),0 4px 10px rgba(0,0,0,.5);}
-.card.joker{background:linear-gradient(135deg,#ffffff,#e4e2ef);color:#2a2440;border-color:rgba(42,36,64,.35);}
-.card.prism{color:#241f3d;border-color:rgba(255,255,255,.55);}
+.card.joker,.card.prism{background:linear-gradient(135deg,#ff6b6b,#ffd76b 25%,#4ce0a0 50%,#33d6c0 75%,#7f77dd);color:#241f3d;border-color:rgba(255,255,255,.7);}
+.card.joker{font-size:calc(var(--card-w) * 0.42);}
+.card.joker-armed{transform:translateY(-10px);outline:3px solid #ffd76b;outline-offset:2px;animation:jokerArmed 1.2s linear infinite;z-index:3;}
+@keyframes jokerArmed{0%{outline-color:#ff6b6b;transform:translateY(-10px) rotate(-3deg);}25%{outline-color:#ffd76b;}50%{outline-color:#4ce0a0;transform:translateY(-10px) rotate(3deg);}75%{outline-color:#33d6c0;}100%{outline-color:#7f77dd;transform:translateY(-10px) rotate(-3deg);}}
+.card.joker-target{outline:2.5px dashed #ffd76b;outline-offset:3px;animation:jokerTarget 1.2s linear infinite;}
+@keyframes jokerTarget{0%{outline-color:#ff6b6b;}25%{outline-color:#ffd76b;}50%{outline-color:#4ce0a0;}75%{outline-color:#33d6c0;}100%{outline-color:#7f77dd;}}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
@@ -522,7 +526,7 @@ var UNLOCK_MILESTONES = [
   { id:"misc:draws10",    kind:"title",  label:"평화",    check:function(s){ return s.draws>=10; },          detail:function(s){ return "무승부 "+Math.min(s.draws,10)+"/10회"; } },
   { id:"misc:jokers20",   kind:"title",  label:"콜렉터",  check:function(s){ return s.jokersBanked>=20; },   detail:function(s){ return "조커 사용 "+Math.min(s.jokersBanked,20)+"/20개"; } },
   { id:"misc:hard100",    kind:"border", label:"트로피",  check:function(s){ return s.hardWins>=100; },      detail:function(s){ return "어려움 승리 "+Math.min(s.hardWins,100)+"/100회"; } },
-  { id:"misc:kstraight",  kind:"border", label:"실버",    check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "10-J-Q-K-A 스트레이트"; } },
+  { id:"misc:kstraight",  kind:"border", label:"실버",    check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "6-7-8-9-10 스트레이트"; } },
   { id:"misc:online4p50", kind:"border", label:"하트",    check:function(s){ return s.fourPOnlineWins>=50; },detail:function(s){ return "4인전(온라인) 승리 "+Math.min(s.fourPOnlineWins,50)+"/50회"; } },
   { id:"misc:online1",    kind:"title",  label:"소셜",    check:function(s){ return s.onlineWins>=1; },      boolCond:true, detail:function(s){ return "온라인 승리"; } },
   { id:"misc:allcolors",  kind:"title",  label:"올컬러",  check:function(s){ return s.colorsWon.length>=4; },detail:function(s){ return "색상 정복 "+Math.min(s.colorsWon.length,4)+"/4색"; } },
@@ -615,7 +619,7 @@ function recordGameResult(outcome, meta){
       if(meta.difficulty==="hard") stats.hardWins = stats.hardWins+1;
       if(meta.isOnline) stats.onlineWins = stats.onlineWins+1;
       if(meta.isOnline && meta.playerCount===4) stats.fourPOnlineWins = stats.fourPOnlineWins+1;
-      if(meta.straight && meta.straight.start===10) stats.hasKStraightWin = true;
+      if(meta.straight && meta.straight.start===6) stats.hasKStraightWin = true;
       if(meta.straight && stats.colorsWon.indexOf(meta.straight.color)===-1) stats.colorsWon.push(meta.straight.color);
       if(meta.scoreLen>=20) stats.hasBigHandWin = true;
     }
@@ -1054,24 +1058,30 @@ function shuffle(arr){
 
 function colorsForCount(n){ return ALL_COLORS.slice(0, n); }
 
-function buildDeck(colors){
+// Each game randomly picks 2 of the 10 ranks to be this game's "prism ranks". This
+// doesn't add cards: for a prism rank, one of its 2 normal per-color copies becomes a
+// colorless prism instead (so total card count per rank stays the same). A fresh pair
+// each game keeps which ranks are wild unpredictable from one game to the next.
+function pickPrismRanks(){
+  var ranks = [1,2,3,4,5,6,7,8,9,10];
+  return shuffle(ranks).slice(0,2);
+}
+
+function buildDeck(colors, prismRanks){
   var deck=[]; var id=0;
   colors.forEach(function(c){
     for(var v=1; v<=10; v++){
-      for(var s=0; s<2; s++){
+      if(prismRanks.indexOf(v)!==-1){
         deck.push({ id:id++, color:c, value:v, isJoker:false, isPrism:false });
+        deck.push({ id:id++, color:null, value:v, isJoker:false, isPrism:true });
+      } else {
+        for(var s=0; s<2; s++){
+          deck.push({ id:id++, color:c, value:v, isJoker:false, isPrism:false });
+        }
       }
     }
   });
   for(var i=0;i<2;i++) deck.push({ id:id++, isJoker:true, color:null, value:null, isPrism:false });
-  // J/Q/K are colorless prism ranks (like the 7-prism): a same-or-higher hand card can
-  // always capture one regardless of color, and one in hand can always capture a same-or-
-  // lower floor card regardless of color. Without this, the top of the range (9-K) had no
-  // "higher same-color" card left to capture it once its own rank was gone, so floor cards
-  // there would get permanently stranded and stall games into draws.
-  [7, 11, 12, 13].forEach(function(v){
-    for(var p=0;p<2;p++) deck.push({ id:id++, isJoker:false, isPrism:true, color:null, value:v });
-  });
   return deck;
 }
 
@@ -1086,9 +1096,6 @@ function pointValue(coin){ if(coin.isJoker) return 10; return coin.value===1 ? 1
 
 function rankLabel(v){
   if(v===1) return "A";
-  if(v===11) return "J";
-  if(v===12) return "Q";
-  if(v===13) return "K";
   return v;
 }
 
@@ -1096,19 +1103,14 @@ function rankLabel(v){
    - joker in hand can no longer capture anything (see bankJoker for the joker's real use)
    - floor joker can only be captured by a hand A
    - same NUMBER beats regardless of color
-   - prism cards (rank 7, color:null) skip the color check entirely
-   - otherwise same color required
-   - floor A(1) can only be captured by a hand K(13) (same color)
-   - hand A(1) can capture a floor K(13) (same color)
-   - otherwise same color & hand value >= floor value
+   - prism cards (color:null) skip the color check entirely
+   - otherwise same color required, and hand value >= floor value
 */
 function isValidEat(hand, floor){
   if(hand.isJoker) return false;
   if(floor.isJoker) return hand.value === 1;
   if(hand.value === floor.value) return true;
   if(!hand.isPrism && !floor.isPrism && hand.color !== floor.color) return false;
-  if(floor.value === 1) return hand.value === 13;
-  if(hand.value === 1 && floor.value === 13) return true;
   return hand.value >= floor.value;
 }
 
@@ -1118,12 +1120,10 @@ function findStraight(score, colors){
     var color = colors[ci];
     var vals = {};
     score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) vals[c.value]=true; });
-    for(var start=1; start<=10; start++){
+    for(var start=1; start<=6; start++){
       var missing=0;
       for(var k=0;k<5;k++){
-        var rank = start+k;
-        var lookup = rank>13 ? rank-13 : rank;
-        if(!vals[lookup]) missing++;
+        if(!vals[start+k]) missing++;
       }
       if(missing<=jokerCount) return { color:color, start:start };
     }
@@ -1155,7 +1155,8 @@ var state = {
   isDraw: false,
   turnSeq: 0,
   stagnantTurns: 0,
-  floorResetStreak: 0
+  floorResetStreak: 0,
+  prismRanks: []
 };
 
 var chosenCharacter = null;
@@ -1202,6 +1203,7 @@ function pushRoomState(){
     floor: state.floor,
     centerDeck: state.centerDeck,
     colors: state.colors,
+    prismRanks: state.prismRanks,
     turnOrder: state.turnOrder,
     currentTurnPos: state.currentTurnPos,
     turnSeq: state.turnSeq,
@@ -1258,6 +1260,7 @@ function applyRemoteRoomState(data){
   state.floor = data.floor || [];
   state.centerDeck = data.centerDeck || [];
   state.colors = data.colors || [];
+  state.prismRanks = data.prismRanks || [];
   state.turnOrder = data.turnOrder || [];
   state.currentTurnPos = data.currentTurnPos || 0;
   state.turnSeq = data.turnSeq || 0;
@@ -1452,7 +1455,8 @@ function startOnlineGame(){
   }
 
   var colors = colorsForCount(lobbyPlayers.length);
-  var deck = shuffle(buildDeck(colors));
+  var prismRanks = pickPrismRanks();
+  var deck = shuffle(buildDeck(colors, prismRanks));
   var floor = deck.splice(0,8);
   lobbyPlayers.forEach(function(p){ p.hand = deck.splice(0,8); p.score = []; });
 
@@ -1463,6 +1467,7 @@ function startOnlineGame(){
 
   state.players = lobbyPlayers;
   state.colors = colors;
+  state.prismRanks = prismRanks;
   state.floor = floor;
   state.centerDeck = deck;
   state.turnOrder = turnOrder;
@@ -1477,7 +1482,8 @@ function startOnlineGame(){
   state.statsRecorded = false;
   state.aiDifficulty = chosenAiDifficulty;
   aiDriveGuard = {};
-  state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
+  state.log = ["게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다.",
+    "✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", ")];
   var myIdx = -1;
   for(var i=0;i<lobbyPlayers.length;i++){ if(lobbyPlayers[i].clientId===myClientId){ myIdx=i; break; } }
   state.myIndex = myIdx>=0 ? myIdx : 0;
@@ -1809,9 +1815,11 @@ function finalizeOrder(players, draws){
 
 function startGame(players, order){
   var colors = colorsForCount(players.length);
-  var deck = shuffle(buildDeck(colors));
+  var prismRanks = pickPrismRanks();
+  var deck = shuffle(buildDeck(colors, prismRanks));
   state.players = players;
   state.colors = colors;
+  state.prismRanks = prismRanks;
   state.turnOrder = order;
   state.currentTurnPos = 0;
   state.floor = deck.splice(0,8);
@@ -1835,6 +1843,7 @@ function startGame(players, order){
   buildRulebookPanel();
   switchScreen("game");
   pushLog("게임을 시작합니다! 선공은 "+players[order[0]].name+" 입니다.");
+  pushLog("✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "));
   render();
 
   var firstIdx = order[0];
@@ -2008,9 +2017,7 @@ function checkWin(playerIdx){
 }
 
 function straightRangeLabel(straight){
-  var endRaw = straight.start+4;
-  var end = endRaw>13 ? endRaw-13 : endRaw;
-  return rankLabel(straight.start)+"~"+rankLabel(end);
+  return rankLabel(straight.start)+"~"+rankLabel(straight.start+4);
 }
 
 function playWinCeremony(playerIdx, straight, cb){
@@ -2376,7 +2383,6 @@ function cardEl(coin, opts){
   } else {
     if(coin.isPrism){
       d.classList.add("prism");
-      d.style.background = "linear-gradient(135deg,#ff6b6b,#ffd76b 25%,#4ce0a0 50%,#33d6c0 75%,#7f77dd)";
     } else {
       var base = COLORS[coin.color];
       d.style.background = "linear-gradient(155deg,"+shadeColor(base,35)+","+base+" 55%,"+shadeColor(base,-35)+")";
@@ -2419,7 +2425,7 @@ function renderInstruction(){
   }
   switch(state.mode){
     case "eat-target": bar.textContent = "🎯 타겟이 될 바닥 카드를 선택하세요!"; break;
-    case "joker-choice": bar.textContent = "✨ 반짝이는 점수덱을 눌러 조커를 내려놓으세요!"; break;
+    case "joker-choice": bar.textContent = "🌈 조커 발동! 바닥 카드를 아무거나 가져오거나, 점수덱에 내려놓으세요"; break;
     default: bar.innerHTML = "✋ 행동을 선택하세요! 손패를 클릭하거나,<br>가져올 수 없으면 [2장 뽑고 턴 종료]를 누르세요.";
   }
 }
@@ -2472,9 +2478,13 @@ function renderFloor(){
   state.floor.forEach(function(fc, fi){
     var slot = el("div","floor-slot");
     var opts = { wild: fc.isJoker };
-    var canTarget = isHumanTurn() && state.mode==="eat-target";
+    var jokerArmed = isHumanTurn() && state.mode==="joker-choice";
+    var canTarget = isHumanTurn() && (state.mode==="eat-target" || jokerArmed);
     var valid = false;
-    if(canTarget){
+    if(jokerArmed){
+      valid = true;
+      opts.cls = "joker-target";
+    } else if(canTarget){
       var handCoin = state.players[state.myIndex].hand[state.selectedHandIdx];
       valid = handCoin ? isValidEat(handCoin, fc) : false;
       if(!valid) opts.cls = "disabled";
@@ -2494,7 +2504,8 @@ function renderHand(){
   var player = state.players[state.myIndex];
   player.hand.forEach(function(hc, hi){
     var cls = "hand";
-    if((state.mode==="eat-target"||state.mode==="joker-choice") && state.selectedHandIdx===hi) cls+=" selected";
+    if(state.mode==="eat-target" && state.selectedHandIdx===hi) cls+=" selected";
+    if(state.mode==="joker-choice" && state.selectedHandIdx===hi) cls+=" joker-armed";
     if(!isHumanTurn()) cls += " disabled";
     var d = cardEl(hc, { cls:cls.trim() });
     d.addEventListener("click", function(){ onHandClick(hi); });
@@ -2592,6 +2603,8 @@ function onFloorTargetClick(fi){
   if(state.mode==="eat-target"){
     if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
     doEat(state.myIndex, handIdx, fi);
+  } else if(state.mode==="joker-choice" && handCoin && handCoin.isJoker){
+    doEat(state.myIndex, handIdx, fi);
   }
 }
 
@@ -2675,13 +2688,12 @@ function buildRulebookPanel(){
   panel.innerHTML =
     "<h2>📖 게임 규칙 요약</h2>"+
     "<ul>"+
-    "<li><b>숫자 체계</b>: A, 2~10, J, Q, K (13랭크). A는 가장 낮은 숫자와 가장 높은 숫자 양쪽으로 쓰일 수 있습니다 (예: A-2-3-4-5, 10-J-Q-K-A 모두 가능). 단 K 다음 바로 A로 넘어가는 순환(K-A-2-3-4)은 인정하지 않습니다.</li>"+
+    "<li><b>숫자 체계</b>: A(1), 2~10. 스트레이트는 A-2-3-4-5부터 6-7-8-9-10까지 가능합니다.</li>"+
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
-    "<li><b>A(1) 특수</b>: 바닥의 A는 같은 색 K로만 가져올 수 있습니다. 손패의 A는 같은 색 바닥 K를 가져올 수 있습니다.</li>"+
-    "<li><b>프리즘카드</b>: 색상이 없는 특수 카드로, 7·J·Q·K 네 가지 숫자로 존재하며 각각 모든 색의 해당 숫자로 취급됩니다. 바닥의 프리즘은 그 숫자 이상인 아무 색 카드로 가져올 수 있고, 손패의 프리즘으로는 그 숫자 이하인 아무 색 카드를 가져올 수 있습니다(바닥 A 제외). 점수덱에서는 검사 중인 모든 색의 해당 숫자 자리로 동시에 인정됩니다.</li>"+
+    "<li><b>오늘의 프리즘</b>: 매 게임 무작위로 숫자 2개가 뽑혀, 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 프리즘이 됩니다(카드 수는 그대로). 프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다. 이번 게임의 프리즘 숫자는 게임 시작 시 안내됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
-    "<li><b>손패 조커</b>: 캡처에는 쓸 수 없습니다. 대신 내 턴이 끝나기 전까지 언제든 점수덱에 내려놓을 수 있고(턴을 소모하지 않음), 내려놓은 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
+    "<li><b>손패 조커</b>: 조커를 누르면 발동! 바닥 카드 아무거나 하나를 가져오거나, 점수덱에 내려놓을 수 있습니다(내려놓기는 턴을 소모하지 않음). 점수덱의 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
     "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
@@ -2791,7 +2803,7 @@ var TUTORIAL_SLIDES = [
     title: "🎯 목표",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 A, 2~10, J, Q, K 순서이고, A는 10-J-Q-K-A처럼 맨 위에도 이어집니다."));
+      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 A(1)부터 10까지입니다."));
       var row = el("div","tutorial-card-row");
       [3,4,5,6,7].forEach(function(v){
         row.appendChild(cardEl({ id:"tut-goal-"+v, color:"PINK", value:v }, { cls:"tiny" }));
@@ -2812,7 +2824,7 @@ var TUTORIAL_SLIDES = [
     title: "🎨 색상 + 숫자 매칭",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","손패 카드가 바닥 카드와 <b>같은 색이면서 숫자가 같거나 높으면</b> 가져올 수 있습니다.<br>숫자가 정확히 같으면 색이 달라도 가져올 수 있습니다.<br>단, 바닥의 A는 A 또는 같은 색 K로만 가져올 수 있고, 손패의 A로는 같은 색 K도 가져올 수 있습니다."));
+      wrap.appendChild(el("p","tutorial-text","손패 카드가 바닥 카드와 <b>같은 색이면서 숫자가 같거나 높으면</b> 가져올 수 있습니다.<br>숫자가 정확히 같으면 색이 달라도 가져올 수 있습니다."));
       var row = el("div","tutorial-card-row");
       row.appendChild(cardEl({ id:"tut-match-hand", color:"BLUE", value:9 }, { cls:"tiny" }));
       row.appendChild(el("span","tutorial-arrow","→"));
@@ -2822,12 +2834,12 @@ var TUTORIAL_SLIDES = [
     }
   },
   {
-    title: "🌈 프리즘카드",
+    title: "🌈 오늘의 프리즘",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","색이 없는 특수 카드로 7·J·Q·K 네 가지 숫자로 존재하며, 각각 모든 색의 해당 숫자로 취급됩니다.<br>바닥의 프리즘은 그 숫자 이상인 아무 색 카드로 가져올 수 있고, 손패의 프리즘으로는 그 숫자 이하인 아무 색 카드를 가져올 수 있습니다(바닥 A 제외).<br>점수덱에서는 검사 중인 모든 색의 해당 숫자 자리로 동시에 인정됩니다."));
+      wrap.appendChild(el("p","tutorial-text","매 게임 무작위로 <b>숫자 2개</b>가 프리즘으로 지정됩니다. 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 무지개 카드가 됩니다(카드 수는 그대로).<br>프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다.<br>이번 게임의 프리즘 숫자는 시작할 때 알려드려요."));
       var row = el("div","tutorial-card-row");
-      [7,11,12,13].forEach(function(v){
+      [2,5].forEach(function(v){
         row.appendChild(cardEl({ id:"tut-prism-"+v, isPrism:true, value:v, color:null }, { cls:"tiny" }));
       });
       wrap.appendChild(row);
@@ -2838,7 +2850,7 @@ var TUTORIAL_SLIDES = [
     title: "🃏 조커 사용법",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","조커는 캡처에는 쓸 수 없습니다.<br>대신 내 턴에 언제든(턴을 소모하지 않고) 점수덱에 내려놓을 수 있고, 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.<br>손패에서 조커를 누르면 점수덱이 반짝이고, 그 자리를 누르면 내려놓습니다."));
+      wrap.appendChild(el("p","tutorial-text","손패의 조커를 누르면 <b>발동</b>! 둘 중 하나를 고르세요.<br>① 바닥 카드 <b>아무거나</b> 하나를 가져오기 (색·숫자 무관)<br>② 점수덱에 내려놓기 (턴 소모 없음) — 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다."));
       var row = el("div","tutorial-card-row");
       row.appendChild(cardEl({ id:"tut-joker", isJoker:true }, { cls:"tiny" }));
       wrap.appendChild(row);
