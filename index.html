@@ -3003,7 +3003,7 @@ function renderInstruction(){
     return;
   }
   switch(state.mode){
-    case "eat-target": bar.textContent = "🎯 가져올 바닥 카드를 고르세요"; break;
+    case "eat-target": bar.textContent = " "; break; // blank, but keeps the bar's height so the log doesn't jump
     case "joker-choice": bar.textContent = "★ 바닥 카드 아무거나, 또는 점수덱에 보관"; break;
     case "reset-choice": bar.textContent = "💣 바닥판을 누르면 바닥 카드를 전부 새로 깝니다"; break;
     default: bar.textContent = "✋ 손패를 골라 바닥 카드를 가져오세요";

@@ -1,0 +1,29 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "bounce-easing",
+        "value": "trophybounce",
+        "createdAt": "2026-09-27T08:15:34.150Z",
+        "reason": "Deliberate celebratory overshoot for the one-time trophy win reveal, not a generic UI transition"
+      },
+      {
+        "rule": "bounce-easing",
+        "value": "cubic-bezier(.34, 1.56, .64, 1)",
+        "createdAt": "2026-09-27T08:15:40.425Z",
+        "reason": "Deliberate celebratory overshoot for the one-time trophy win reveal, not a generic UI transition"
+      },
+      {
+        "rule": "codex-grid-background",
+        "value": "*",
+        "files": [
+          "index.html"
+        ],
+        "createdAt": "2026-09-29T13:47:11.721Z",
+        "reason": "Card-back decorative tile patterns (CARD_BACK_PRESETS feature) are intentionally repeating grid/dot backgrounds by design, not generic AI-slop filler"
+      }
+    ]
+  }
+}
