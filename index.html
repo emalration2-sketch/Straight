@@ -282,7 +282,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
-.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-polka::after,.pattern-solar::after,.pattern-hologram::after,.pattern-royal::after,.pattern-cosmic::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-solar::after,.pattern-hologram::after,.pattern-royal::after,.pattern-cosmic::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:14px 14px;background-position:0 0,7px 7px;}
@@ -290,7 +290,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
 .pattern-diagonal::after{background-image:linear-gradient(135deg,transparent 0 50%,rgba(0,0,0,.18) 50% 100%);}
 .pattern-ripple::after{background-image:repeating-radial-gradient(circle at 25% 30%,transparent 0 5px,rgba(0,0,0,.14) 5px 6px);}
-.pattern-polka::after{background-image:radial-gradient(rgba(0,0,0,.16) 1.6px,transparent 1.9px),radial-gradient(rgba(0,0,0,.16) 1.6px,transparent 1.9px);background-size:12px 12px;background-position:0 0,6px 6px;}
+.pattern-scale::after{background-image:radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px),radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px);background-size:12px 8px;background-position:0 0,6px 4px;}
 .pattern-solar::after{background-image:radial-gradient(circle,rgba(255,226,120,.6) 0 2.6px,transparent 2.9px),radial-gradient(circle,transparent 0 3.6px,rgba(255,226,120,.32) 3.8px 4.4px,transparent 4.6px),repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,226,120,.2) 0 12deg,transparent 12deg 45deg);background-size:20px 20px;}
 .pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.5) 15% 19%, transparent 19% 45%, rgba(255,255,255,.35) 45% 48%, transparent 48% 75%, rgba(255,255,255,.45) 75% 78%, transparent 78% 100%);}
 .pattern-royal::after{background-image:linear-gradient(45deg,rgba(246,168,60,.55) 25%,transparent 25%,transparent 75%,rgba(246,168,60,.55) 75%),linear-gradient(45deg,rgba(246,168,60,.55) 25%,transparent 25%,transparent 75%,rgba(246,168,60,.55) 75%),radial-gradient(rgba(255,215,107,.7) 1.3px, transparent 1.5px);background-size:14px 14px,14px 14px,14px 14px;background-position:0 0,7px 7px,3.5px 3.5px;}
@@ -374,9 +374,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
 .coll-tab{font-size:12px;padding:6px 12px;}
 .coll-grid{width:100%;max-width:480px;max-height:62vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:8px;padding:4px;}
-.coll-item{background:var(--panel2);border-radius:10px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.coll-item{background:var(--panel2);border-radius:10px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;border:2px solid transparent;}
 .coll-item.locked{opacity:.45;}
-.coll-item.equipped{border:2px solid var(--accent);}
+.coll-item.equipped{border-color:var(--accent);}
 .coll-item-preview{min-height:32px;display:flex;align-items:center;justify-content:center;}
 .coll-item-name{font-size:11.5px;font-weight:700;margin:0;min-height:14px;}
 .coll-item-state{font-size:10px;color:var(--muted);margin:0;}
@@ -591,7 +591,7 @@ var CARD_BACK_PRESETS = [
   { id:"honeycomb", name:"허니콤", cls:"pattern-honeycomb" },
   { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal" },
   { id:"ripple", name:"리플", cls:"pattern-ripple" },
-  { id:"polka", name:"폴카", cls:"pattern-polka" },
+  { id:"scale", name:"비늘", cls:"pattern-scale" },
   { id:"solar", name:"솔라", cls:"pattern-solar" },
   { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
   { id:"royal", name:"로열", cls:"pattern-royal" },
@@ -616,7 +616,7 @@ var UNLOCK_MILESTONES = [
   { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
   { id:"win:1000", kind:"avatar",  label:"폭스트릭",       check:function(s){ return s.wins>=1000; }, detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
 
-  { id:"games:10",   kind:"pattern", label:"폴카",     check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
+  { id:"games:10",   kind:"pattern", label:"비늘",     check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
   { id:"games:20",   kind:"title",   label:"카드 산책러",   check:function(s){ return s.games>=20; },   detail:function(s){ return "플레이 "+Math.min(s.games,20)+"/20판"; } },
   { id:"games:30",   kind:"pattern", label:"솔라",   check:function(s){ return s.games>=30; },   detail:function(s){ return "플레이 "+Math.min(s.games,30)+"/30판"; } },
   { id:"games:50",   kind:"pattern", label:"아가일",   check:function(s){ return s.games>=50; },   detail:function(s){ return "플레이 "+Math.min(s.games,50)+"/50판"; } },
@@ -3078,8 +3078,7 @@ function renderFloor(){
   var hintMode = isHumanTurn() ? state.mode : "idle";
   area.onclick = hintMode==="reset-choice" ? function(){ onFloorTargetClick(0); } : null;
   var hint = null;
-  if(hintMode==="eat-target") hint = el("div","floor-hint","🎯 가져올 카드를 고르세요");
-  else if(hintMode==="joker-choice") hint = el("div","floor-hint joker","★ 아무 카드나 가져오기");
+  if(hintMode==="joker-choice") hint = el("div","floor-hint joker","★ 아무 카드나 가져오기");
   else if(hintMode==="reset-choice") hint = el("div","floor-hint reset","💣 바닥판을 누르면 리셋");
   if(hint) area.appendChild(hint);
 }
@@ -3346,12 +3345,25 @@ function renderCollectionScreen(){
   var tab = collectionActiveTab;
   var items = collectionItemsFor(tab);
   var revealed = [];
+  function isEquippedItem(it){
+    if(!it.unlocked) return false;
+    if(tab==="title") return getActiveTitle()===it.id;
+    if(tab==="border") return getActiveBorder()===it.id;
+    if(tab==="pattern") return backPresetIndex===it.idx;
+    return getDefaultAvatarName()===it.name;
+  }
+  // Equipping only flips the equipped state in place. A full re-render reset the grid's
+  // scroll position and restarted every animated preview, so the other items twitched.
+  function refreshEquipped(){
+    Array.prototype.forEach.call(grid.children, function(card, k){
+      var on = isEquippedItem(items[k]);
+      card.classList.toggle("equipped", on);
+      var b = card.querySelector(".coll-equip-btn");
+      if(b){ b.classList.toggle("primary", on); b.textContent = on ? "장착 중" : "장착"; }
+    });
+  }
   items.forEach(function(it){
-    var isEquipped;
-    if(tab==="title") isEquipped = it.unlocked && getActiveTitle()===it.id;
-    else if(tab==="border") isEquipped = it.unlocked && getActiveBorder()===it.id;
-    else if(tab==="pattern") isEquipped = it.unlocked && backPresetIndex===it.idx;
-    else isEquipped = it.unlocked && getDefaultAvatarName()===it.name;
+    var isEquipped = isEquippedItem(it);
 
     var card = el("div","coll-item"+(it.unlocked?"":" locked")+(isEquipped?" equipped":""));
     var itemMilestone = findMilestoneByLabel(tab, it.name);
@@ -3375,7 +3387,7 @@ function renderCollectionScreen(){
         else if(tab==="pattern") setBackPreset(it.idx);
         else setDefaultAvatar(it.name);
         sfxSelect();
-        renderCollectionScreen();
+        refreshEquipped();
       });
       card.appendChild(btn);
     }
