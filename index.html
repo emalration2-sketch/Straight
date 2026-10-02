@@ -2887,48 +2887,118 @@ function findValidCaptures(hand, floor){
   return options;
 }
 
-function colorProgress(score, color){
-  var vals = {};
-  score.forEach(function(c){
-    if(c.isJoker) return;
-    if(c.color===color || c.isPrism) vals[c.value] = true;
+
+// How many more cards a score pile needs to make a straight: the best 5-in-a-row window
+// over every color (prisms count for all colors), minus banked jokers. 0 = straight.
+// With `others` (the other players' score piles — public info), windows needing a card
+// whose every copy is already in someone else's pile are dead and skipped: card counting.
+function straightNeed(score, colors, others){
+  var jokers = 0;
+  score.forEach(function(c){ if(c.isJoker) jokers++; });
+  var best = 5;
+  colors.forEach(function(color){
+    var vals = {};
+    score.forEach(function(c){ if(!c.isJoker && !c.isReset && (c.color===color || c.isPrism)) vals[c.value] = true; });
+    for(var start=1; start<=6; start++){
+      var missing = 0, dead = false;
+      for(var k=0;k<5;k++){
+        var v = start+k;
+        if(vals[v]) continue;
+        missing++;
+        if(others && !cardStillOut(color, v, colors, others)) dead = true;
+      }
+      if(!dead && missing<best) best = missing;
+    }
   });
-  return Object.keys(vals).length;
+  return Math.max(0, best - jokers);
+}
+// Copies that can fill (color, value): its colored copies plus that value's prisms
+// (a prism rank has 1 colored copy + 1 prism per color; other ranks 2 colored copies).
+function cardStillOut(color, v, colors, others){
+  var isPrismRank = (state.prismRanks||[]).indexOf(v)!==-1;
+  var total = isPrismRank ? 1 + colors.length : 2;
+  var taken = 0;
+  others.forEach(function(pile){
+    pile.forEach(function(c){ if(!c.isJoker && !c.isReset && c.value===v && (c.color===color || c.isPrism)) taken++; });
+  });
+  return taken < total;
+}
+function needAfter(score, card, colors, others){ return straightNeed(score.concat([card]), colors, others); }
+
+// Difficulty is how well the AI plays, not just how it breaks ties:
+// - easy: sometimes passes up captures, often grabs a random one, doesn't always bank jokers
+// - normal: always takes the capture that moves its own straight forward most
+// - hard: also blocks opponents close to a straight (peeking at their hands), avoids
+//   leaving them the card they need, and wipes the floor with a reset card when someone
+//   is one card away.
+var AI_PROFILES = {
+  easy:   { skipCapture:0.35, randomPick:0.75, bankJoker:0.35, useReset:0.3, progressW:8,  deny:false, placeCost:false, countCards:false },
+  normal: { skipCapture:0,    randomPick:0.1,  bankJoker:1,    useReset:1,   progressW:20, deny:false, placeCost:false, countCards:false },
+  hard:   { skipCapture:0,    randomPick:0,    bankJoker:1,    useReset:1,   progressW:30, deny:true,  placeCost:true,  countCards:true }
+};
+function aiProfile(){ return AI_PROFILES[state.aiDifficulty] || AI_PROFILES.normal; }
+
+function scoreCaptureOption(o, ai, opponents, prof){
+  var colors = state.colors;
+  var others = prof.countCards ? opponents.map(function(p){ return p.score; }) : null;
+  var s = 0;
+  if(o.floor.isReset){
+    s += 6;
+  } else {
+    if(needAfter(ai.score, o.floor, colors)===0) return 1000;
+    var after = needAfter(ai.score, o.floor, colors, others);
+    s += (straightNeed(ai.score, colors, others) - after) * prof.progressW;
+    s += pointValue(o.floor) * 0.3;
+    if(o.floor.isPrism) s += 3;
+  }
+  opponents.forEach(function(opp){
+    var oppNeed = straightNeed(opp.score, colors);
+    function oppCanUse(card){
+      if(card.isReset) return false;
+      var na = needAfter(opp.score, card, colors);
+      return na<oppNeed && opp.hand.some(function(h){ return isValidEat(h, card); }) ? na : -1;
+    }
+    if(prof.deny){
+      var taken = oppCanUse(o.floor);
+      if(taken===0) s += 200; else if(taken>0) s += oppNeed<=2 ? 25 : 8;
+    }
+    if(prof.placeCost){
+      // The hand card stays on the floor in the captured card's place.
+      var left = oppCanUse(o.hand);
+      if(left===0) s -= 150; else if(left>0) s -= oppNeed<=2 ? 20 : 6;
+    }
+  });
+  return s - pointValue(o.hand) * 0.05;
 }
 
-function chooseAiCapture(options, difficulty, aiPlayer, opponents){
-  if(options.length===0) return null;
-  // A floor reset card is worth grabbing over drawing, but less than a real score card.
-  // The small hand-value term makes ties (e.g. any card can take a reset) spend the
-  // cheapest card.
-  function baseVal(o){ return (o.floor.isReset ? 3 : pointValue(o.floor)) - pointValue(o.hand)*0.05; }
-  if(difficulty==="easy"){
-    var best=null;
-    options.forEach(function(o){ var v=baseVal(o); if(!best||v>best.v) best={o:o,v:v}; });
-    return best.o;
+function aiPickCapture(options, ai, opponents, prof){
+  if(!options.length) return null;
+  if(Math.random() < prof.skipCapture) return null;
+  var scored = options.map(function(o){ return { o:o, s:scoreCaptureOption(o, ai, opponents, prof) }; });
+  scored.sort(function(a,b){ return b.s-a.s; });
+  if(scored[0].s>=1000) return scored[0];
+  if(Math.random() < prof.randomPick) return scored[Math.floor(Math.random()*scored.length)];
+  return scored[0];
+}
+
+// What an AI does this turn (after banking jokers). Pure: reads state, never touches the
+// DOM — aiTakeTurn executes it, and the balance simulation reuses it as-is.
+function aiDecide(playerIdx){
+  var player = state.players[playerIdx];
+  var prof = aiProfile();
+  var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
+  var resetIdx = -1;
+  player.hand.forEach(function(c,i){ if(c.isReset && resetIdx<0) resetIdx = i; });
+  var canReset = resetIdx>=0 && state.centerDeck.length>0;
+  var pick = aiPickCapture(findValidCaptures(player.hand, state.floor), player, opponents, prof);
+  if(prof.deny && canReset){
+    var threat = Math.min.apply(null, opponents.map(function(o){ return straightNeed(o.score, state.colors); }));
+    if(threat<=1 && (!pick || pick.s<30)) return { type:"reset", idx:resetIdx };
   }
-  if(difficulty==="normal"){
-    var scored = options.map(function(o){
-      var s = baseVal(o);
-      if(o.floor.isPrism) s += 4;
-      s += colorProgress(aiPlayer.score, o.floor.color) * 2;
-      return { o:o, s:s };
-    });
-    scored.sort(function(a,b){ return b.s-a.s; });
-    return scored[0].o;
-  }
-  var scored2 = options.map(function(o){
-    var s = baseVal(o);
-    if(o.floor.isPrism) s += 6;
-    s += colorProgress(aiPlayer.score, o.floor.color) * 2;
-    var denies = opponents.some(function(opp){
-      return opp.hand.some(function(oh){ return isValidEat(oh, o.floor); });
-    });
-    if(denies) s += 4;
-    return { o:o, s:s };
-  });
-  scored2.sort(function(a,b){ return b.s-a.s; });
-  return scored2[0].o;
+  // Hard won't hand an opponent their winning card just to make a capture.
+  if(pick && !(prof.placeCost && pick.s < -50 && state.centerDeck.length>0)) return { type:"capture", hi:pick.o.hi, fi:pick.o.fi };
+  if(canReset && Math.random() < prof.useReset) return { type:"reset", idx:resetIdx };
+  return { type:"draw" };
 }
 
 function aiTakeTurn(playerIdx){
@@ -2936,7 +3006,9 @@ function aiTakeTurn(playerIdx){
   var player = state.players[playerIdx];
 
   var jokerIndices = [];
-  player.hand.forEach(function(c,i){ if(c.isJoker) jokerIndices.push(i); });
+  if(Math.random() < aiProfile().bankJoker){
+    player.hand.forEach(function(c,i){ if(c.isJoker) jokerIndices.push(i); });
+  }
   if(jokerIndices.length>0){
     for(var ji=jokerIndices.length-1; ji>=0; ji--){
       player.score.push(player.hand.splice(jokerIndices[ji],1)[0]);
@@ -2946,20 +3018,14 @@ function aiTakeTurn(playerIdx){
     if(checkWin(playerIdx)) return;
   }
 
-  var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
-  var options = findValidCaptures(player.hand, state.floor);
-  var best = chooseAiCapture(options, state.aiDifficulty || "normal", player, opponents);
-
-  if(best){
-    doEat(playerIdx, best.hi, best.fi);
+  var move = aiDecide(playerIdx);
+  if(move.type==="capture"){
+    doEat(playerIdx, move.hi, move.fi);
     return;
   }
-
-  // Nothing to take: spend a reset card (free action) and look at the fresh floor.
-  var resetIdx = -1;
-  player.hand.forEach(function(c,i){ if(c.isReset && resetIdx<0) resetIdx = i; });
-  if(resetIdx>=0 && state.centerDeck.length>0){
-    useResetCard(playerIdx, resetIdx, function(){ aiTakeTurn(playerIdx); });
+  if(move.type==="reset"){
+    // Free action: wipe the floor, then decide again on the fresh one.
+    useResetCard(playerIdx, move.idx, function(){ aiTakeTurn(playerIdx); });
     return;
   }
 
