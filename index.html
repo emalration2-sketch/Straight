@@ -193,8 +193,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .deck-label b{font-family:var(--font-display);font-weight:400;font-size:20px;line-height:1;color:var(--text);}
 
 .floor-board{display:grid;grid-template-columns:repeat(4, var(--card-w));grid-template-rows:repeat(2, var(--card-h));gap:7px;background:rgba(var(--line-rgb),.04);border:1.5px solid rgba(var(--line-rgb),.12);border-radius:16px;padding:8px;flex-shrink:0;transition:border-color .2s,background-color .2s;}
-/* Member game boards. Each skin only sets tokens; the rules below apply them to the
-   game screen, the floor board and the collection preview alike. Declared before the
+/* Member-only theme table skins (theme.skin). Each skin only sets tokens; the rules below
+   apply them to your own game screen, the floor board and the theme previews alike. Declared before the
    joker/reset mode rules so those highlights still win on the floor board. */
 .board-skin-felt{
   --skin-bg:repeating-linear-gradient(45deg,rgba(255,255,255,.022) 0 1px,transparent 1px 4px),repeating-linear-gradient(-45deg,rgba(0,0,0,.05) 0 1px,transparent 1px 4px),linear-gradient(180deg,#125a3f,#0b3f2c);
@@ -360,6 +360,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .nickname-input:disabled{opacity:.55;}
 .swatch-btn{display:flex;flex-direction:column;align-items:center;gap:5px;padding:7px 4px;border-radius:10px;background:var(--panel2);border:2px solid transparent;color:var(--text);cursor:pointer;}
 .swatch-btn.primary{border-color:var(--accent);background:rgba(255,215,107,.12);}
+.swatch-btn.locked{opacity:.5;cursor:not-allowed;}
 .pattern-name{font-size:10.5px;text-align:center;line-height:1.2;}
 .section-label{font-size:11.5px;color:var(--muted);font-weight:700;padding:9px 2px 2px;}
 .theme-dot{width:12px;height:12px;border-radius:50%;border:1px solid rgba(var(--line-rgb),.4);flex-shrink:0;}
@@ -894,14 +895,36 @@ var CARD_THEMES = [
     colors:{ PINK:"#FF6F8E", BLUE:"#5AB4FF", YELLOW:"#FFD24F", GREEN:"#5BE38A" } },
   { id:"cherry", name:"체리", isDark:true, bg:"#220C13", panel:"#31131C", panel2:"#3F1A25",
     text:"#FFEEF1", muted:"#DCA3AD", lineRgb:"255,255,255",
+    colors:{ PINK:"#FF5C7A", BLUE:"#6EC1FF", YELLOW:"#FFC94D", GREEN:"#5FE0A6" } },
+  // Member-only themes: a palette plus a textured game table (skin), on your own screen only.
+  { id:"felt", name:"그린 펠트", member:true, skin:"board-skin-felt", isDark:true, bg:"#0B3A29", panel:"#0F4733", panel2:"#155A41",
+    text:"#EEF8F1", muted:"#A9CDB8", lineRgb:"255,255,255",
+    colors:{ PINK:"#FF6F8E", BLUE:"#5AB4FF", YELLOW:"#FFD24F", GREEN:"#7BE8A2" } },
+  { id:"walnut", name:"월넛 테이블", member:true, skin:"board-skin-walnut", isDark:true, bg:"#2E1C10", panel:"#3B2416", panel2:"#4A2E1C",
+    text:"#FBEFE3", muted:"#D2B394", lineRgb:"255,255,255",
+    colors:{ PINK:"#FF6F8E", BLUE:"#5AB4FF", YELLOW:"#FFD24F", GREEN:"#5BE38A" } },
+  { id:"marble", name:"블랙 마블", member:true, skin:"board-skin-marble", isDark:true, bg:"#121217", panel:"#1B1B22", panel2:"#25252E",
+    text:"#F2F2F6", muted:"#A7A9B8", lineRgb:"255,255,255",
     colors:{ PINK:"#FF5C7A", BLUE:"#6EC1FF", YELLOW:"#FFC94D", GREEN:"#5FE0A6" } }
 ];
+// Membership will come from the account's server-written entitlements once Google login
+// lands. Until then only a local dev server counts as a member, so member themes can be
+// built and previewed without shipping a way to get them free on the live site.
+function hasMembership(){
+  var h = location.hostname;
+  return h==="localhost" || h==="127.0.0.1";
+}
+function isThemeOwned(theme){ return !!theme && (!theme.member || hasMembership()); }
+// Fields every player object carries so other clients can render this player's VIP badge.
+function myMemberFields(){ return { vip:hasMembership() }; }
+
 var cardThemeIndex = 0;
 try{
   var savedTheme = localStorage.getItem("straightCardTheme");
   if(savedTheme!==null){
     var idx = CARD_THEMES.findIndex(function(t){ return t.id===savedTheme; });
-    if(idx>=0) cardThemeIndex = idx;
+    // A member theme saved while subscribed falls back to the default once it lapses.
+    if(idx>=0 && isThemeOwned(CARD_THEMES[idx])) cardThemeIndex = idx;
   }
 }catch(e){}
 var COLORS = {};
@@ -918,12 +941,15 @@ function applyCardThemeVars(theme){
   rootStyle.setProperty("--muted", theme.muted);
   rootStyle.setProperty("--line-rgb", theme.lineRgb);
   document.documentElement.classList.toggle("theme-light", !theme.isDark);
+  var gameScreen = $("screen-game");
+  CARD_THEMES.forEach(function(t){ if(t.skin) gameScreen.classList.toggle(t.skin, t===theme); });
 }
 applyCardThemeVars(CARD_THEMES[cardThemeIndex]);
 applyBackPresetToDeckVisual();
 
 function setCardTheme(idx){
   if(idx<0 || idx>=CARD_THEMES.length) return;
+  if(!isThemeOwned(CARD_THEMES[idx])) return;
   cardThemeIndex = idx;
   var theme = CARD_THEMES[idx];
   Object.assign(COLORS, theme.colors);
@@ -1010,63 +1036,6 @@ function activeBorderCls(){
   for(var i=0;i<BORDER_PRESETS.length;i++){ if(BORDER_PRESETS[i].id===id) return BORDER_PRESETS[i].cls; }
   return null;
 }
-/* ---------------- membership & game boards ---------------- */
-// Membership will come from the account's server-written entitlements once Google login
-// lands. Until then only a local dev server counts as a member, so the boards can be
-// built and previewed without shipping a way to get them free on the live site.
-function hasMembership(){
-  var h = location.hostname;
-  return h==="localhost" || h==="127.0.0.1";
-}
-// Game boards restyle the whole table. Member-only boards are equipped like any other
-// cosmetic; in a game, the first member in seat order who has one equipped sets it for
-// every player for that game only.
-var BOARD_SKINS = [
-  { id:"default", name:"기본",       cls:"" },
-  { id:"felt",    name:"그린 펠트",   cls:"board-skin-felt",   member:true },
-  { id:"walnut",  name:"월넛 테이블", cls:"board-skin-walnut", member:true },
-  { id:"marble",  name:"블랙 마블",   cls:"board-skin-marble", member:true }
-];
-function findBoardSkin(id){
-  for(var i=0;i<BOARD_SKINS.length;i++){ if(BOARD_SKINS[i].id===id) return BOARD_SKINS[i]; }
-  return null;
-}
-function isBoardSkinOwned(id){
-  var s = findBoardSkin(id);
-  return !!s && (!s.member || hasMembership());
-}
-function getBoardSkin(){
-  var id = null;
-  try{ id = localStorage.getItem("straightBoardSkin"); }catch(e){}
-  return (id && isBoardSkinOwned(id)) ? id : "default";
-}
-function setBoardSkin(id){
-  if(!isBoardSkinOwned(id)) return;
-  try{ localStorage.setItem("straightBoardSkin", id); }catch(e){}
-}
-// Fields every player object carries so other clients can render this player's VIP badge
-// and resolve the room's board.
-function myMemberFields(){
-  var vip = hasMembership();
-  return { vip:vip, boardSkin: vip ? getBoardSkin() : "default" };
-}
-function roomBoardSkinCls(){
-  var players = state.players || [];
-  for(var i=0;i<players.length;i++){
-    var p = players[i];
-    if(p && p.vip && p.boardSkin && p.boardSkin!=="default"){
-      var s = findBoardSkin(p.boardSkin);
-      if(s && s.member) return s.cls;
-    }
-  }
-  return "";
-}
-function applyBoardSkin(){
-  var screen = $("screen-game");
-  var want = roomBoardSkinCls();
-  BOARD_SKINS.forEach(function(s){ if(s.cls) screen.classList.toggle(s.cls, s.cls===want); });
-}
-
 // Every player renders as the same pill (so bordered and unbordered tags are the same
 // size). A player's title/border travel with their player object so opponents' — not
 // just the local player's — show correctly, including online.
@@ -1681,7 +1650,6 @@ function cleanPlayer(p){
   out.title = TITLE_PRESETS.some(function(t){ return t.name===p.title; }) ? p.title : null;
   out.border = BORDER_PRESETS.some(function(b){ return b.cls===p.border; }) ? p.border : null;
   out.vip = !!p.vip;
-  out.boardSkin = findBoardSkin(p.boardSkin) ? p.boardSkin : "default";
   out.hand = cleanCards(p.hand);
   out.score = cleanCards(p.score);
   return out;
@@ -1903,7 +1871,7 @@ function pickAvatar(ch, cb){
       var updated = {}; for(var k in players[mine]) updated[k]=players[mine][k];
       updated.name = chosenNickname || ch.name; updated.characterName = ch.name; updated.avatar = avatarIconHTML(ch); updated.avatarPicked = true;
       updated.title = activeTitleLabel(); updated.border = activeBorderCls();
-      var mf = myMemberFields(); updated.vip = mf.vip; updated.boardSkin = mf.boardSkin;
+      updated.vip = myMemberFields().vip;
       players[mine] = updated;
       tx.update(ref, { players: players, updatedAt: Date.now() });
     });
@@ -2288,8 +2256,7 @@ function runOrderCutscene(){
   $("order-start-btn").classList.add("hidden");
 
   var players = [];
-  var mf = myMemberFields();
-  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), title:activeTitleLabel(), border:activeBorderCls(), vip:mf.vip, boardSkin:mf.boardSkin, isAI:false, hand:[], score:[] });
+  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), title:activeTitleLabel(), border:activeBorderCls(), vip:myMemberFields().vip, isAI:false, hand:[], score:[] });
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
@@ -3026,7 +2993,6 @@ function render(){
   renderInstruction();
   if(!turnTimerId) renderTurnTimer(null);
   $("sync-btn").classList.toggle("hidden", !isMultiplayer());
-  applyBoardSkin();
   fitBoard();
 }
 
@@ -3381,7 +3347,7 @@ var COLLECTION_TABS = [
   { kind:"pattern", label:"패턴" },
   { kind:"title", label:"칭호" },
   { kind:"border", label:"테두리" },
-  { kind:"board", label:"게임판" }
+  { kind:"theme", label:"테마" }
 ];
 var collectionActiveTab = "avatar";
 function collectionItemsFor(kind){
@@ -3403,10 +3369,12 @@ function collectionItemsFor(kind){
     });
     return sortCollectionItems(titleItems, "title");
   }
-  if(kind==="board"){
-    return BOARD_SKINS.map(function(s){
-      return { id:s.id, name:s.name, member:!!s.member, unlocked:isBoardSkinOwned(s.id),
-        preview:"<span class=\"achv-preview board-preview "+s.cls+"\"><i></i><i></i><i></i><i></i></span>" };
+  if(kind==="theme"){
+    return CARD_THEMES.map(function(t, i){
+      var chips = ["PINK","BLUE","YELLOW","GREEN"].map(function(c){ return "<i style=\"background:"+t.colors[c]+"\"></i>"; }).join("");
+      var bg = t.skin ? "" : " style=\"background:"+t.bg+";border-color:"+t.panel2+"\"";
+      return { id:t.id, idx:i, name:t.name, member:!!t.member, unlocked:isThemeOwned(t),
+        preview:"<span class=\"achv-preview board-preview "+(t.skin||"")+"\""+bg+">"+chips+"</span>" };
     });
   }
   var borderItems = BORDER_PRESETS.map(function(b){
@@ -3415,9 +3383,9 @@ function collectionItemsFor(kind){
   return sortCollectionItems(borderItems, "border");
 }
 function collectionItemDetailText(kind, name){
-  if(kind==="board"){
-    var s = BOARD_SKINS.filter(function(b){ return b.name===name; })[0];
-    return s && s.member ? "👑 멤버십 전용 · 방 전체에 적용" : "기본 게임판";
+  if(kind==="theme"){
+    var t = CARD_THEMES.filter(function(x){ return x.name===name; })[0];
+    return t && t.member ? "👑 멤버십 전용 테마" : "기본 테마";
   }
   var m = findMilestoneByLabel(kind, name);
   if(!m) return "";
@@ -3453,7 +3421,7 @@ function renderCollectionScreen(){
     if(tab==="title") return getActiveTitle()===it.id;
     if(tab==="border") return getActiveBorder()===it.id;
     if(tab==="pattern") return backPresetIndex===it.idx;
-    if(tab==="board") return getBoardSkin()===it.id;
+    if(tab==="theme") return cardThemeIndex===it.idx;
     return getDefaultAvatarName()===it.name;
   }
   // Equipping only flips the equipped state in place. A full re-render reset the grid's
@@ -3489,7 +3457,7 @@ function renderCollectionScreen(){
         if(tab==="title") setActiveTitle(it.id);
         else if(tab==="border") setActiveBorder(it.id);
         else if(tab==="pattern") setBackPreset(it.idx);
-        else if(tab==="board") setBoardSkin(it.id);
+        else if(tab==="theme") setCardTheme(it.idx);
         else setDefaultAvatar(it.name);
         sfxSelect();
         refreshEquipped();
@@ -3683,9 +3651,11 @@ function openSettingsModal(){
   var cardThemeLabel = el("div","section-label","🃏 카드 테마");
   var cardThemeRow = el("div","swatch-grid");
   CARD_THEMES.forEach(function(theme, i){
-    var tb = el("button","swatch-btn theme-swatch"+(i===cardThemeIndex?" primary":""));
-    var preview = el("span","theme-preview");
-    preview.style.background = theme.bg;
+    var owned = isThemeOwned(theme);
+    var tb = el("button","swatch-btn theme-swatch"+(i===cardThemeIndex?" primary":"")+(owned?"":" locked"));
+    var preview = el("span","theme-preview"+(theme.skin?" "+theme.skin:""));
+    if(theme.skin) preview.style.background = "var(--skin-bg)";
+    else preview.style.background = theme.bg;
     preview.style.borderColor = theme.panel2;
     ["PINK","BLUE","YELLOW","GREEN"].forEach(function(c){
       var chip = el("i","theme-card");
@@ -3693,8 +3663,9 @@ function openSettingsModal(){
       preview.appendChild(chip);
     });
     tb.appendChild(preview);
-    tb.appendChild(el("span","pattern-name", theme.name));
+    tb.appendChild(el("span","pattern-name", (theme.member?"👑 ":"")+theme.name));
     tb.addEventListener("click", function(){
+      if(!owned){ sfxInvalid(); return; }
       setCardTheme(i);
       Array.prototype.forEach.call(cardThemeRow.children, function(c){ c.classList.remove("primary"); });
       tb.classList.add("primary");
