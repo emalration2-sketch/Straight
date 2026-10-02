@@ -38,16 +38,15 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // Rooms are still open to signed-out clients until the sign-in build is live; the
-    // follow-up rule change adds signedIn() to get/create/update.
     match /rooms/{code} {
-      allow get: if code.matches('^[A-HJ-NP-Z2-9]{5}$');
+      allow get: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{5}$');
       allow list: if false;
-      allow create: if code.matches('^[A-HJ-NP-Z2-9]{5}$')
+      allow create: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{5}$')
         && request.resource.data.phase == 'lobby'
         && request.resource.data.players is list
         && request.resource.data.players.size() <= 4;
-      allow update: if request.resource.data.players is list
+      allow update: if signedIn()
+        && request.resource.data.players is list
         && request.resource.data.players.size() <= 4
         && request.resource.data.phase in ['lobby', 'playing'];
       allow delete: if false;
