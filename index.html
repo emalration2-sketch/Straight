@@ -1092,10 +1092,44 @@ function announceNewUnlocks(ids){
     setTimeout(function(){ toast.remove(); }, 300);
   }, 3600);
 }
+// Hidden account record (never shown in game) — for future ranked play and levels.
+function recordAccountResult(outcome, online){
+  if(!account || !fbDb) return;
+  var F = fbFs, inc = F.increment(1);
+  var field = outcome==="win" ? "wins" : outcome==="draw" ? "draws" : "losses";
+  var bucket = { games:inc }; bucket[field] = inc;
+  var record = { games:inc }; record[field] = inc; record[online ? "online" : "solo"] = bucket;
+  F.setDoc(F.doc(fbDb,"users",account.uid), { record:record }, { merge:true })
+    .catch(function(e){ console.error("전적 저장 실패", e); });
+}
+// One anonymous summary per finished game (written by the host only online). No uid,
+// nickname or email — only the developer role can read these.
+function logBalanceGame(){
+  if(!account || !fbDb) return;
+  var F = fbFs, b = state.balance || {}, ws = state.winnerStraight;
+  var hasAI = state.players.some(function(p){ return p && p.isAI; });
+  var winner = state.isDraw ? null : state.winnerIndex;
+  F.addDoc(F.collection(fbDb,"balanceLogs"), {
+    players: state.turnOrder.length,
+    mode: isMultiplayer() ? "online" : "solo",
+    aiDifficulty: hasAI ? (state.aiDifficulty || null) : null,
+    firstSeat: state.turnOrder.length ? state.turnOrder[0] : null,
+    winnerSeat: (winner===null || winner===undefined) ? null : winner,
+    winnerOrder: (winner===null || winner===undefined) ? null : state.turnOrder.indexOf(winner),
+    turns: state.turnSeq || 0,
+    jokers: b.jokers || 0,
+    bombs: b.bombs || 0,
+    autoResets: b.autoResets || 0,
+    straight: ws ? { color:ws.color, start:ws.start } : null,
+    at: F.serverTimestamp()
+  }).catch(function(e){ console.error("밸런스 기록 실패", e); });
+}
 function maybeRecordLocalGameResult(outcome, meta){
   if(state.statsRecorded) return;
   state.statsRecorded = true;
   recordGameResult(outcome, meta);
+  recordAccountResult(outcome, isMultiplayer());
+  if(iAmHost()) logBalanceGame();
   saveProgressNow();
 }
 
@@ -1930,6 +1964,7 @@ var state = {
   turnSeq: 0,
   stagnantTurns: 0,
   floorResetStreak: 0,
+  balance: { jokers:0, bombs:0, autoResets:0 },
   prismRanks: []
 };
 
@@ -1987,6 +2022,7 @@ function pushRoomState(){
     turnSeq: state.turnSeq,
     stagnantTurns: state.stagnantTurns,
     floorResetStreak: state.floorResetStreak,
+    balance: state.balance,
     gameOver: state.gameOver,
     winnerIndex: state.winnerIndex,
     winnerStraight: state.winnerStraight,
@@ -2040,6 +2076,8 @@ function sanitizeRoomData(data){
   var ws = data.winnerStraight;
   data.winnerStraight = (ws && typeof ws==="object" && ALL_COLORS.indexOf(ws.color)!==-1 && Number(ws.start)>=1 && Number(ws.start)<=6)
     ? { color:ws.color, start:Number(ws.start) } : null;
+  var bl = data.balance || {};
+  data.balance = { jokers:Math.max(0, Number(bl.jokers)||0), bombs:Math.max(0, Number(bl.bombs)||0), autoResets:Math.max(0, Number(bl.autoResets)||0) };
   return data;
 }
 
@@ -2104,6 +2142,7 @@ function applyRemoteRoomState(data){
   state.turnSeq = data.turnSeq || 0;
   state.stagnantTurns = data.stagnantTurns || 0;
   state.floorResetStreak = data.floorResetStreak || 0;
+  state.balance = data.balance;
   state.gameOver = !!data.gameOver;
   state.winnerIndex = data.winnerIndex;
   state.winnerStraight = data.winnerStraight;
@@ -2336,6 +2375,7 @@ function startOnlineGame(){
   state.stagnantTurns = 0;
   state.floorResetStreak = 0;
   state.statsRecorded = false;
+  state.balance = { jokers:0, bombs:0, autoResets:0 };
   state.aiDifficulty = chosenAiDifficulty;
   aiDriveGuard = {};
   // Newest first: Grand Master announcements sit on top of the start lines.
@@ -2702,6 +2742,7 @@ function startGame(players, order){
   state.stagnantTurns = 0;
   state.floorResetStreak = 0;
   state.statsRecorded = false;
+  state.balance = { jokers:0, bombs:0, autoResets:0 };
   aiDriveGuard = {};
   clearSelectionState();
 
@@ -2830,6 +2871,7 @@ function resetFloor(){
   state.floor = state.centerDeck.splice(0, n);
   state.stagnantTurns = 0;
   state.floorResetStreak = (state.floorResetStreak||0) + 1;
+  state.balance.autoResets++;
   pushLog("🔄 바닥 카드가 오래 정체되어 새로 섞어 깔았습니다!");
 }
 
@@ -3157,6 +3199,7 @@ function bankJoker(handIdx){
   var player = state.players[state.myIndex];
   var joker = player.hand.splice(handIdx,1)[0];
   player.score.push(joker);
+  state.balance.jokers++;
   bumpStatAndCheck("jokersBanked", 1);
   pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
   clearSelectionState();
@@ -3174,6 +3217,7 @@ function useResetCard(playerIdx, handIdx, cb){
   var card = player.hand[handIdx];
   if(!card || !card.isReset) return;
   player.hand.splice(handIdx, 1);
+  state.balance.bombs++;
   state.animating = true;
   clearSelectionState();
   render();
@@ -3348,6 +3392,7 @@ function aiTakeTurn(playerIdx){
   if(jokerIndices.length>0){
     for(var ji=jokerIndices.length-1; ji>=0; ji--){
       player.score.push(player.hand.splice(jokerIndices[ji],1)[0]);
+      state.balance.jokers++;
     }
     pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
     pushRoomState();
