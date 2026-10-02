@@ -23,8 +23,9 @@
 ## 이번 세션에서 처리할 것 (아직 안 됨)
 
 1. ~~Firebase 콘솔 작업~~ → **완료**(아래 진행 기록).
-2. **첫 출시 유료 아이템 구성 결정**(사용자 결정 대기): 테두리·패턴·테마·멤버 전용 캐릭터 개수. 추천: 테두리 4, 패턴 4, 테마 2, 멤버 캐릭터 2.
-3. **구현 계획서 작성 → 개발**(superpowers:writing-plans → 실행). 순서:
+2. **수집품 개편 구현**: `docs/superpowers/specs/2026-10-03-collectibles-redesign.md`(확정 + 일부 "제안" 항목 확인 대기). 로그인 구현과 함께 또는 직전에 진행.
+3. **첫 출시 유료 아이템 구성 결정**(사용자 결정 대기): 테두리·패턴·테마·멤버 전용 캐릭터 개수. 추천: 테두리 4, 패턴 4, 테마 2, 멤버 캐릭터 2.
+4. **구현 계획서 작성 → 개발**(superpowers:writing-plans → 실행). 순서:
    1. 구글 로그인(필수) + `users/{uid}` 진행도 저장(기존 localStorage 진행도는 이관 안 함, "기존 플레이어 전부 해금" 규칙 제거)
    2. `devAccounts` 역할(dev/tester) 판정 + `entitlements/{uid}` 권한 → `isDevAccount()`/`hasMembership()` 임시 판정 교체
    3. 숨은 전적(`users/{uid}.record`)과 밸런스 데이터(`balanceLogs`, dev만 읽기)
