@@ -235,6 +235,18 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
   --skin-floor-border:#c8ccd6;
   --skin-floor-shadow:inset 0 0 0 4px rgba(0,0,0,.35),0 4px 12px rgba(0,0,0,.45);
 }
+.board-skin-neon{
+  --skin-bg:linear-gradient(rgba(57,243,255,.07) 1px,transparent 1px) 0 0/24px 24px,linear-gradient(90deg,rgba(255,61,230,.07) 1px,transparent 1px) 0 0/24px 24px,radial-gradient(ellipse at 50% 110%,rgba(255,61,230,.28),transparent 60%),linear-gradient(180deg,#140533,#0a0118);
+  --skin-floor-bg:rgba(10,1,24,.55);
+  --skin-floor-border:#39f3ff;
+  --skin-floor-shadow:0 0 10px rgba(57,243,255,.45),inset 0 0 12px rgba(255,61,230,.22);
+}
+.board-skin-ocean{
+  --skin-bg:radial-gradient(ellipse at 30% -10%,rgba(120,220,255,.24),transparent 55%),repeating-linear-gradient(100deg,rgba(255,255,255,.025) 0 2px,transparent 2px 18px),linear-gradient(180deg,#0a3a5c,#031626);
+  --skin-floor-bg:rgba(3,22,38,.45);
+  --skin-floor-border:#4fc3f7;
+  --skin-floor-shadow:inset 0 0 0 3px rgba(0,0,0,.25),0 4px 14px rgba(0,30,60,.5);
+}
 #screen-game[class*="board-skin-"]{background:var(--skin-bg);}
 /* Let the table show through: theme-colored panels would clash with wood/marble. */
 #screen-game[class*="board-skin-"] .opponent-card,#screen-game[class*="board-skin-"] .status-panel,#screen-game[class*="board-skin-"] .log-emoji-btn{background:rgba(0,0,0,.32);}
@@ -935,9 +947,6 @@ var CARD_THEMES = [
   { id:"forest", name:"포레스트", isDark:true, bg:"#0E1C15", panel:"#15291F", panel2:"#1C3528",
     text:"#EAF7EF", muted:"#9DC6AE", lineRgb:"255,255,255",
     colors:{ PINK:"#FF6F8E", BLUE:"#5AB4FF", YELLOW:"#FFD24F", GREEN:"#5BE38A" } },
-  { id:"cherry", name:"체리", isDark:true, bg:"#220C13", panel:"#31131C", panel2:"#3F1A25",
-    text:"#FFEEF1", muted:"#DCA3AD", lineRgb:"255,255,255",
-    colors:{ PINK:"#FF5C7A", BLUE:"#6EC1FF", YELLOW:"#FFC94D", GREEN:"#5FE0A6" } },
   // Member-only themes: a palette plus a textured game table (skin), on your own screen only.
   { id:"felt", name:"그린 펠트", member:true, skin:"board-skin-felt", isDark:true, bg:"#0B3A29", panel:"#0F4733", panel2:"#155A41",
     text:"#EEF8F1", muted:"#A9CDB8", lineRgb:"255,255,255",
@@ -947,7 +956,14 @@ var CARD_THEMES = [
     colors:{ PINK:"#FF6F8E", BLUE:"#5AB4FF", YELLOW:"#FFD24F", GREEN:"#5BE38A" } },
   { id:"marble", name:"블랙 마블", member:true, skin:"board-skin-marble", isDark:true, bg:"#121217", panel:"#1B1B22", panel2:"#25252E",
     text:"#F2F2F6", muted:"#A7A9B8", lineRgb:"255,255,255",
-    colors:{ PINK:"#FF5C7A", BLUE:"#6EC1FF", YELLOW:"#FFC94D", GREEN:"#5FE0A6" } }
+    colors:{ PINK:"#FF5C7A", BLUE:"#6EC1FF", YELLOW:"#FFC94D", GREEN:"#5FE0A6" } },
+  // Paid themes (3,300원): a palette plus a table skin, like the member themes.
+  { id:"neon", name:"네온 아케이드", paid:true, skin:"board-skin-neon", isDark:true, bg:"#0D0221", panel:"#1A0638", panel2:"#260A4F",
+    text:"#F5EEFF", muted:"#B9A3E3", lineRgb:"255,255,255",
+    colors:{ PINK:"#FF3DE6", BLUE:"#39F3FF", YELLOW:"#FFE53D", GREEN:"#3DFF8B" } },
+  { id:"ocean", name:"오션 딥", paid:true, skin:"board-skin-ocean", isDark:true, bg:"#03192B", panel:"#06263F", panel2:"#0A3353",
+    text:"#E6F6FF", muted:"#8FBCD8", lineRgb:"255,255,255",
+    colors:{ PINK:"#FF6F91", BLUE:"#4FC3F7", YELLOW:"#FFD54F", GREEN:"#4DE0B5" } }
 ];
 // Membership will come from the account's server-written entitlements once Google login
 // lands. Until then only a local dev server counts as a member, so member themes can be
@@ -1042,6 +1058,9 @@ var CHARACTERS = [
   { emoji:"🐢", name:"슬로우모" },
   { emoji:"🦊", name:"폭스트릭" },
   { emoji:"🦖", name:"렉스 버서커" },
+  // Member-only characters.
+  { emoji:"🦄", name:"유니콘", member:true },
+  { emoji:"🐼", name:"판다 킹", member:true },
   // Event characters: shipped now, locked until an event hands them out.
   { emoji:"🦈", name:"썬더 죠스", event:true },
   { emoji:"🦂", name:"블랙 스콜피온", event:true }
@@ -1218,6 +1237,10 @@ function isBorderUnlocked(id, unlocks){
   if(UNLOCK_STARTER_BORDERS.indexOf(id)!==-1) return true;
   var m = findMilestoneByLabel("border", preset.name);
   return m ? unlocks.indexOf(m.id)!==-1 : false;
+}
+// AI opponents only use the four starter characters; event and member ones stay special.
+function randomStarterCharacter(){
+  return presetByName("avatar", UNLOCK_STARTER_AVATARS[Math.floor(Math.random()*UNLOCK_STARTER_AVATARS.length)]);
 }
 function avatarIconHTML(ch){ return (ch && ch.avatarIcon) ? ch.avatarIcon : (ch ? ch.emoji : ""); }
 
@@ -2059,7 +2082,7 @@ function startOnlineGame(){
   lobbyPlayers.forEach(function(p){ usedNames[p.characterName||p.name]=true; });
   while(lobbyPlayers.length < maxPlayers){
     var ch;
-    do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(usedNames[ch.name]);
+    do{ ch = randomStarterCharacter(); }while(usedNames[ch.name]);
     usedNames[ch.name]=true;
     lobbyPlayers.push({ clientId:null, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
   }
@@ -2393,7 +2416,7 @@ function runOrderCutscene(){
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
-    do{ ch = CHARACTERS[Math.floor(Math.random()*CHARACTERS.length)]; }while(used[ch.name]);
+    do{ ch = randomStarterCharacter(); }while(used[ch.name]);
     used[ch.name]=true;
     players.push({ idx:i, name:ch.name, characterName:ch.name, avatar:avatarIconHTML(ch), isAI:true, hand:[], score:[] });
   }
@@ -3581,12 +3604,13 @@ function collectionItemsFor(kind){
     return sortCollectionItems(titleItems, "title");
   }
   if(kind==="theme"){
-    return CARD_THEMES.map(function(t, i){
+    var themeItems = CARD_THEMES.map(function(t, i){
       var chips = ["PINK","BLUE","YELLOW","GREEN"].map(function(c){ return "<i style=\"background:"+t.colors[c]+"\"></i>"; }).join("");
       var bg = t.skin ? "" : " style=\"background:"+t.bg+";border-color:"+t.panel2+"\"";
       return { id:t.id, idx:i, name:t.name, unlocked:isThemeOwned(t),
         preview:"<span class=\"achv-preview board-preview "+(t.skin||"")+"\""+bg+">"+chips+"</span>" };
     });
+    return sortCollectionItems(themeItems, "theme");
   }
   var borderItems = BORDER_PRESETS.map(function(b){
     return { id:b.id, name:b.name, unlocked:isBorderUnlocked(b.id, straightUnlocks), preview:"<span class=\"achv-preview border-ring "+b.cls+"\"></span>" };
@@ -3880,7 +3904,7 @@ function openSettingsModal(){
       preview.appendChild(chip);
     });
     tb.appendChild(preview);
-    tb.appendChild(el("span","pattern-name", (theme.member?"👑 ":"")+theme.name));
+    tb.appendChild(el("span","pattern-name", (theme.member?"👑 ":theme.paid?"💎 ":"")+theme.name));
     tb.addEventListener("click", function(){
       if(!owned){ sfxInvalid(); return; }
       setCardTheme(i);
