@@ -433,6 +433,15 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .unlock-popup.show{opacity:1;transform:translateX(-50%) translateY(0);}
 .unlock-popup b{color:var(--text);}
 .unlock-popup-head{font-size:14px;font-weight:800;margin-bottom:3px;}
+.login-gate{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--bg);}
+.login-gate.hidden{display:none;}
+.login-card{width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;}
+.login-logo{font-family:var(--font-display);font-size:40px;color:var(--text);}
+.login-logo span{color:var(--pink);}
+.login-msg{font-size:13px;color:var(--muted);min-height:1.4em;}
+.login-inapp,.login-nick{display:flex;flex-direction:column;gap:8px;width:100%;font-size:13px;color:var(--text);line-height:1.5;}
+.login-inapp.hidden,.login-nick.hidden{display:none;}
+.login-nick .nickname-input{width:100%;text-align:center;font-size:15px;padding:10px;}
 #collection-btn{position:relative;}
 #collection-btn.has-new::after,.coll-tab.has-new::after{content:"";position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#ff4d6d;border:2px solid var(--bg);}
 .coll-tab{position:relative;}
@@ -614,12 +623,29 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
   </div>
 
 </div>
+<div class="login-gate" id="login-gate">
+  <div class="login-card">
+    <div class="login-logo">스트레이트<span>!</span></div>
+    <p class="login-msg" id="login-msg">불러오는 중...</p>
+    <div class="login-inapp hidden" id="login-inapp">
+      <p>카카오톡·인스타그램 등 앱 안의 브라우저에서는 구글 로그인이 막혀 있어요.<br><b>Chrome</b> 또는 <b>Safari</b>로 열어 주세요.</p>
+      <button class="btn primary" id="login-open-external">다른 브라우저로 열기</button>
+      <button class="btn" id="login-copy-link">링크 복사</button>
+    </div>
+    <button class="btn primary big hidden" id="login-google-btn">G&nbsp; Google로 시작하기</button>
+    <div class="login-nick hidden" id="login-nick">
+      <p>게임에서 쓸 닉네임을 정해 주세요</p>
+      <input type="text" class="nickname-input" id="login-nick-input" maxlength="12">
+      <button class="btn primary" id="login-nick-btn">시작하기</button>
+    </div>
+    <button class="btn hidden" id="login-retry-btn">다시 시도</button>
+  </div>
+</div>
 <div id="tooltip-layer"></div>
 
 <script type="module">
-/* Firebase is loaded lazily (only when the player actually chooses online
-   multiplayer) so solo play never touches the network and works fully
-   offline once the page itself is loaded. */
+/* Firebase (app, auth, firestore) loads at startup: Google sign-in is required before
+   the game starts, and the account's progress lives in Firestore users/{uid}. */
 const firebaseConfig = {
   apiKey: "AIzaSyBO_HG0CtTRF3NmDUXN1aae8uCm5IFjpAQ",
   authDomain: "straight-game.firebaseapp.com",
@@ -629,22 +655,27 @@ const firebaseConfig = {
   appId: "1:435687905535:web:2dfc13e707ebdbbb7394ca"
 };
 var fbDb = null, fbDoc = null, fbSetDoc = null, fbUpdateDoc = null, fbGetDoc = null, fbOnSnapshot = null, fbRunTransaction = null;
+var fbFs = null, fbAuth = null, fbAuthApi = null;
 var fbReadyPromise = null;
 function ensureFirebase(){
   if(fbReadyPromise) return fbReadyPromise;
   fbReadyPromise = Promise.all([
     import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"),
-    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js")
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"),
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js")
   ]).then(function(mods){
-    var appMod = mods[0], fsMod = mods[1];
+    var appMod = mods[0], fsMod = mods[1], authMod = mods[2];
     var fbApp = appMod.initializeApp(firebaseConfig);
     fbDb = fsMod.getFirestore(fbApp);
+    fbFs = fsMod;
     fbDoc = fsMod.doc;
     fbSetDoc = fsMod.setDoc;
     fbUpdateDoc = fsMod.updateDoc;
     fbGetDoc = fsMod.getDoc;
     fbOnSnapshot = fsMod.onSnapshot;
     fbRunTransaction = fsMod.runTransaction;
+    fbAuthApi = authMod;
+    fbAuth = authMod.getAuth(fbApp);
   }).catch(function(e){
     fbReadyPromise = null;
     throw e;
@@ -652,7 +683,151 @@ function ensureFirebase(){
   return fbReadyPromise;
 }
 
-(function(){
+/* ---------------- account (Google sign-in gate) ---------------- */
+var account = null;
+// localStorage keys that belong to the signed-in account (mirrored to users/{uid}.progress).
+var SYNCED_KEYS = ["straightStats","straightUnlocks","straightUnlocksVer","straightNewUnlocks",
+  "straightActiveTitle","straightActiveBorder","straightDefaultAvatar","straightArtPreset",
+  "straightCardTheme","straightNickname","straightAiDifficulty"];
+function saveProgressNow(){ return Promise.resolve(); }
+
+function gateEl(id){ return document.getElementById(id); }
+function showGate(mode, msg){
+  gateEl("login-gate").classList.remove("hidden");
+  gateEl("login-msg").textContent = msg || "";
+  gateEl("login-google-btn").classList.toggle("hidden", mode!=="signin");
+  gateEl("login-inapp").classList.toggle("hidden", mode!=="inapp");
+  gateEl("login-nick").classList.toggle("hidden", mode!=="nickname");
+  gateEl("login-retry-btn").classList.toggle("hidden", mode!=="error");
+}
+function isInAppBrowser(){
+  return /KAKAOTALK|NAVER\(inapp|Instagram|FBAN|FBAV|Line\/|DaumApps|everytimeApp|; wv\)/i.test(navigator.userAgent);
+}
+function openInExternalBrowser(){
+  var url = location.href;
+  if(/KAKAOTALK/i.test(navigator.userAgent)){
+    location.href = "kakaotalk://web/openExternal?url="+encodeURIComponent(url);
+  } else if(/Android/i.test(navigator.userAgent)){
+    location.href = "intent://"+location.host+location.pathname+location.search+"#Intent;scheme=https;package=com.android.chrome;end";
+  } else {
+    gateEl("login-msg").textContent = "화면의 ⋯ 메뉴에서 'Safari로 열기'를 눌러 주세요.";
+  }
+}
+function toMillis(v){
+  if(!v) return 0;
+  if(typeof v.toMillis==="function") return v.toMillis();
+  var n = Number(v);
+  return isFinite(n) ? n : 0;
+}
+// The account's saved progress replaces whatever another account (or a pre-login
+// session) left in this browser; nothing from before sign-in is carried over.
+function hydrateProgress(uid, data){
+  try{
+    var prevUid = localStorage.getItem("straightAccountUid");
+    var progress = data && data.progress && typeof data.progress==="object" ? data.progress : null;
+    if(progress || prevUid!==uid){
+      SYNCED_KEYS.forEach(function(k){ localStorage.removeItem(k); });
+    }
+    if(progress){
+      SYNCED_KEYS.forEach(function(k){ if(typeof progress[k]==="string") localStorage.setItem(k, progress[k]); });
+    }
+    localStorage.setItem("straightAccountUid", uid);
+  }catch(e){}
+}
+function loadAccount(user){
+  var F = fbFs;
+  var email = user.email || "";
+  return Promise.all([
+    F.getDoc(F.doc(fbDb,"users",user.uid)),
+    F.getDoc(F.doc(fbDb,"entitlements",user.uid)).catch(function(){ return null; }),
+    (email && user.emailVerified) ? F.getDoc(F.doc(fbDb,"devAccounts",email)).catch(function(){ return null; }) : Promise.resolve(null)
+  ]).then(function(r){
+    var userSnap = r[0], entSnap = r[1], devSnap = r[2];
+    var ent = entSnap && entSnap.exists() ? entSnap.data() : {};
+    var dev = devSnap && devSnap.exists() ? devSnap.data() : {};
+    account = {
+      uid: user.uid, email: email,
+      role: (dev.role==="dev" || dev.role==="tester") ? dev.role : null,
+      items: Array.isArray(ent.items) ? ent.items.map(String) : [],
+      membershipUntil: toMillis(ent.membershipUntil)
+    };
+    hydrateProgress(user.uid, userSnap.exists() ? userSnap.data() : null);
+    return userSnap.exists();
+  });
+}
+var gameStarted = false;
+function enterGame(){
+  if(gameStarted) return;
+  gameStarted = true;
+  gateEl("login-gate").classList.add("hidden");
+  startGame();
+}
+function cleanNick(s){ return String(s==null?"":s).replace(/[<>&"'`]/g,"").trim().slice(0, 12); }
+function askNickname(defaultName){
+  showGate("nickname", "");
+  var input = gateEl("login-nick-input");
+  input.value = cleanNick(defaultName);
+  gateEl("login-nick-btn").onclick = function(){
+    var nick = cleanNick(input.value);
+    if(!nick){ input.focus(); return; }
+    try{ localStorage.setItem("straightNickname", nick); }catch(e){}
+    var F = fbFs;
+    F.setDoc(F.doc(fbDb,"users",account.uid), {
+      progress: { straightNickname: nick }, createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp()
+    }, { merge:true }).catch(function(e){ console.error("계정 생성 실패", e); });
+    enterGame();
+  };
+}
+function signInWithGoogle(){
+  var provider = new fbAuthApi.GoogleAuthProvider();
+  fbAuthApi.signInWithPopup(fbAuth, provider).catch(function(e){
+    if(e && e.code==="auth/popup-blocked") return fbAuthApi.signInWithRedirect(fbAuth, provider);
+    if(e && (e.code==="auth/popup-closed-by-user" || e.code==="auth/cancelled-popup-request")) return;
+    console.error("로그인 실패", e);
+    showGate("signin", "로그인에 실패했어요. 다시 시도해 주세요.");
+  });
+}
+function signOutAndReload(){
+  var p = fbAuth ? fbAuthApi.signOut(fbAuth) : Promise.resolve();
+  p.then(function(){ location.reload(); }, function(){ location.reload(); });
+}
+// ?guest on a local dev server skips sign-in (no account: nothing is saved to the cloud),
+// so the game itself can be exercised without a Google login.
+function isLocalGuest(){
+  var h = location.hostname;
+  return (h==="localhost" || h==="127.0.0.1") && /[?&]guest\b/.test(location.search);
+}
+function bootAuth(){
+  if(isLocalGuest()){ enterGame(); return; }
+  if(isInAppBrowser()){ showGate("inapp", ""); return; }
+  showGate("loading", "불러오는 중...");
+  ensureFirebase().then(function(){
+    fbAuthApi.onAuthStateChanged(fbAuth, function(user){
+      if(gameStarted) return;
+      if(!user){ showGate("signin", "구글 계정으로 로그인하면 기록이 저장돼요."); return; }
+      showGate("loading", "계정 불러오는 중...");
+      loadAccount(user).then(function(hasDoc){
+        if(hasDoc) enterGame();
+        else askNickname(user.displayName || "");
+      }).catch(function(e){
+        console.error("계정 불러오기 실패", e);
+        showGate("error", "계정을 불러오지 못했어요. 네트워크를 확인해 주세요.");
+      });
+    });
+  }).catch(function(e){
+    console.error("Firebase 로드 실패", e);
+    showGate("error", "연결에 실패했어요. 네트워크를 확인해 주세요.");
+  });
+}
+gateEl("login-google-btn").addEventListener("click", signInWithGoogle);
+gateEl("login-retry-btn").addEventListener("click", function(){ location.reload(); });
+gateEl("login-open-external").addEventListener("click", openInExternalBrowser);
+gateEl("login-copy-link").addEventListener("click", function(){
+  var done = function(){ gateEl("login-msg").textContent = "링크를 복사했어요. Chrome/Safari 주소창에 붙여 넣어 주세요."; };
+  if(navigator.clipboard) navigator.clipboard.writeText(location.href).then(done, done); else done();
+});
+
+function startGame(){
 "use strict";
 
 var COLOR_NAMES = { PINK:"핑크", BLUE:"블루", YELLOW:"옐로우", GREEN:"그린" };
@@ -3933,6 +4108,17 @@ function openSettingsModal(){
   nickInput.addEventListener("blur", function(){ if(!nickLocked) applyNickname(nickInput.value); });
   nickRow.appendChild(nickInput);
 
+  var logoutRow = el("div","settings-row");
+  logoutRow.style.justifyContent = "center";
+  logoutRow.style.borderBottom = "none";
+  var logoutBtn = el("button","btn","🚪 로그아웃");
+  logoutBtn.style.width = "100%";
+  logoutBtn.addEventListener("click", function(){
+    if(!confirm("로그아웃할까요?")) return;
+    saveProgressNow().then(signOutAndReload);
+  });
+  logoutRow.appendChild(logoutBtn);
+
   var quitRow = null;
   if(!$("screen-game").classList.contains("hidden")){
     quitRow = el("div","settings-row");
@@ -3964,6 +4150,7 @@ function openSettingsModal(){
     box.appendChild(cardThemeRow);
   }
   if(!nickLocked) box.appendChild(nickRow);
+  if(!inGame && account) box.appendChild(logoutRow);
   if(quitRow) box.appendChild(quitRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
@@ -4007,7 +4194,8 @@ $("sync-btn").addEventListener("click", function(){
   setTimeout(function(){ btn.classList.remove("spinning"); }, 500);
 });
 
-})();
+}
+bootAuth();
 </script>
 </body>
 </html>
