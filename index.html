@@ -108,8 +108,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag{position:relative;display:inline-flex;align-items:center;gap:7px;max-width:100%;vertical-align:middle;border-radius:999px;border:2px solid rgba(var(--line-rgb),.2);background:var(--panel2);padding:2px 11px 2px 2px;}
 .name-tag-avatar{width:26px;height:26px;border-radius:50%;background:rgba(var(--line-rgb),.1);display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;flex-shrink:0;}
 .name-tag-avatar svg{width:1.1em;height:1.1em;}
-.name-tag-text{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.name-tag-title{flex-shrink:0;white-space:nowrap;font-size:9.5px;font-weight:700;background:var(--accent);color:#4a3a05;padding:1px 7px;border-radius:6px;}
+/* When a tag runs out of room the title gives way first (flex-shrink:20) and the name
+   keeps at least ~3 characters; badges never shrink. */
+.name-tag-text{font-weight:700;min-width:3em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.name-tag-title{flex-shrink:20;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;font-weight:700;background:var(--accent);color:#4a3a05;padding:1px 7px;border-radius:6px;}
 .name-tag.compact{gap:5px;padding:1px 8px 1px 1px;font-size:11.5px;min-width:0;flex:0 1 auto;}
 .name-tag.compact .name-tag-avatar{width:21px;height:21px;font-size:13px;}
 .name-tag.compact .name-tag-title{font-size:8.5px;padding:0 5px;}
@@ -126,6 +128,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-aurora{border-color:transparent;background:linear-gradient(90deg,rgba(76,224,160,.22),rgba(180,140,255,.14)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#4ce0a0,#33d6c0,#7f9cff,#b48cff) border-box;}
 .name-tag.border-candy{border-color:transparent;background:linear-gradient(90deg,rgba(255,122,168,.24),rgba(255,122,168,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(45deg,#ff7aa8 0 5px,#ffffff 5px 10px) border-box;}
 @keyframes tagSheen{from{background-position:0 0,0 0,0% 0;}to{background-position:0 0,0 0,100% 0;}}
+/* 레전드 (Grand Master): metallic gold rim; one light streak crosses the pill, then rests. */
+.name-tag.border-legend{border-color:transparent;background:linear-gradient(90deg,rgba(233,185,73,.3),rgba(233,185,73,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}
+.name-tag.border-legend::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.4) 50%,transparent 62%);background-size:260% 100%;animation:legendSweep 3.4s ease-in-out infinite;}
+@keyframes legendSweep{0%{background-position:130% 0;}45%,100%{background-position:-30% 0;}}
+@media (prefers-reduced-motion: reduce){.name-tag.border-legend::after{animation:none;opacity:0;}}
+.border-ring.border-legend{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}
+.master-badge{flex-shrink:0;font-size:8.5px;font-weight:900;letter-spacing:.4px;line-height:1.3;padding:1px 5px;border-radius:5px;background:#2a2140;color:#ffd36b;border:1px solid #e9b949;}
 @media (prefers-reduced-motion: reduce){.name-tag{animation:none !important;}}
 
 /* count select */
@@ -311,7 +320,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
-.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-solar::after,.pattern-hologram::after,.pattern-royal::after,.pattern-cosmic::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-solar::after,.pattern-hologram::after,.pattern-royal::after,.pattern-cosmic::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:14px 14px;background-position:0 0,7px 7px;}
@@ -319,6 +328,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
 .pattern-diagonal::after{background-image:linear-gradient(135deg,transparent 0 50%,rgba(0,0,0,.18) 50% 100%);}
 .pattern-ripple::after{background-image:repeating-radial-gradient(circle at 25% 30%,transparent 0 5px,rgba(0,0,0,.14) 5px 6px);}
+.pattern-goldfoil::after{background-image:linear-gradient(115deg,transparent 0 26%,rgba(255,236,170,.34) 37%,transparent 48%,transparent 58%,rgba(255,215,107,.24) 68%,transparent 78%),repeating-linear-gradient(45deg,rgba(255,215,107,.16) 0 1px,transparent 1px 5px);box-shadow:inset 0 0 0 2px rgba(233,185,73,.55);}
 .pattern-scale::after{background-image:radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px),radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px);background-size:12px 8px;background-position:0 0,6px 4px;}
 .pattern-solar::after{background-image:radial-gradient(circle,rgba(255,226,120,.6) 0 2.6px,transparent 2.9px),radial-gradient(circle,transparent 0 3.6px,rgba(255,226,120,.32) 3.8px 4.4px,transparent 4.6px),repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,226,120,.2) 0 12deg,transparent 12deg 45deg);background-size:20px 20px;}
 .pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.5) 15% 19%, transparent 19% 45%, rgba(255,255,255,.35) 45% 48%, transparent 48% 75%, rgba(255,255,255,.45) 75% 78%, transparent 78% 100%);}
@@ -625,7 +635,8 @@ var CARD_BACK_PRESETS = [
   { id:"solar", name:"솔라", cls:"pattern-solar" },
   { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
   { id:"royal", name:"로열", cls:"pattern-royal" },
-  { id:"cosmic", name:"코스믹", cls:"pattern-cosmic" }
+  { id:"cosmic", name:"코스믹", cls:"pattern-cosmic" },
+  { id:"goldfoil", name:"골드 포일", cls:"pattern-goldfoil", gm:true }
 ];
 
 /* ---------------- progress / unlocks ---------------- */
@@ -910,13 +921,35 @@ var CARD_THEMES = [
 // Membership will come from the account's server-written entitlements once Google login
 // lands. Until then only a local dev server counts as a member, so member themes can be
 // built and previewed without shipping a way to get them free on the live site.
-function hasMembership(){
+// The developer account will come from entitlements.role the same way; a local dev
+// server stands in for both until then.
+function isDevAccount(){
   var h = location.hostname;
   return h==="localhost" || h==="127.0.0.1";
 }
+function hasMembership(){ return isDevAccount(); }
 function isThemeOwned(theme){ return !!theme && (!theme.member || hasMembership()); }
-// Fields every player object carries so other clients can render this player's VIP badge.
-function myMemberFields(){ return { vip:hasMembership() }; }
+
+// Grand Master: every achievement milestone done (the dev account counts regardless).
+// Its reward items carry gm:true in their preset lists.
+function grandMasterProgress(unlocks){
+  unlocks = unlocks || straightUnlocks;
+  var done = UNLOCK_MILESTONES.filter(function(m){ return unlocks.indexOf(m.id)!==-1; }).length;
+  return { done:done, total:UNLOCK_MILESTONES.length };
+}
+function isGrandMaster(unlocks){
+  if(isDevAccount()) return true;
+  var p = grandMasterProgress(unlocks);
+  return p.done>=p.total;
+}
+// Fields every player object carries so other clients can render this player's badges.
+function myMemberFields(){ return { vip:hasMembership(), master:isGrandMaster() }; }
+function bareName(name){ return String(name||"").replace(/ \(나\)$/, ""); }
+function grandMasterLogLines(players){
+  return players.filter(function(p){ return p && p.master; }).map(function(p){
+    return "🏆 그랜드마스터 "+bareName(p.name)+"님이 함께합니다!";
+  });
+}
 
 var cardThemeIndex = 0;
 try{
@@ -984,7 +1017,8 @@ var TITLE_PRESETS = [
   { id:"collector", name:"조커 마니아" },
   { id:"social", name:"인싸 등극" },
   { id:"allcolor", name:"무지개 정복자" },
-  { id:"bighand", name:"손이 큰 편" }
+  { id:"bighand", name:"손이 큰 편" },
+  { id:"grandmaster", name:"그랜드마스터", gm:true }
 ];
 var BORDER_PRESETS = [
   { id:"gold", name:"골드", cls:"border-gold" },
@@ -998,7 +1032,8 @@ var BORDER_PRESETS = [
   { id:"rainbow", name:"레인보우", cls:"border-rainbow" },
   { id:"trophy", name:"트로피", cls:"border-trophy" },
   { id:"flame", name:"불꽃", cls:"border-flame" },
-  { id:"heart", name:"하트", cls:"border-heart" }
+  { id:"heart", name:"하트", cls:"border-heart" },
+  { id:"legend", name:"레전드", cls:"border-legend", gm:true }
 ];
 
 function getActiveTitle(){
@@ -1041,8 +1076,9 @@ function activeBorderCls(){
 // just the local player's — show correctly, including online.
 function playerTagHTML(p, extraCls){
   var titleHTML = p.title ? ("<span class=\"name-tag-title\">"+p.title+"</span>") : "";
+  var masterHTML = p.master ? "<span class=\"master-badge\" title=\"그랜드마스터\">MASTER</span>" : "";
   var vipHTML = p.vip ? "<span class=\"vip-badge\" title=\"멤버십\">VIP</span>" : "";
-  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+"</span><span class=\"name-tag-text\">"+p.name+"</span>"+vipHTML+titleHTML+"</span>";
+  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+"</span><span class=\"name-tag-text\">"+p.name+"</span>"+masterHTML+vipHTML+titleHTML+"</span>";
 }
 
 function findMilestoneByLabel(kind, label){
@@ -1059,10 +1095,14 @@ function milestoneSortKey(kind, label){
   }
   return -1;
 }
+function isGrandMasterItem(kind, name){
+  var list = kind==="pattern" ? CARD_BACK_PRESETS : kind==="title" ? TITLE_PRESETS : kind==="border" ? BORDER_PRESETS : [];
+  return list.some(function(p){ return p.gm && p.name===name; });
+}
+// Grand Master rewards sort last — they're the capstone after every other item.
 function sortCollectionItems(items, kind){
-  return items.slice().sort(function(a,b){
-    return milestoneSortKey(kind, a.name) - milestoneSortKey(kind, b.name);
-  });
+  function key(it){ return isGrandMasterItem(kind, it.name) ? 1e6 : milestoneSortKey(kind, it.name); }
+  return items.slice().sort(function(a,b){ return key(a) - key(b); });
 }
 function isAvatarUnlocked(name, unlocks){
   if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
@@ -1073,6 +1113,7 @@ function isPatternUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<CARD_BACK_PRESETS.length;i++){ if(CARD_BACK_PRESETS[i].id===id){ preset=CARD_BACK_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(preset.gm) return isGrandMaster(unlocks);
   if(UNLOCK_STARTER_PATTERNS.indexOf(id)!==-1) return true;
   var m = findMilestoneByLabel("pattern", preset.name);
   return m ? unlocks.indexOf(m.id)!==-1 : false;
@@ -1081,6 +1122,7 @@ function isTitleUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<TITLE_PRESETS.length;i++){ if(TITLE_PRESETS[i].id===id){ preset=TITLE_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(preset.gm) return isGrandMaster(unlocks);
   var m = findMilestoneByLabel("title", preset.name);
   return m ? unlocks.indexOf(m.id)!==-1 : false;
 }
@@ -1088,6 +1130,7 @@ function isBorderUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<BORDER_PRESETS.length;i++){ if(BORDER_PRESETS[i].id===id){ preset=BORDER_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(preset.gm) return isGrandMaster(unlocks);
   if(UNLOCK_STARTER_BORDERS.indexOf(id)!==-1) return true;
   var m = findMilestoneByLabel("border", preset.name);
   return m ? unlocks.indexOf(m.id)!==-1 : false;
@@ -1650,6 +1693,7 @@ function cleanPlayer(p){
   out.title = TITLE_PRESETS.some(function(t){ return t.name===p.title; }) ? p.title : null;
   out.border = BORDER_PRESETS.some(function(b){ return b.cls===p.border; }) ? p.border : null;
   out.vip = !!p.vip;
+  out.master = !!p.master;
   out.hand = cleanCards(p.hand);
   out.score = cleanCards(p.score);
   return out;
@@ -1871,7 +1915,7 @@ function pickAvatar(ch, cb){
       var updated = {}; for(var k in players[mine]) updated[k]=players[mine][k];
       updated.name = chosenNickname || ch.name; updated.characterName = ch.name; updated.avatar = avatarIconHTML(ch); updated.avatarPicked = true;
       updated.title = activeTitleLabel(); updated.border = activeBorderCls();
-      updated.vip = myMemberFields().vip;
+      var mf = myMemberFields(); updated.vip = mf.vip; updated.master = mf.master;
       players[mine] = updated;
       tx.update(ref, { players: players, updatedAt: Date.now() });
     });
@@ -1965,8 +2009,10 @@ function startOnlineGame(){
   state.statsRecorded = false;
   state.aiDifficulty = chosenAiDifficulty;
   aiDriveGuard = {};
-  state.log = ["✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "),
-    "게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."];
+  // Newest first: Grand Master announcements sit on top of the start lines.
+  state.log = grandMasterLogLines(lobbyPlayers).reverse().concat([
+    "✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "),
+    "게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."]);
   var myIdx = -1;
   for(var i=0;i<lobbyPlayers.length;i++){ if(lobbyPlayers[i].clientId===myClientId){ myIdx=i; break; } }
   state.myIndex = myIdx>=0 ? myIdx : 0;
@@ -2256,7 +2302,7 @@ function runOrderCutscene(){
   $("order-start-btn").classList.add("hidden");
 
   var players = [];
-  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), title:activeTitleLabel(), border:activeBorderCls(), vip:myMemberFields().vip, isAI:false, hand:[], score:[] });
+  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), title:activeTitleLabel(), border:activeBorderCls(), vip:myMemberFields().vip, master:myMemberFields().master, isAI:false, hand:[], score:[] });
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
@@ -2329,6 +2375,7 @@ function startGame(players, order){
   switchScreen("game");
   pushLog("게임을 시작합니다! 선공은 "+players[order[0]].name+" 입니다.");
   pushLog("✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "));
+  grandMasterLogLines(players).forEach(pushLog);
   render();
 
   var firstIdx = order[0];
@@ -2994,6 +3041,17 @@ function render(){
   if(!turnTimerId) renderTurnTimer(null);
   $("sync-btn").classList.toggle("hidden", !isMultiplayer());
   fitBoard();
+  fitNameTags($("screen-game"));
+}
+
+// A title squeezed down to a sliver ("그…") reads worse than no title: when a tag's
+// title can't show in full, drop it so the name gets the room.
+function fitNameTags(root){
+  if(!root) return;
+  Array.prototype.forEach.call(root.querySelectorAll(".name-tag-title"), function(t){
+    t.style.display = "";
+    if(t.scrollWidth > t.clientWidth + 1) t.style.display = "none";
+  });
 }
 
 // Size cards to the space actually left over (board row = whatever the fixed rows don't
@@ -3386,6 +3444,12 @@ function collectionItemDetailText(kind, name){
   if(kind==="theme"){
     var t = CARD_THEMES.filter(function(x){ return x.name===name; })[0];
     return t && t.member ? "👑 멤버십 전용 테마" : "기본 테마";
+  }
+  if(isGrandMasterItem(kind, name)){
+    var gp = grandMasterProgress();
+    if(gp.done>=gp.total) return "🏆 모든 업적 달성 완료";
+    if(isDevAccount()) return "🏆 모든 업적 달성 · 개발자 계정";
+    return "🏆 모든 업적 달성 "+gp.done+"/"+gp.total;
   }
   var m = findMilestoneByLabel(kind, name);
   if(!m) return "";
