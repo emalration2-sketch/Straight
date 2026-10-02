@@ -22,8 +22,7 @@
 
 ## 이번 세션에서 처리할 것 (아직 안 됨)
 
-1. **Firebase 콘솔 작업**(사용자 확인 후): Authentication에서 Google 로그인 사용 설정, 승인 도메인 `emalration2-sketch.github.io` 추가, Firestore에 `devAccounts/emalration2@gmail.com {role:"dev"}`, `devAccounts/dlatnwls0624@gmail.com {role:"tester"}` 문서 생성.
-   - 이전 세션 끝에서 처리 여부를 확인할 것(이 문서 아래 "진행 기록" 참고).
+1. ~~Firebase 콘솔 작업~~ → **완료**(아래 진행 기록).
 2. **첫 출시 유료 아이템 구성 결정**(사용자 결정 대기): 테두리·패턴·테마·멤버 전용 캐릭터 개수. 추천: 테두리 4, 패턴 4, 테마 2, 멤버 캐릭터 2.
 3. **구현 계획서 작성 → 개발**(superpowers:writing-plans → 실행). 순서:
    1. 구글 로그인(필수) + `users/{uid}` 진행도 저장(기존 localStorage 진행도는 이관 안 함, "기존 플레이어 전부 해금" 규칙 제거)
@@ -39,4 +38,7 @@
 
 ## 진행 기록
 
-- (2026-10-02) 보안 규칙 게시 완료. 나머지 콘솔 작업은 아래에 결과를 추가할 것.
+- (2026-10-02) Firestore 보안 규칙 게시 완료(저장소 `firestore.rules`). 확인: `rooms` 목록 403, 정상 코드 조회 200.
+- (2026-10-02) Authentication 시작 + **Google 로그인 사용 설정됨**. 공개 프로젝트 이름 "스트레이트!", 지원 이메일 emalration2@gmail.com.
+- (2026-10-02) 승인 도메인에 `emalration2-sketch.github.io` 추가(기본: localhost, straight-game.firebaseapp.com, straight-game.web.app).
+- (2026-10-02) Firestore `devAccounts/emalration2@gmail.com {role:"dev"}`, `devAccounts/dlatnwls0624@gmail.com {role:"tester"}` 생성. 현재 규칙상 비로그인 읽기 403(로그인 규칙 작성 시 본인 이메일 문서만 읽기 허용하도록 추가할 것).
