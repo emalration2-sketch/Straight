@@ -17,14 +17,15 @@
 - **구글 로그인 필수.** 로그인 전에는 게임 진입 불가. 첫 로그인 때 닉네임 설정(구글 이름 기본값).
 - **Firebase Auth(Google provider)** 사용. 지금의 Firebase 프로젝트 `straight-game` 그대로.
 - **`users/{uid}`**: 통계·해금·장착·설정. 본인만 읽기/쓰기. 판 종료 시와 꾸미기 변경 시에만 저장(쓰기 횟수 절약). localStorage는 계정별 캐시로만.
+- **개발자 계정**(아래 `devAccounts`)은 모든 유료·무료·멤버 아이템 사용 가능 + VIP 배지 + 그랜드마스터(섹션 3).
 - **`entitlements/{uid}`**: 본인은 읽기만, 쓰기는 콘솔(운영자)·추후 서버만.
-  - `role: "dev"` → 모든 유료·무료·멤버 아이템 사용 가능 + VIP 배지 표시 + 그랜드마스터(섹션 3) 적용
   - `items: [...]` → 구매한 영구 아이템 id
   - `membershipUntil` → 멤버십 만료 시각
 - **기존 진행도 이관 없음.** 계정 데이터가 유일한 기준. "기존 플레이어는 전부 해금" 규칙 제거.
 - **카카오톡 등 인앱 브라우저**는 구글 로그인이 막히므로 감지해 "Chrome/Safari로 열기" 안내.
 - **온라인 방 규칙**을 "로그인한 사용자만"으로 강화.
-- 콘솔 작업(사용자): Google 로그인 제공자 사용 설정, 승인 도메인에 `emalration2-sketch.github.io` 추가, 보안 규칙 게시, 개발자 계정 `entitlements/{uid}.role = "dev"` 지정.
+- **개발자 계정 지정 = Gmail 주소 기준.** 콘솔에서 `devAccounts/{gmail주소}` 문서를 만들면 그 계정은 로그인 즉시 개발자 계정(로그인 전에도 미리 지정 가능, 여러 개 가능, 문서 삭제로 해제). 보안 규칙: `request.auth.token.email == 문서ID && request.auth.token.email_verified`일 때만 읽기 허용, 쓰기는 전부 금지(콘솔만). 코드에 이메일을 넣지 않는다. `entitlements/{uid}.role`은 사용하지 않는다.
+- 콘솔 작업: Google 로그인 제공자 사용 설정, 승인 도메인에 `emalration2-sketch.github.io` 추가, 보안 규칙 게시, `devAccounts/{개발자 Gmail}` 문서 생성.
 - 한계: 통계는 클라이언트가 기록하므로 업적 진행도 위조는 막을 수 없다. 유료 권한은 서버만 쓸 수 있어 안전하다.
 
 ## 섹션 2 — 부분 유료화 (확정)
