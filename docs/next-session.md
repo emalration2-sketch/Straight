@@ -31,6 +31,7 @@
 3. **구글 로그인·계정 — 코드 완료, 브랜치 `feat/google-login`에서 대기 (아직 main/라이브 아님)**. 계획서 `docs/superpowers/plans/2026-10-03-google-login-accounts.md`.
    - 2026-10-03 밤(사용자 취침 중) 진행: Task 1~5 코드 + Task 6 규칙 파일까지 브랜치에 커밋·푸시. `?guest`로 게임 시작→한 판 종료까지 오류 없음, 로그인 화면 표시 확인.
    - **못 한 것(사용자 필요)**: ① 보안 규칙 게시 — 자동 권한 정책이 콘솔 "게시" 클릭을 막음. 콘솔 규칙 편집기에 Task 1 규칙(추가형)이 들어간 채 **미게시** 상태. ② 구글 로그인 실사용 확인(로그인은 사용자가 직접).
+   - (2026-10-03 새벽) 규칙 v2 게시·로컬 로그인 확인 완료(dev 전부 해금, 클라우드 복원, record·balanceLogs 기록). main 머지·푸시는 자동 권한 정책에 막혀 사용자가 직접 해야 함. 그 뒤 **레디! 기능을 `feat/ready-callout`(로그인 브랜치 위)에 추가** — 머지는 이 브랜치로 한 번에: `git checkout main && git merge --ff-only feat/ready-callout && git push origin main`. 그다음 rooms 로그인 강제 규칙 게시.
    - **아침 순서**: (a) 사용자가 콘솔에서 규칙 게시 — 브랜치의 `firestore.rules`는 이미 rooms 로그인 강제(Task 6)까지 들어간 최종본이지만, 라이브가 아직 비로그인 빌드라 **먼저 커밋 e1a611a 버전(rooms 불변)**을 게시해야 한다. (b) `feat/google-login` 체크아웃 상태로 `http://localhost:5175/`에서 사용자가 구글 로그인 → 닉네임 → 수집품 전부 해금(dev) 확인, 장착 후 새로고침 유지, 한 판 후 콘솔에서 `users/{uid}.record`·`balanceLogs` 문서 확인. (c) 문제없으면 main에 머지·푸시(라이브 로그인 시작). (d) 최종 `firestore.rules`(rooms 로그인 강제) 게시. (e) 휴대폰 카카오톡에서 라이브 링크 열어 인앱 안내 확인.
    원래 순서:
    1. 구글 로그인(필수) + `users/{uid}` 진행도 저장(기존 localStorage 진행도는 이관 안 함)
