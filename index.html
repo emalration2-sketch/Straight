@@ -925,11 +925,17 @@ var CARD_THEMES = [
 // The developer account will come from entitlements.role the same way; a local dev
 // server stands in for both until then.
 function isDevAccount(){
+  // ?nodev on a local server previews the game as an ordinary player (locks visible).
+  if(/[?&]nodev\b/.test(location.search)) return false;
   var h = location.hostname;
   return h==="localhost" || h==="127.0.0.1";
 }
 function hasMembership(){ return isDevAccount(); }
-function isThemeOwned(theme){ return !!theme && (!theme.member || hasMembership()); }
+function isThemeOwned(theme){
+  if(!theme) return false;
+  var special = specialItemOwned(theme);
+  return special===null ? true : special;
+}
 
 // Grand Master: every achievement milestone done (the dev account counts regardless).
 // Its reward items carry gm:true in their preset lists.
@@ -1102,25 +1108,46 @@ function milestoneSortKey(kind, label){
   }
   return -1;
 }
-function isGrandMasterItem(kind, name){
-  var list = kind==="pattern" ? CARD_BACK_PRESETS : kind==="title" ? TITLE_PRESETS : kind==="border" ? BORDER_PRESETS : [];
-  return list.some(function(p){ return p.gm && p.name===name; });
+var PRICE_LABELS = { border:"2,200원", pattern:"2,200원", theme:"3,300원" };
+function presetListFor(kind){
+  if(kind==="avatar") return CHARACTERS;
+  if(kind==="pattern") return CARD_BACK_PRESETS;
+  if(kind==="title") return TITLE_PRESETS;
+  if(kind==="border") return BORDER_PRESETS;
+  if(kind==="theme") return CARD_THEMES;
+  return [];
 }
-// Grand Master rewards sort last — they're the capstone after every other item.
+function presetByName(kind, name){
+  var list = presetListFor(kind);
+  for(var i=0;i<list.length;i++){ if(list[i].name===name) return list[i]; }
+  return null;
+}
+function isEventItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.event); }
+function isPaidItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.paid); }
+function isMemberItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.member); }
+function isGrandMasterItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.gm); }
+// Items no achievement grants. Until purchases and entitlements land, membership (a local
+// dev server for now) owns paid and member items, and only the dev account sees events.
+function specialItemOwned(p){
+  if(p.event) return isDevAccount();
+  if(p.paid || p.member) return hasMembership();
+  return null;
+}
+// Achievements first, then the Grand Master capstone, then paid, member and event items.
 function sortCollectionItems(items, kind){
   function key(it){
     if(isEventItem(kind, it.name)) return 2e6;
+    if(isMemberItem(kind, it.name)) return 1.7e6;
+    if(isPaidItem(kind, it.name)) return 1.5e6;
     return isGrandMasterItem(kind, it.name) ? 1e6 : milestoneSortKey(kind, it.name);
   }
   return items.slice().sort(function(a,b){ return key(a) - key(b); });
 }
-function isEventItem(kind, name){
-  if(kind!=="avatar") return false;
-  return CHARACTERS.some(function(ch){ return ch.event && ch.name===name; });
-}
 function isAvatarUnlocked(name, unlocks){
-  // Event characters stay locked until events exist; the dev account sees everything.
-  if(isEventItem("avatar", name)) return isDevAccount();
+  var ch = presetByName("avatar", name);
+  if(!ch) return false;
+  var special = specialItemOwned(ch);
+  if(special!==null) return special;
   if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
   var m = findMilestoneByLabel("avatar", name);
   return m ? unlocks.indexOf(m.id)!==-1 : false;
@@ -1129,6 +1156,8 @@ function isPatternUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<CARD_BACK_PRESETS.length;i++){ if(CARD_BACK_PRESETS[i].id===id){ preset=CARD_BACK_PRESETS[i]; break; } }
   if(!preset) return false;
+  var special = specialItemOwned(preset);
+  if(special!==null) return special;
   if(preset.gm) return isGrandMaster(unlocks);
   if(UNLOCK_STARTER_PATTERNS.indexOf(id)!==-1) return true;
   var m = findMilestoneByLabel("pattern", preset.name);
@@ -1146,6 +1175,8 @@ function isBorderUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<BORDER_PRESETS.length;i++){ if(BORDER_PRESETS[i].id===id){ preset=BORDER_PRESETS[i]; break; } }
   if(!preset) return false;
+  var special = specialItemOwned(preset);
+  if(special!==null) return special;
   if(preset.gm) return isGrandMaster(unlocks);
   if(UNLOCK_STARTER_BORDERS.indexOf(id)!==-1) return true;
   var m = findMilestoneByLabel("border", preset.name);
@@ -3517,7 +3548,7 @@ function collectionItemsFor(kind){
     return CARD_THEMES.map(function(t, i){
       var chips = ["PINK","BLUE","YELLOW","GREEN"].map(function(c){ return "<i style=\"background:"+t.colors[c]+"\"></i>"; }).join("");
       var bg = t.skin ? "" : " style=\"background:"+t.bg+";border-color:"+t.panel2+"\"";
-      return { id:t.id, idx:i, name:t.name, member:!!t.member, unlocked:isThemeOwned(t),
+      return { id:t.id, idx:i, name:t.name, unlocked:isThemeOwned(t),
         preview:"<span class=\"achv-preview board-preview "+(t.skin||"")+"\""+bg+">"+chips+"</span>" };
     });
   }
@@ -3527,11 +3558,10 @@ function collectionItemsFor(kind){
   return sortCollectionItems(borderItems, "border");
 }
 function collectionItemDetailText(kind, name){
-  if(kind==="theme"){
-    var t = CARD_THEMES.filter(function(x){ return x.name===name; })[0];
-    return t && t.member ? "👑 멤버십 전용 테마" : "기본 테마";
-  }
   if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
+  if(isMemberItem(kind, name)) return "👑 멤버십 전용";
+  if(isPaidItem(kind, name)) return "💎 "+PRICE_LABELS[kind];
+  if(kind==="theme") return "기본 테마";
   if(isGrandMasterItem(kind, name)){
     var gp = grandMasterProgress();
     if(gp.done>=gp.total || isGrandMaster()) return "🏆 모든 업적 달성 완료";
@@ -3597,7 +3627,7 @@ function renderCollectionScreen(){
     card.appendChild(el("div","coll-item-preview", it.preview));
     card.appendChild(el("p","coll-item-name", tab==="title" ? "" : it.name));
     // Member items already say "👑 멤버십 전용" in their detail line, so no second line.
-    if(!it.unlocked && !it.member){
+    if(!it.unlocked && !isMemberItem(tab, it.name)){
       card.appendChild(el("p","coll-item-state","🔒 미보유"));
     }
     card.appendChild(el("p","coll-item-detail", collectionItemDetailText(tab, it.name)));
