@@ -194,6 +194,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .opponent-card:only-child{max-width:210px;}
 .opp-head-row{display:flex;align-items:center;flex-shrink:0;line-height:1.2;min-width:0;}
 .opp-head-row .name-tag{max-width:100%;}
+/* Opponent's best straight progress; at 4/5 ("레디!") it pulses. */
+.opp-head-row .name-tag{min-width:0;flex:0 1 auto;}
+.opp-progress{flex-shrink:0;margin-left:auto;padding-left:4px;font-size:10px;font-weight:800;color:var(--prog-color);white-space:nowrap;}
+.opp-progress.ready{padding:1px 6px;border-radius:6px;background:var(--prog-color);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);animation:readyPulse 1.2s ease-in-out infinite;}
+@keyframes readyPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
+@media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
 /* 3 opponents: columns are narrow, so the title badge yields its space to the nickname. */
 .opponents-row.many .name-tag-title{display:none;}
 .opponents-row.many .name-tag.compact{font-size:11px;gap:4px;padding-right:7px;}
@@ -1651,6 +1657,7 @@ function sfxReset(){
   noiseHit(0.35, { freq:900, to:4200, q:1, vol:0.07, delay:0.45 });
 }
 function sfxReveal(){ tone(1319, 0.12, { vol:0.08 }); tone(1760, 0.2, { vol:0.06, delay:0.06 }); }
+function sfxReady(){ tone(660, 0.09, { type:"triangle", vol:0.09 }); tone(880, 0.09, { type:"triangle", vol:0.09, delay:0.09 }); tone(1175, 0.22, { type:"triangle", vol:0.1, delay:0.18 }); }
 
 /* ---------------- background music ---------------- */
 // Notes are MIDI numbers (0 = rest), one per step. pads: one chord per bar. Drum strings
@@ -1939,6 +1946,32 @@ function findStraight(score, colors){
   return null;
 }
 
+// Closest a score pile is to a straight: the best color/window, counting jokers as wild
+// (same rules as findStraight). count is 0–5; 5 means findStraight would succeed.
+function straightProgress(score, colors){
+  var jokerCount = score.filter(function(c){ return c.isJoker; }).length;
+  var best = { color:null, count:0 };
+  colors.forEach(function(color){
+    var vals = {};
+    score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) vals[c.value]=true; });
+    for(var start=1; start<=6; start++){
+      var have = 0;
+      for(var k=0;k<5;k++){ if(vals[start+k]) have++; }
+      var n = Math.min(5, have + jokerCount);
+      if(n>best.count) best = { color:color, count:n };
+    }
+  });
+  return best;
+}
+// "레디!": announced once, by whichever client made the move, when a player reaches 4/5.
+function announceReady(playerIdx, beforeCount){
+  var p = state.players[playerIdx];
+  var prog = straightProgress(p.score, state.colors);
+  if(beforeCount>=4 || prog.count!==4) return;
+  pushLog("🔥 "+bareName(p.name)+" 레디! ("+COLOR_NAMES[prog.color]+" 4/5)");
+  sfxReady();
+}
+
 /* ---------------- state ---------------- */
 var state = {
   players: [],
@@ -2147,7 +2180,9 @@ function applyRemoteRoomState(data){
   state.winnerIndex = data.winnerIndex;
   state.winnerStraight = data.winnerStraight;
   state.isDraw = !!data.isDraw;
+  var prevLog = state.log || [];
   state.log = data.log || [];
+  if(state.log.some(function(m){ return /레디!/.test(m) && prevLog.indexOf(m)===-1; })) sfxReady();
   var idx = -1;
   for(var i=0;i<state.players.length;i++){ if(state.players[i].clientId===myClientId){ idx=i; break; } }
   state.myIndex = idx>=0 ? idx : 0;
@@ -3155,6 +3190,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     handCoin: handCoin,
     capturedCoin: capturedCoin
   }, function(){
+    var readyBefore = straightProgress(player.score, state.colors).count;
     player.hand.splice(handIdx,1);
     // A reset card isn't a score card — taking it from the floor puts it in your hand to use later.
     if(capturedCoin.isReset) player.hand.push(capturedCoin);
@@ -3162,6 +3198,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     if(capturedCoin.isPrism && playerIdx===state.myIndex) bumpStatAndCheck("prismBanked", 1);
     state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, isReset:!!handCoin.isReset, color:handCoin.color, value:handCoin.value, isPrism:handCoin.isPrism };
     pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
+    announceReady(playerIdx, readyBefore);
     state.stagnantTurns = 0;
     state.floorResetStreak = 0;
     state.animating = false;
@@ -3198,10 +3235,12 @@ function bankJoker(handIdx){
   if(state.animating || !isHumanTurn()) return;
   var player = state.players[state.myIndex];
   var joker = player.hand.splice(handIdx,1)[0];
+  var readyBefore = straightProgress(player.score, state.colors).count;
   player.score.push(joker);
   state.balance.jokers++;
   bumpStatAndCheck("jokersBanked", 1);
   pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
+  announceReady(state.myIndex, readyBefore);
   clearSelectionState();
   render();
   pushRoomState();
@@ -3390,11 +3429,13 @@ function aiTakeTurn(playerIdx){
     player.hand.forEach(function(c,i){ if(c.isJoker) jokerIndices.push(i); });
   }
   if(jokerIndices.length>0){
+    var readyBefore = straightProgress(player.score, state.colors).count;
     for(var ji=jokerIndices.length-1; ji>=0; ji--){
       player.score.push(player.hand.splice(jokerIndices[ji],1)[0]);
       state.balance.jokers++;
     }
     pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
+    announceReady(playerIdx, readyBefore);
     pushRoomState();
     if(checkWin(playerIdx)) return;
   }
@@ -3583,6 +3624,12 @@ function renderOpponents(){
     // score cards get the height.
     var headRow = el("div","opp-head-row");
     headRow.innerHTML = playerTagHTML(p, "compact");
+    var prog = straightProgress(p.score, state.colors);
+    if(prog.count>=2){
+      var chip = el("span","opp-progress"+(prog.count>=4?" ready":""), (prog.count>=4?"🔥 ":"")+COLOR_NAMES[prog.color]+" "+prog.count+"/5");
+      chip.style.setProperty("--prog-color", COLORS[prog.color]);
+      headRow.appendChild(chip);
+    }
 
     var scoreWrap = el("div","opp-score-wrap");
     p.score.filter(function(c){ return c.isJoker; }).forEach(function(c){
