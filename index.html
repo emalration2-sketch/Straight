@@ -91,7 +91,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .border-ring.border-flame::before{content:"🔥";position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:14px;line-height:1;}
 .border-ring.border-heart{border:3px solid #d4537e;}
 .border-ring.border-heart::after{content:"";position:absolute;top:-3px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:#ff8fb3;}
-.border-ring.border-gold{border:4px solid #ffd447;}
+.border-ring.border-coral{border:4px solid #ff7f6b;}
 .border-ring.border-mint{border:4px double #33e6c0;}
 .border-ring.border-stars{border:3px solid #4b5185;}
 .border-ring.border-stars::before,.border-ring.border-stars::after{content:"★";position:absolute;font-size:8px;color:#ffe66d;line-height:1;}
@@ -118,7 +118,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-trophy{border-color:#f6a83c;background:linear-gradient(90deg,rgba(246,168,60,.28),rgba(246,168,60,.05)),var(--panel2);}
 .name-tag.border-flame{border-color:#f0763c;background:linear-gradient(90deg,rgba(216,90,48,.32),rgba(216,90,48,.05)),var(--panel2);}
 .name-tag.border-heart{border-color:#ff8fb3;background:linear-gradient(90deg,rgba(255,143,179,.28),rgba(255,143,179,.05)),var(--panel2);}
-.name-tag.border-gold{border-color:#ffd447;background:linear-gradient(90deg,rgba(255,212,71,.28),rgba(255,212,71,.05)),var(--panel2);}
+.name-tag.border-coral{border-color:#ff7f6b;background:linear-gradient(90deg,rgba(255,127,107,.28),rgba(255,127,107,.05)),var(--panel2);}
 .name-tag.border-mint{border-color:#33e6c0;background:linear-gradient(90deg,rgba(51,230,192,.26),rgba(51,230,192,.05)),var(--panel2);}
 .name-tag.border-stars{border-color:#ffe66d;background:linear-gradient(90deg,rgba(255,230,109,.26),rgba(255,230,109,.05)),var(--panel2);}
 .name-tag.border-blueberry{border-color:#5b6cff;background:linear-gradient(90deg,rgba(91,108,255,.3),rgba(91,108,255,.06)),var(--panel2);}
@@ -641,7 +641,7 @@ var CARD_BACK_PRESETS = [
 
 var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","볼트 드라코","매드독"];
 var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag","honeycomb","ripple"];
-var UNLOCK_STARTER_BORDERS = ["gold","mint","stars","aurora","candy","blueberry","sprout"];
+var UNLOCK_STARTER_BORDERS = ["coral","mint","stars","aurora","candy","blueberry","sprout"];
 
 var UNLOCK_MILESTONES = [
   { id:"win:10",   kind:"avatar",  label:"나이트올빼미",   check:function(s){ return s.wins>=10; },   detail:function(s){ return "승리 "+Math.min(s.wins,10)+"/10회"; } },
@@ -1019,7 +1019,7 @@ var TITLE_PRESETS = [
   { id:"grandmaster", name:"그랜드마스터", gm:true }
 ];
 var BORDER_PRESETS = [
-  { id:"gold", name:"골드", cls:"border-gold" },
+  { id:"coral", name:"코랄", cls:"border-coral" },
   { id:"mint", name:"민트", cls:"border-mint" },
   { id:"stars", name:"별자리", cls:"border-stars" },
   { id:"aurora", name:"오로라", cls:"border-aurora" },
@@ -1041,7 +1041,10 @@ function setActiveTitle(id){
   try{ localStorage.setItem("straightActiveTitle", id||""); }catch(e){}
 }
 function getActiveBorder(){
-  try{ return localStorage.getItem("straightActiveBorder"); }catch(e){ return null; }
+  var id = null;
+  try{ id = localStorage.getItem("straightActiveBorder"); }catch(e){}
+  // 골드 was replaced by 코랄 (too close to the Grand Master border); keep it equipped.
+  return id==="gold" ? "coral" : id;
 }
 function setActiveBorder(id){
   try{ localStorage.setItem("straightActiveBorder", id||""); }catch(e){}
