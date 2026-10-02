@@ -318,7 +318,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
-.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-solar::after,.pattern-hologram::after,.pattern-royal::after,.pattern-cosmic::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-solar::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-carbon::after,.pattern-stained::after,.pattern-crystal::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:14px 14px;background-position:0 0,7px 7px;}
@@ -330,7 +330,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-scale::after{background-image:radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px),radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px);background-size:12px 8px;background-position:0 0,6px 4px;}
 .pattern-solar::after{background-image:radial-gradient(circle,rgba(255,226,120,.6) 0 2.6px,transparent 2.9px),radial-gradient(circle,transparent 0 3.6px,rgba(255,226,120,.32) 3.8px 4.4px,transparent 4.6px),repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,226,120,.2) 0 12deg,transparent 12deg 45deg);background-size:20px 20px;}
 .pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.5) 15% 19%, transparent 19% 45%, rgba(255,255,255,.35) 45% 48%, transparent 48% 75%, rgba(255,255,255,.45) 75% 78%, transparent 78% 100%);}
-.pattern-royal::after{background-image:linear-gradient(45deg,rgba(246,168,60,.55) 25%,transparent 25%,transparent 75%,rgba(246,168,60,.55) 75%),linear-gradient(45deg,rgba(246,168,60,.55) 25%,transparent 25%,transparent 75%,rgba(246,168,60,.55) 75%),radial-gradient(rgba(255,215,107,.7) 1.3px, transparent 1.5px);background-size:14px 14px,14px 14px,14px 14px;background-position:0 0,7px 7px,3.5px 3.5px;}
 .pattern-cosmic::after{background-image:radial-gradient(rgba(255,255,255,.9) 1px, transparent 1.2px),radial-gradient(rgba(255,255,255,.55) 0.8px, transparent 1px),radial-gradient(rgba(255,215,107,.8) 1.3px, transparent 1.5px);background-size:9px 9px,6px 6px,16px 16px;background-position:0 0,3px 5px,8px 2px;}
 .pattern-preview{width:34px;height:34px;border-radius:7px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
 .card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
@@ -625,80 +624,88 @@ var CARD_BACK_PRESETS = [
   { id:"stripe", name:"스트라이프", cls:"pattern-stripe" },
   { id:"zigzag", name:"지그재그", cls:"pattern-zigzag" },
   { id:"argyle", name:"아가일", cls:"pattern-argyle" },
-  { id:"diamond", name:"다이아몬드", cls:"pattern-diamond" },
   { id:"honeycomb", name:"허니콤", cls:"pattern-honeycomb" },
-  { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal" },
-  { id:"ripple", name:"리플", cls:"pattern-ripple" },
-  { id:"scale", name:"비늘", cls:"pattern-scale" },
   { id:"solar", name:"솔라", cls:"pattern-solar" },
-  { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
-  { id:"royal", name:"로열", cls:"pattern-royal" },
+  { id:"scale", name:"비늘", cls:"pattern-scale" },
+  { id:"ripple", name:"리플", cls:"pattern-ripple" },
+  { id:"diamond", name:"다이아몬드", cls:"pattern-diamond" },
   { id:"cosmic", name:"코스믹", cls:"pattern-cosmic" },
-  { id:"goldfoil", name:"그랜드마스터", cls:"pattern-goldfoil", gm:true }
+  { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
+  { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal" },
+  // Grand Master pattern: the gold-foil design, now named 로열 (the old 로열 design is gone).
+  { id:"goldfoil", name:"로열", cls:"pattern-goldfoil", gm:true },
+  { id:"sakura", name:"벚꽃", cls:"pattern-sakura", event:true },
+  { id:"snowflake", name:"눈송이", cls:"pattern-snowflake", event:true },
+  { id:"onyx", name:"오닉스", cls:"pattern-onyx", paid:true },
+  { id:"carbon", name:"카본", cls:"pattern-carbon", paid:true },
+  { id:"stained", name:"스테인드글라스", cls:"pattern-stained", paid:true },
+  { id:"crystal", name:"크리스탈", cls:"pattern-crystal", paid:true }
 ];
 
 /* ---------------- progress / unlocks ---------------- */
 
 var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","매드독","크러셔 루"];
-var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag","honeycomb","ripple"];
-var UNLOCK_STARTER_BORDERS = ["coral","mint","stars","aurora","candy","blueberry","sprout"];
+var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag","argyle"];
+var UNLOCK_STARTER_BORDERS = ["coral","blueberry","stars"];
 
 var UNLOCK_MILESTONES = [
   { id:"win:10",   kind:"avatar",  label:"나이트올빼미",   check:function(s){ return s.wins>=10; },   detail:function(s){ return "승리 "+Math.min(s.wins,10)+"/10회"; } },
-  { id:"win:20",   kind:"title",   label:"이기는 맛",          check:function(s){ return s.wins>=20; },   detail:function(s){ return "승리 "+Math.min(s.wins,20)+"/20회"; } },
+  { id:"win:20",   kind:"title",   label:"초보",          check:function(s){ return s.wins>=20; },   detail:function(s){ return "승리 "+Math.min(s.wins,20)+"/20회"; } },
   { id:"win:30",   kind:"avatar",  label:"볼트 드라코",    check:function(s){ return s.wins>=30; },   detail:function(s){ return "승리 "+Math.min(s.wins,30)+"/30회"; } },
   { id:"win:50",   kind:"avatar",  label:"폭스트릭",       check:function(s){ return s.wins>=50; },   detail:function(s){ return "승리 "+Math.min(s.wins,50)+"/50회"; } },
   // 100 wins rewards both a character and a title, so ids carry the reward kind.
   { id:"win:100:avatar", kind:"avatar", label:"고양이 예언자", check:function(s){ return s.wins>=100; }, detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
   { id:"win:100",  kind:"title",   label:"승부사",          check:function(s){ return s.wins>=100; },  detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
   { id:"win:300",  kind:"avatar",  label:"슬로우모",       check:function(s){ return s.wins>=300; },  detail:function(s){ return "승리 "+Math.min(s.wins,300)+"/300회"; } },
-  { id:"win:400",  kind:"title",   label:"전설의 손",        check:function(s){ return s.wins>=400; },  detail:function(s){ return "승리 "+Math.min(s.wins,400)+"/400회"; } },
+  { id:"win:400",  kind:"title",   label:"카드의 신",        check:function(s){ return s.wins>=400; },  detail:function(s){ return "승리 "+Math.min(s.wins,400)+"/400회"; } },
   { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
   { id:"win:700",  kind:"avatar",  label:"렉스 버서커",    check:function(s){ return s.wins>=700; },  detail:function(s){ return "승리 "+Math.min(s.wins,700)+"/700회"; } },
   { id:"win:1000", kind:"avatar",  label:"메가블록",       check:function(s){ return s.wins>=1000; }, detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
 
-  { id:"games:10",   kind:"pattern", label:"비늘",     check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
-  { id:"games:20",   kind:"title",   label:"카드 산책러",   check:function(s){ return s.games>=20; },   detail:function(s){ return "플레이 "+Math.min(s.games,20)+"/20판"; } },
-  { id:"games:30",   kind:"pattern", label:"솔라",   check:function(s){ return s.games>=30; },   detail:function(s){ return "플레이 "+Math.min(s.games,30)+"/30판"; } },
-  { id:"games:50",   kind:"pattern", label:"아가일",   check:function(s){ return s.games>=50; },   detail:function(s){ return "플레이 "+Math.min(s.games,50)+"/50판"; } },
+  { id:"games:10",   kind:"pattern", label:"허니콤",   check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
+  { id:"games:30",   kind:"pattern", label:"솔라",     check:function(s){ return s.games>=30; },   detail:function(s){ return "플레이 "+Math.min(s.games,30)+"/30판"; } },
+  { id:"games:50",   kind:"pattern", label:"비늘",     check:function(s){ return s.games>=50; },   detail:function(s){ return "플레이 "+Math.min(s.games,50)+"/50판"; } },
+  // 100 games rewards both a pattern and a title.
+  { id:"games:100:pattern", kind:"pattern", label:"리플", check:function(s){ return s.games>=100; }, detail:function(s){ return "플레이 "+Math.min(s.games,100)+"/100판"; } },
   { id:"games:100",  kind:"title",   label:"개근상",   check:function(s){ return s.games>=100; },  detail:function(s){ return "플레이 "+Math.min(s.games,100)+"/100판"; } },
-  { id:"games:200",  kind:"pattern", label:"다이아몬드", check:function(s){ return s.games>=200; }, detail:function(s){ return "플레이 "+Math.min(s.games,200)+"/200판"; } },
-  { id:"games:300",  kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=300; },  detail:function(s){ return "플레이 "+Math.min(s.games,300)+"/300판"; } },
-  { id:"games:400",  kind:"title",   label:"카드에 진심",   check:function(s){ return s.games>=400; },  detail:function(s){ return "플레이 "+Math.min(s.games,400)+"/400판"; } },
-  { id:"games:500",  kind:"pattern", label:"로열",     check:function(s){ return s.games>=500; },  detail:function(s){ return "플레이 "+Math.min(s.games,500)+"/500판"; } },
-  { id:"games:1000", kind:"pattern", label:"코스믹",   check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
+  { id:"games:300",  kind:"pattern", label:"다이아몬드", check:function(s){ return s.games>=300; }, detail:function(s){ return "플레이 "+Math.min(s.games,300)+"/300판"; } },
+  { id:"games:400",  kind:"title",   label:"카드에 진심", check:function(s){ return s.games>=400; },  detail:function(s){ return "플레이 "+Math.min(s.games,400)+"/400판"; } },
+  { id:"games:500",  kind:"pattern", label:"코스믹",   check:function(s){ return s.games>=500; },  detail:function(s){ return "플레이 "+Math.min(s.games,500)+"/500판"; } },
+  { id:"games:700",  kind:"border",  label:"루비",     check:function(s){ return s.games>=700; },  detail:function(s){ return "플레이 "+Math.min(s.games,700)+"/700판"; } },
+  { id:"games:1000", kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
 
-  { id:"misc:streak10",   kind:"border", label:"불꽃",    check:function(s){ return s.winStreak>=10; },      detail:function(s){ return "연승 "+Math.min(s.winStreak,10)+"/10회"; } },
-  { id:"misc:prism10",    kind:"border", label:"레인보우", check:function(s){ return s.prismBanked>=10; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,10)+"/10개"; } },
-  { id:"misc:draws10",    kind:"title",  label:"평화주의자",    check:function(s){ return s.draws>=10; },          detail:function(s){ return "무승부 "+Math.min(s.draws,10)+"/10회"; } },
-  { id:"misc:jokers20",   kind:"title",  label:"조커 마니아",  check:function(s){ return s.jokersBanked>=20; },   detail:function(s){ return "조커 사용 "+Math.min(s.jokersBanked,20)+"/20개"; } },
-  { id:"misc:hard100",    kind:"border", label:"트로피",  check:function(s){ return s.hardWins>=100; },      detail:function(s){ return "어려움 승리 "+Math.min(s.hardWins,100)+"/100회"; } },
-  { id:"misc:kstraight",  kind:"border", label:"실버",    check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "6-7-8-9-10 스트레이트"; } },
-  { id:"misc:online4p50", kind:"border", label:"하트",    check:function(s){ return s.fourPOnlineWins>=50; },detail:function(s){ return "4인전(온라인) 승리 "+Math.min(s.fourPOnlineWins,50)+"/50회"; } },
-  { id:"misc:online1",    kind:"title",  label:"인싸 등극",    check:function(s){ return s.onlineWins>=1; },      boolCond:true, detail:function(s){ return "온라인 승리"; } },
-  { id:"misc:allcolors",  kind:"title",  label:"무지개 정복자",  check:function(s){ return s.colorsWon.length>=4; },detail:function(s){ return "색상 정복 "+Math.min(s.colorsWon.length,4)+"/4색"; } },
-  { id:"misc:bighand",    kind:"title",  label:"손이 큰 편",  check:function(s){ return s.hasBigHandWin; },      boolCond:true, detail:function(s){ return "빅핸드(20장) 승리"; } },
+  { id:"misc:streak5",    kind:"title",  label:"연승 머신",  check:function(s){ return s.winStreak>=5; },       detail:function(s){ return "연승 "+Math.min(s.winStreak,5)+"/5회"; } },
+  { id:"misc:streak10",   kind:"border", label:"불꽃",      check:function(s){ return s.winStreak>=10; },      detail:function(s){ return "연승 "+Math.min(s.winStreak,10)+"/10회"; } },
+  { id:"misc:prism50",    kind:"border", label:"오로라",    check:function(s){ return s.prismBanked>=50; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,50)+"/50개"; } },
+  { id:"misc:hard100",    kind:"border", label:"레인보우",  check:function(s){ return s.hardWins>=100; },      detail:function(s){ return "어려움 승리 "+Math.min(s.hardWins,100)+"/100회"; } },
+  { id:"misc:kstraight",  kind:"border", label:"실버",      check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "6-7-8-9-10 스트레이트"; } },
+  { id:"misc:online4p50", kind:"border", label:"하트",      check:function(s){ return s.fourPOnlineWins>=50; },detail:function(s){ return "4인전(온라인) 승리 "+Math.min(s.fourPOnlineWins,50)+"/50회"; } },
+  { id:"misc:online30",   kind:"border", label:"에메랄드",  check:function(s){ return s.onlineWins>=30; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,30)+"/30회"; } },
+  { id:"misc:draws10",    kind:"title",  label:"평화주의자", check:function(s){ return s.draws>=10; },          detail:function(s){ return "무승부 "+Math.min(s.draws,10)+"/10회"; } },
+  { id:"misc:jokers50",   kind:"title",  label:"조커 마니아", check:function(s){ return s.jokersBanked>=50; },   detail:function(s){ return "조커 사용 "+Math.min(s.jokersBanked,50)+"/50개"; } },
+  { id:"misc:bombs30",    kind:"title",  label:"폭탄마",    check:function(s){ return s.bombsUsed>=30; },      detail:function(s){ return "폭탄 카드 사용 "+Math.min(s.bombsUsed,30)+"/30회"; } },
+  { id:"misc:online1",    kind:"title",  label:"인싸 등극", check:function(s){ return s.onlineWins>=1; },      boolCond:true, detail:function(s){ return "온라인 승리"; } },
+  { id:"misc:colors20",   kind:"title",  label:"무지개 정복자", check:function(s){ return colorsAt20(s)>=4; }, detail:function(s){ return "색깔마다 20승 "+colorsAt20(s)+"/4색"; } },
 
   { id:"pattern:diagonal", kind:"pattern", label:"다이애그널", check:function(s){ return s.tutorialDone; }, boolCond:true, detail:function(s){ return "튜토리얼 완주"; } }
 ];
+// Runs during startup unlock migration, before ALL_COLORS is assigned — so list colors here.
+function colorsAt20(s){
+  return ["PINK","BLUE","YELLOW","GREEN"].filter(function(c){ return (s.winsByColor[c]||0)>=20; }).length;
+}
 
 function loadStats(){
-  try{
-    var raw = localStorage.getItem("straightStats");
-    var p = raw ? JSON.parse(raw) : {};
-    return {
-      wins: p.wins||0, games: p.games||0, draws: p.draws||0,
-      winStreak: p.winStreak||0, prismBanked: p.prismBanked||0,
-      jokersBanked: p.jokersBanked||0, hardWins: p.hardWins||0,
-      onlineWins: p.onlineWins||0, fourPOnlineWins: p.fourPOnlineWins||0,
-      colorsWon: p.colorsWon||[], hasKStraightWin: !!p.hasKStraightWin,
-      hasBigHandWin: !!p.hasBigHandWin, tutorialDone: !!p.tutorialDone
-    };
-  }catch(e){
-    return { wins:0, games:0, draws:0, winStreak:0, prismBanked:0, jokersBanked:0,
-      hardWins:0, onlineWins:0, fourPOnlineWins:0, colorsWon:[], hasKStraightWin:false,
-      hasBigHandWin:false, tutorialDone:false };
-  }
+  var p = {};
+  try{ p = JSON.parse(localStorage.getItem("straightStats") || "{}") || {}; }catch(e){}
+  return {
+    wins: p.wins||0, games: p.games||0, draws: p.draws||0,
+    winStreak: p.winStreak||0, prismBanked: p.prismBanked||0,
+    jokersBanked: p.jokersBanked||0, hardWins: p.hardWins||0,
+    onlineWins: p.onlineWins||0, fourPOnlineWins: p.fourPOnlineWins||0,
+    winsByColor: Object.assign({ PINK:0, BLUE:0, YELLOW:0, GREEN:0 }, p.winsByColor||{}),
+    bombsUsed: p.bombsUsed||0,
+    hasKStraightWin: !!p.hasKStraightWin, tutorialDone: !!p.tutorialDone
+  };
 }
 function saveStats(stats){
   try{ localStorage.setItem("straightStats", JSON.stringify(stats)); }catch(e){}
@@ -747,8 +754,8 @@ function initUnlocksIfNeeded(){
 // their real condition was met), re-derive the unlock set strictly from the player's
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
-// "4": character rewards were reshuffled (2026-10-03) — re-derive from stats once.
-var UNLOCK_SCHEMA_VERSION = "4";
+// "5": collectibles redesign (patterns/titles/borders, 34 achievements) — re-derive once.
+var UNLOCK_SCHEMA_VERSION = "5";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
@@ -768,8 +775,7 @@ function recordGameResult(outcome, meta){
       if(meta.isOnline) stats.onlineWins = stats.onlineWins+1;
       if(meta.isOnline && meta.playerCount===4) stats.fourPOnlineWins = stats.fourPOnlineWins+1;
       if(meta.straight && meta.straight.start===6) stats.hasKStraightWin = true;
-      if(meta.straight && stats.colorsWon.indexOf(meta.straight.color)===-1) stats.colorsWon.push(meta.straight.color);
-      if(meta.scoreLen>=20) stats.hasBigHandWin = true;
+      if(meta.straight) stats.winsByColor[meta.straight.color] = (stats.winsByColor[meta.straight.color]||0)+1;
     }
   } else if(outcome==="draw"){
     stats.draws = stats.draws+1;
@@ -1018,33 +1024,40 @@ var CHARACTERS = [
 ];
 
 var TITLE_PRESETS = [
-  { id:"beginner", name:"이기는 맛" },
+  { id:"beginner", name:"초보" },
   { id:"skilled", name:"승부사" },
-  { id:"master", name:"전설의 손" },
-  { id:"firststep", name:"카드 산책러" },
+  { id:"master", name:"카드의 신" },
   { id:"consistent", name:"개근상" },
   { id:"veteran", name:"카드에 진심" },
   { id:"peace", name:"평화주의자" },
   { id:"collector", name:"조커 마니아" },
   { id:"social", name:"인싸 등극" },
   { id:"allcolor", name:"무지개 정복자" },
-  { id:"bighand", name:"손이 큰 편" },
+  { id:"bomber", name:"폭탄마" },
+  { id:"streak", name:"연승 머신" },
   { id:"grandmaster", name:"그랜드마스터", gm:true }
 ];
 var BORDER_PRESETS = [
   { id:"coral", name:"코랄", cls:"border-coral" },
-  { id:"mint", name:"민트", cls:"border-mint" },
+  { id:"blueberry", name:"블루베리", cls:"border-blueberry" },
   { id:"stars", name:"별자리", cls:"border-stars" },
   { id:"aurora", name:"오로라", cls:"border-aurora" },
-  { id:"candy", name:"캔디", cls:"border-candy" },
-  { id:"blueberry", name:"블루베리", cls:"border-blueberry" },
-  { id:"sprout", name:"새싹", cls:"border-sprout" },
-  { id:"silver", name:"실버", cls:"border-silver" },
   { id:"rainbow", name:"레인보우", cls:"border-rainbow" },
-  { id:"trophy", name:"트로피", cls:"border-trophy" },
-  { id:"flame", name:"불꽃", cls:"border-flame" },
   { id:"heart", name:"하트", cls:"border-heart" },
-  { id:"legend", name:"그랜드마스터", cls:"border-legend", gm:true }
+  { id:"silver", name:"실버", cls:"border-silver" },
+  { id:"flame", name:"불꽃", cls:"border-flame" },
+  { id:"emerald", name:"에메랄드", cls:"border-emerald" },
+  { id:"ruby", name:"루비", cls:"border-ruby" },
+  // Grand Master border (was named 그랜드마스터; same design).
+  { id:"legend", name:"솔라리스", cls:"border-legend", gm:true },
+  { id:"candy", name:"캔디", cls:"border-candy", event:true },
+  { id:"trophy", name:"트로피", cls:"border-trophy", event:true },
+  { id:"sprout", name:"새싹", cls:"border-sprout", event:true },
+  { id:"mint", name:"민트", cls:"border-mint", event:true },
+  { id:"neon", name:"네온", cls:"border-neon", paid:true },
+  { id:"chrome", name:"크롬", cls:"border-chrome", paid:true },
+  { id:"opal", name:"오팔", cls:"border-opal", paid:true },
+  { id:"blackgold", name:"블랙골드", cls:"border-blackgold", paid:true }
 ];
 
 function getActiveTitle(){
@@ -1865,8 +1878,7 @@ function applyRemoteRoomState(data){
             difficulty: state.aiDifficulty,
             isOnline: isMultiplayer(),
             playerCount: state.turnOrder.length,
-            straight: state.winnerStraight,
-            scoreLen: winner.score.length
+            straight: state.winnerStraight
           });
         } else {
           maybeRecordLocalGameResult("loss");
@@ -2597,8 +2609,7 @@ function checkWin(playerIdx){
         difficulty: state.aiDifficulty,
         isOnline: isMultiplayer(),
         playerCount: state.turnOrder.length,
-        straight: straight,
-        scoreLen: player.score.length
+        straight: straight
       });
     } else {
       maybeRecordLocalGameResult("loss");
@@ -3399,6 +3410,7 @@ function onFloorTargetClick(fi){
   var floorCoin = state.floor[fi];
 
   if(state.mode==="reset-choice" && handCoin && handCoin.isReset){
+    bumpStatAndCheck("bombsUsed", 1);
     useResetCard(state.myIndex, handIdx);
     return;
   }
