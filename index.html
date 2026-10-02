@@ -2283,9 +2283,13 @@ function renderLobby(data){
   CHARACTERS.forEach(function(ch){
     var taken = !!takenNames[ch.name];
     var mine = myPicked && me.characterName===ch.name;
-    var b = el("button","avatar-btn"+(mine?" selected":""));
+    // Same lock as the solo picker: characters you haven't unlocked can't be picked online.
+    var locked = !isAvatarUnlocked(ch.name, straightUnlocks);
+    var b = el("button","avatar-btn"+(mine?" selected":"")+(locked && !mine?" locked":""));
     b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+(taken?" (선택됨)":"")+"</span>";
-    if(taken || myPicked){
+    if(locked && !mine){
+      b.disabled = true;
+    } else if(taken || myPicked){
       b.disabled = true;
       b.style.opacity = mine ? "1" : (taken ? ".3" : ".5");
       b.style.cursor = "default";
@@ -3527,11 +3531,10 @@ function collectionItemDetailText(kind, name){
     var t = CARD_THEMES.filter(function(x){ return x.name===name; })[0];
     return t && t.member ? "👑 멤버십 전용 테마" : "기본 테마";
   }
-  if(isEventItem(kind, name)) return isDevAccount() ? "🎉 이벤트 획득 · 개발자 계정" : "🎉 이벤트로 획득 (준비 중)";
+  if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
   if(isGrandMasterItem(kind, name)){
     var gp = grandMasterProgress();
-    if(gp.done>=gp.total) return "🏆 모든 업적 달성 완료";
-    if(isDevAccount()) return "🏆 모든 업적 달성 · 개발자 계정";
+    if(gp.done>=gp.total || isGrandMaster()) return "🏆 모든 업적 달성 완료";
     return "🏆 모든 업적 달성 "+gp.done+"/"+gp.total;
   }
   var m = findMilestoneByLabel(kind, name);
