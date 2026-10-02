@@ -33,7 +33,7 @@
    2. `devAccounts` 역할(dev/tester) 판정 + `entitlements/{uid}` 권한 → `isDevAccount()`/`hasMembership()` 임시 판정 교체
    3. 숨은 전적(`users/{uid}.record`)과 밸런스 데이터(`balanceLogs`, dev만 읽기)
    4. 보안 규칙을 "로그인한 사용자만"으로 재작성·게시(`users`, `entitlements`, `devAccounts`, `balanceLogs`, `rooms`)
-   5. 수집품에 유료 아이템 가격 표시(결제는 후속 단계)
+   5. ~~수집품에 유료 아이템 가격 표시~~ → 완료(2026-10-03). 로그인 후에는 로 개별 소유 판정만 연결(결제는 후속 단계)
    - 카카오톡 등 인앱 브라우저 감지 → "Chrome/Safari로 열기" 안내 포함.
 
 ## 사용자 확인 대기
