@@ -1172,21 +1172,27 @@ var CARD_THEMES = [
     text:"#E6F6FF", muted:"#8FBCD8", lineRgb:"255,255,255",
     colors:{ PINK:"#FF6F91", BLUE:"#4FC3F7", YELLOW:"#FFD54F", GREEN:"#4DE0B5" } }
 ];
-// Membership will come from the account's server-written entitlements once Google login
-// lands. Until then only a local dev server counts as a member, so member themes can be
-// built and previewed without shipping a way to get them free on the live site.
-// The developer account will come from entitlements.role the same way; a local dev
-// server stands in for both until then.
-function isDevAccount(){
-  // ?nodev on a local server previews the game as an ordinary player (locks visible).
-  if(/[?&]nodev\b/.test(location.search)) return false;
-  var h = location.hostname;
-  return h==="localhost" || h==="127.0.0.1";
+// Roles come from devAccounts/{gmail} (console-only); membership and bought items from
+// entitlements/{uid}. ?nodev previews the game as an ordinary player.
+function previewAsPlayer(){ return /[?&]nodev\b/.test(location.search); }
+function accountRole(){
+  if(previewAsPlayer()) return null;
+  return account ? account.role : null;
 }
-function hasMembership(){ return isDevAccount(); }
+function isDevAccount(){ return accountRole()==="dev"; }
+// Developer and tester accounts both get every item, VIP and Grand Master.
+function isSpecialAccount(){ var r = accountRole(); return r==="dev" || r==="tester"; }
+function hasMembership(){
+  if(isSpecialAccount()) return true;
+  return !!account && !previewAsPlayer() && account.membershipUntil > Date.now();
+}
+function ownsItem(kind, id){
+  return !!account && !previewAsPlayer() && account.items.indexOf(kind+":"+id)!==-1;
+}
 function isThemeOwned(theme){
   if(!theme) return false;
-  var special = specialItemOwned(theme);
+  if(isSpecialAccount()) return true;
+  var special = specialItemOwned("theme", theme);
   return special===null ? true : special;
 }
 
@@ -1198,7 +1204,7 @@ function grandMasterProgress(unlocks){
   return { done:done, total:UNLOCK_MILESTONES.length };
 }
 function isGrandMaster(unlocks){
-  if(isDevAccount()) return true;
+  if(isSpecialAccount()) return true;
   var p = grandMasterProgress(unlocks);
   return p.done>=p.total;
 }
@@ -1393,11 +1399,12 @@ function isEventItem(kind, name){ var p = presetByName(kind, name); return !!(p 
 function isPaidItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.paid); }
 function isMemberItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.member); }
 function isGrandMasterItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.gm); }
-// Items no achievement grants. Until purchases and entitlements land, membership (a local
-// dev server for now) owns paid and member items, and only the dev account sees events.
-function specialItemOwned(p){
-  if(p.event) return isDevAccount();
-  if(p.paid || p.member) return hasMembership();
+// Items no achievement grants: events (special accounts only until events run), member
+// items (membership) and paid items (membership or bought in entitlements.items).
+function specialItemOwned(kind, p){
+  if(p.event) return isSpecialAccount();
+  if(p.member) return hasMembership();
+  if(p.paid) return hasMembership() || ownsItem(kind, p.id || p.name);
   return null;
 }
 // Achievements first, then the Grand Master capstone, then paid, member and event items.
@@ -1413,7 +1420,8 @@ function sortCollectionItems(items, kind){
 function isAvatarUnlocked(name, unlocks){
   var ch = presetByName("avatar", name);
   if(!ch) return false;
-  var special = specialItemOwned(ch);
+  if(isSpecialAccount()) return true;
+  var special = specialItemOwned("avatar", ch);
   if(special!==null) return special;
   if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
   var m = findMilestoneByLabel("avatar", name);
@@ -1423,7 +1431,8 @@ function isPatternUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<CARD_BACK_PRESETS.length;i++){ if(CARD_BACK_PRESETS[i].id===id){ preset=CARD_BACK_PRESETS[i]; break; } }
   if(!preset) return false;
-  var special = specialItemOwned(preset);
+  if(isSpecialAccount()) return true;
+  var special = specialItemOwned("pattern", preset);
   if(special!==null) return special;
   if(preset.gm) return isGrandMaster(unlocks);
   if(UNLOCK_STARTER_PATTERNS.indexOf(id)!==-1) return true;
@@ -1434,6 +1443,7 @@ function isTitleUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<TITLE_PRESETS.length;i++){ if(TITLE_PRESETS[i].id===id){ preset=TITLE_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(isSpecialAccount()) return true;
   if(preset.gm) return isGrandMaster(unlocks);
   var m = findMilestoneByLabel("title", preset.name);
   return m ? unlocks.indexOf(m.id)!==-1 : false;
@@ -1442,7 +1452,8 @@ function isBorderUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<BORDER_PRESETS.length;i++){ if(BORDER_PRESETS[i].id===id){ preset=BORDER_PRESETS[i]; break; } }
   if(!preset) return false;
-  var special = specialItemOwned(preset);
+  if(isSpecialAccount()) return true;
+  var special = specialItemOwned("border", preset);
   if(special!==null) return special;
   if(preset.gm) return isGrandMaster(unlocks);
   if(UNLOCK_STARTER_BORDERS.indexOf(id)!==-1) return true;
