@@ -1,12 +1,45 @@
 rules_version = '2';
 
-// The game has no sign-in, so these rules can't tell players apart. What they can do is
-// limit the blast radius: nobody can list/enumerate every room, rooms can't be deleted,
-// codes must look like real room codes, and a room can't grow past 4 players.
-// Deploy: Firebase console > Firestore Database > Rules > paste > Publish
-// (or `firebase deploy --only firestore:rules`).
+// Signed-in players (Google) own users/{uid}. Entitlements and devAccounts are written
+// only from the console. balanceLogs are anonymous append-only game summaries that only
+// the developer role can read.
+// Deploy: Firebase console > Firestore Database > Rules > paste > Publish.
 service cloud.firestore {
   match /databases/{database}/documents {
+    function signedIn(){ return request.auth != null; }
+    function verifiedEmail(){
+      return signedIn() && request.auth.token.email_verified == true;
+    }
+    function devRole(){
+      return verifiedEmail()
+        && exists(/databases/$(database)/documents/devAccounts/$(request.auth.token.email))
+        && get(/databases/$(database)/documents/devAccounts/$(request.auth.token.email)).data.role == 'dev';
+    }
+
+    match /users/{uid} {
+      allow read, create, update: if signedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+    match /entitlements/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+    match /devAccounts/{email} {
+      allow get: if verifiedEmail() && request.auth.token.email == email;
+      allow list, write: if false;
+    }
+    match /balanceLogs/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['players','mode','aiDifficulty','firstSeat','winnerSeat','winnerOrder','turns','jokers','bombs','autoResets','straight','at'])
+        && request.resource.data.players is int
+        && request.resource.data.players >= 2 && request.resource.data.players <= 4
+        && request.resource.data.mode in ['solo', 'online'];
+      allow read: if devRole();
+      allow update, delete: if false;
+    }
+
+    // Rooms are still open to signed-out clients until the sign-in build is live; the
+    // follow-up rule change adds signedIn() to get/create/update.
     match /rooms/{code} {
       allow get: if code.matches('^[A-HJ-NP-Z2-9]{5}$');
       allow list: if false;
