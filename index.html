@@ -639,21 +639,23 @@ var CARD_BACK_PRESETS = [
 
 /* ---------------- progress / unlocks ---------------- */
 
-var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","볼트 드라코","매드독"];
+var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","매드독","크러셔 루"];
 var UNLOCK_STARTER_PATTERNS = ["stripe","zigzag","honeycomb","ripple"];
 var UNLOCK_STARTER_BORDERS = ["coral","mint","stars","aurora","candy","blueberry","sprout"];
 
 var UNLOCK_MILESTONES = [
   { id:"win:10",   kind:"avatar",  label:"나이트올빼미",   check:function(s){ return s.wins>=10; },   detail:function(s){ return "승리 "+Math.min(s.wins,10)+"/10회"; } },
   { id:"win:20",   kind:"title",   label:"이기는 맛",          check:function(s){ return s.wins>=20; },   detail:function(s){ return "승리 "+Math.min(s.wins,20)+"/20회"; } },
-  { id:"win:30",   kind:"avatar",  label:"고양이 예언자",  check:function(s){ return s.wins>=30; },   detail:function(s){ return "승리 "+Math.min(s.wins,30)+"/30회"; } },
-  { id:"win:50",   kind:"avatar",  label:"슬로우모",       check:function(s){ return s.wins>=50; },   detail:function(s){ return "승리 "+Math.min(s.wins,50)+"/50회"; } },
+  { id:"win:30",   kind:"avatar",  label:"볼트 드라코",    check:function(s){ return s.wins>=30; },   detail:function(s){ return "승리 "+Math.min(s.wins,30)+"/30회"; } },
+  { id:"win:50",   kind:"avatar",  label:"폭스트릭",       check:function(s){ return s.wins>=50; },   detail:function(s){ return "승리 "+Math.min(s.wins,50)+"/50회"; } },
+  // 100 wins rewards both a character and a title, so ids carry the reward kind.
+  { id:"win:100:avatar", kind:"avatar", label:"고양이 예언자", check:function(s){ return s.wins>=100; }, detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
   { id:"win:100",  kind:"title",   label:"승부사",          check:function(s){ return s.wins>=100; },  detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
-  { id:"win:200",  kind:"avatar",  label:"크러셔 루",      check:function(s){ return s.wins>=200; },  detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
-  { id:"win:300",  kind:"avatar",  label:"메가블록",       check:function(s){ return s.wins>=300; },  detail:function(s){ return "승리 "+Math.min(s.wins,300)+"/300회"; } },
+  { id:"win:300",  kind:"avatar",  label:"슬로우모",       check:function(s){ return s.wins>=300; },  detail:function(s){ return "승리 "+Math.min(s.wins,300)+"/300회"; } },
   { id:"win:400",  kind:"title",   label:"전설의 손",        check:function(s){ return s.wins>=400; },  detail:function(s){ return "승리 "+Math.min(s.wins,400)+"/400회"; } },
   { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
-  { id:"win:1000", kind:"avatar",  label:"폭스트릭",       check:function(s){ return s.wins>=1000; }, detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
+  { id:"win:700",  kind:"avatar",  label:"렉스 버서커",    check:function(s){ return s.wins>=700; },  detail:function(s){ return "승리 "+Math.min(s.wins,700)+"/700회"; } },
+  { id:"win:1000", kind:"avatar",  label:"메가블록",       check:function(s){ return s.wins>=1000; }, detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
 
   { id:"games:10",   kind:"pattern", label:"비늘",     check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
   { id:"games:20",   kind:"title",   label:"카드 산책러",   check:function(s){ return s.games>=20; },   detail:function(s){ return "플레이 "+Math.min(s.games,20)+"/20판"; } },
@@ -745,7 +747,8 @@ function initUnlocksIfNeeded(){
 // their real condition was met), re-derive the unlock set strictly from the player's
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
-var UNLOCK_SCHEMA_VERSION = "3";
+// "4": character rewards were reshuffled (2026-10-03) — re-derive from stats once.
+var UNLOCK_SCHEMA_VERSION = "4";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
@@ -1001,7 +1004,11 @@ var CHARACTERS = [
   { emoji:"🐉", name:"볼트 드라코" },
   { emoji:"🦉", name:"나이트올빼미" },
   { emoji:"🐢", name:"슬로우모" },
-  { emoji:"🦊", name:"폭스트릭" }
+  { emoji:"🦊", name:"폭스트릭" },
+  { emoji:"🦖", name:"렉스 버서커" },
+  // Event characters: shipped now, locked until an event hands them out.
+  { emoji:"🦈", name:"썬더 죠스", event:true },
+  { emoji:"🦂", name:"블랙 스콜피온", event:true }
 ];
 
 var TITLE_PRESETS = [
@@ -1101,10 +1108,19 @@ function isGrandMasterItem(kind, name){
 }
 // Grand Master rewards sort last — they're the capstone after every other item.
 function sortCollectionItems(items, kind){
-  function key(it){ return isGrandMasterItem(kind, it.name) ? 1e6 : milestoneSortKey(kind, it.name); }
+  function key(it){
+    if(isEventItem(kind, it.name)) return 2e6;
+    return isGrandMasterItem(kind, it.name) ? 1e6 : milestoneSortKey(kind, it.name);
+  }
   return items.slice().sort(function(a,b){ return key(a) - key(b); });
 }
+function isEventItem(kind, name){
+  if(kind!=="avatar") return false;
+  return CHARACTERS.some(function(ch){ return ch.event && ch.name===name; });
+}
 function isAvatarUnlocked(name, unlocks){
+  // Event characters stay locked until events exist; the dev account sees everything.
+  if(isEventItem("avatar", name)) return isDevAccount();
   if(UNLOCK_STARTER_AVATARS.indexOf(name)!==-1) return true;
   var m = findMilestoneByLabel("avatar", name);
   return m ? unlocks.indexOf(m.id)!==-1 : false;
@@ -3511,6 +3527,7 @@ function collectionItemDetailText(kind, name){
     var t = CARD_THEMES.filter(function(x){ return x.name===name; })[0];
     return t && t.member ? "👑 멤버십 전용 테마" : "기본 테마";
   }
+  if(isEventItem(kind, name)) return isDevAccount() ? "🎉 이벤트 획득 · 개발자 계정" : "🎉 이벤트로 획득 (준비 중)";
   if(isGrandMasterItem(kind, name)){
     var gp = grandMasterProgress();
     if(gp.done>=gp.total) return "🏆 모든 업적 달성 완료";
