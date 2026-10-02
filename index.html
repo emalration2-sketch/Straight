@@ -689,7 +689,34 @@ var account = null;
 var SYNCED_KEYS = ["straightStats","straightUnlocks","straightUnlocksVer","straightNewUnlocks",
   "straightActiveTitle","straightActiveBorder","straightDefaultAvatar","straightArtPreset",
   "straightCardTheme","straightNickname","straightAiDifficulty"];
-function saveProgressNow(){ return Promise.resolve(); }
+// Writes happen only at game end, on cosmetic changes and when the tab is hidden, so a
+// game costs about one write. Mid-game stat bumps just mark the progress dirty.
+var progressSaveTimer = null, progressDirty = false;
+function collectProgress(){
+  var out = {};
+  SYNCED_KEYS.forEach(function(k){
+    try{ var v = localStorage.getItem(k); if(v!==null) out[k] = v; }catch(e){}
+  });
+  return out;
+}
+function saveProgressNow(){
+  if(!account || !fbDb) return Promise.resolve();
+  clearTimeout(progressSaveTimer); progressSaveTimer = null;
+  progressDirty = false;
+  var F = fbFs;
+  return F.setDoc(F.doc(fbDb,"users",account.uid), { progress: collectProgress(), updatedAt: F.serverTimestamp() }, { merge:true })
+    .catch(function(e){ progressDirty = true; console.error("진행도 저장 실패", e); });
+}
+function saveProgressSoon(){
+  if(!account) return;
+  progressDirty = true;
+  clearTimeout(progressSaveTimer);
+  progressSaveTimer = setTimeout(saveProgressNow, 1500);
+}
+function markProgressDirty(){ progressDirty = true; }
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState==="hidden" && progressDirty) saveProgressNow();
+});
 
 function gateEl(id){ return document.getElementById(id); }
 function showGate(mode, msg){
@@ -1009,6 +1036,7 @@ function bumpStatAndCheck(field, delta){
   straightUnlocks = result.updated;
   saveUnlocks(straightUnlocks);
   showUnlockPopup(result.newly);
+  markProgressDirty();
 }
 function recordTutorialDone(){
   var stats = loadStats();
@@ -1019,6 +1047,7 @@ function recordTutorialDone(){
   straightUnlocks = result.updated;
   saveUnlocks(straightUnlocks);
   showUnlockPopup(result.newly);
+  saveProgressSoon();
 }
 
 // New unlocks aren't announced the moment they're earned (often mid-game, where a popup
@@ -1034,6 +1063,7 @@ function loadNewUnlocks(){
 function saveNewUnlocks(ids){
   try{ localStorage.setItem("straightNewUnlocks", JSON.stringify(ids)); }catch(e){}
   updateCollectionBadge();
+  saveProgressSoon();
 }
 function findMilestoneById(id){
   for(var i=0;i<UNLOCK_MILESTONES.length;i++){ if(UNLOCK_MILESTONES[i].id===id) return UNLOCK_MILESTONES[i]; }
@@ -1066,6 +1096,7 @@ function maybeRecordLocalGameResult(outcome, meta){
   if(state.statsRecorded) return;
   state.statsRecorded = true;
   recordGameResult(outcome, meta);
+  saveProgressNow();
 }
 
 // migrateOldUnlocksIfNeeded() must run before initUnlocksIfNeeded() reads straightUnlocks,
@@ -1097,6 +1128,7 @@ function setBackPreset(idx){
   try{ localStorage.setItem("straightArtPreset", CARD_BACK_PRESETS[idx].id); }catch(e){}
   applyBackPresetToDeckVisual();
   if(typeof render==="function" && !$("screen-game").classList.contains("hidden")) render();
+  saveProgressSoon();
 }
 
 var ALL_COLORS = ["PINK","BLUE","YELLOW","GREEN"];
@@ -1218,6 +1250,7 @@ function setCardTheme(idx){
   renderStartFan();
   try{ localStorage.setItem("straightCardTheme", theme.id); }catch(e){}
   if(typeof render==="function" && !$("screen-game").classList.contains("hidden")) render();
+  saveProgressSoon();
 }
 
 var CHARACTERS = [
@@ -1283,6 +1316,7 @@ function getActiveTitle(){
 }
 function setActiveTitle(id){
   try{ localStorage.setItem("straightActiveTitle", id||""); }catch(e){}
+  saveProgressSoon();
 }
 function getActiveBorder(){
   var id = null;
@@ -1292,6 +1326,7 @@ function getActiveBorder(){
 }
 function setActiveBorder(id){
   try{ localStorage.setItem("straightActiveBorder", id||""); }catch(e){}
+  saveProgressSoon();
 }
 function getDefaultAvatarName(){
   try{ return localStorage.getItem("straightDefaultAvatar"); }catch(e){ return null; }
@@ -1301,6 +1336,7 @@ function setDefaultAvatar(name){
   var ch = null;
   for(var i=0;i<CHARACTERS.length;i++){ if(CHARACTERS[i].name===name){ ch=CHARACTERS[i]; break; } }
   if(ch){ chosenCharacter = ch; renderAvatarGrid(); }
+  saveProgressSoon();
 }
 function activeTitleLabel(){
   var id = getActiveTitle();
@@ -2208,6 +2244,7 @@ function applyNickname(raw){
   chosenNickname = nick || null;
   try{ localStorage.setItem("straightNickname", chosenNickname||""); }catch(e){}
   updateMyDisplayName();
+  saveProgressSoon();
 }
 
 function updateMyDisplayName(){
@@ -2381,6 +2418,7 @@ var difficultyRow = $("difficulty-row");
     b.classList.add("selected");
     chosenAiDifficulty = pair[0];
     try{ localStorage.setItem("straightAiDifficulty", pair[0]); }catch(e){}
+    saveProgressSoon();
   });
   difficultyRow.appendChild(b);
 });
