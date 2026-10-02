@@ -3507,8 +3507,9 @@ function renderCollectionScreen(){
     }
     card.appendChild(el("div","coll-item-preview", it.preview));
     card.appendChild(el("p","coll-item-name", tab==="title" ? "" : it.name));
-    if(!it.unlocked){
-      card.appendChild(el("p","coll-item-state", it.member ? "👑 멤버십 필요" : "🔒 미보유"));
+    // Member items already say "👑 멤버십 전용" in their detail line, so no second line.
+    if(!it.unlocked && !it.member){
+      card.appendChild(el("p","coll-item-state","🔒 미보유"));
     }
     card.appendChild(el("p","coll-item-detail", collectionItemDetailText(tab, it.name)));
     if(it.unlocked){
@@ -3773,12 +3774,17 @@ function openSettingsModal(){
   var actions = el("div","modal-actions");
   actions.appendChild(closeBtn);
 
+  // In a game the settings modal is sound/BGM + surrender only: the theme is picked from
+  // the collection, and the nickname can't change once a game/lobby is under way.
+  var inGame = !$("screen-game").classList.contains("hidden");
   box.appendChild(avRow);
   box.appendChild(trackLabel);
   box.appendChild(trackRow);
-  box.appendChild(cardThemeLabel);
-  box.appendChild(cardThemeRow);
-  box.appendChild(nickRow);
+  if(!inGame){
+    box.appendChild(cardThemeLabel);
+    box.appendChild(cardThemeRow);
+  }
+  if(!nickLocked) box.appendChild(nickRow);
   if(quitRow) box.appendChild(quitRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
