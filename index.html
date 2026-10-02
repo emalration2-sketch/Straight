@@ -128,14 +128,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-aurora{border-color:transparent;background:linear-gradient(90deg,rgba(76,224,160,.22),rgba(180,140,255,.14)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#4ce0a0,#33d6c0,#7f9cff,#b48cff) border-box;}
 .name-tag.border-candy{border-color:transparent;background:linear-gradient(90deg,rgba(255,122,168,.24),rgba(255,122,168,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(45deg,#ff7aa8 0 5px,#ffffff 5px 10px) border-box;}
 @keyframes tagSheen{from{background-position:0 0,0 0,0% 0;}to{background-position:0 0,0 0,100% 0;}}
-/* 레전드 (Grand Master): metallic gold rim; one light streak crosses the pill, then rests. */
+/* 그랜드마스터 border: metallic gold rim; one light streak crosses the pill, then rests. */
 .name-tag.border-legend{border-color:transparent;background:linear-gradient(90deg,rgba(233,185,73,.3),rgba(233,185,73,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}
 .name-tag.border-legend::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.4) 50%,transparent 62%);background-size:260% 100%;animation:legendSweep 3.4s ease-in-out infinite;}
 @keyframes legendSweep{0%{background-position:130% 0;}45%,100%{background-position:-30% 0;}}
 @media (prefers-reduced-motion: reduce){.name-tag.border-legend::after{animation:none;opacity:0;}}
-.border-ring.border-legend{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}
-.master-badge{flex-shrink:0;font-size:8.5px;font-weight:900;letter-spacing:.4px;line-height:1.3;padding:1px 5px;border-radius:5px;background:#2a2140;color:#ffd36b;border:1px solid #e9b949;}
-@media (prefers-reduced-motion: reduce){.name-tag{animation:none !important;}}
+.border-ring.border-legend{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}@media (prefers-reduced-motion: reduce){.name-tag{animation:none !important;}}
 
 /* count select */
 .count-row{display:flex;gap:10px;}
@@ -636,7 +634,7 @@ var CARD_BACK_PRESETS = [
   { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
   { id:"royal", name:"로열", cls:"pattern-royal" },
   { id:"cosmic", name:"코스믹", cls:"pattern-cosmic" },
-  { id:"goldfoil", name:"골드 포일", cls:"pattern-goldfoil", gm:true }
+  { id:"goldfoil", name:"그랜드마스터", cls:"pattern-goldfoil", gm:true }
 ];
 
 /* ---------------- progress / unlocks ---------------- */
@@ -1033,7 +1031,7 @@ var BORDER_PRESETS = [
   { id:"trophy", name:"트로피", cls:"border-trophy" },
   { id:"flame", name:"불꽃", cls:"border-flame" },
   { id:"heart", name:"하트", cls:"border-heart" },
-  { id:"legend", name:"레전드", cls:"border-legend", gm:true }
+  { id:"legend", name:"그랜드마스터", cls:"border-legend", gm:true }
 ];
 
 function getActiveTitle(){
@@ -1076,9 +1074,8 @@ function activeBorderCls(){
 // just the local player's — show correctly, including online.
 function playerTagHTML(p, extraCls){
   var titleHTML = p.title ? ("<span class=\"name-tag-title\">"+p.title+"</span>") : "";
-  var masterHTML = p.master ? "<span class=\"master-badge\" title=\"그랜드마스터\">MASTER</span>" : "";
   var vipHTML = p.vip ? "<span class=\"vip-badge\" title=\"멤버십\">VIP</span>" : "";
-  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+"</span><span class=\"name-tag-text\">"+p.name+"</span>"+masterHTML+vipHTML+titleHTML+"</span>";
+  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+"</span><span class=\"name-tag-text\">"+p.name+"</span>"+vipHTML+titleHTML+"</span>";
 }
 
 function findMilestoneByLabel(kind, label){
