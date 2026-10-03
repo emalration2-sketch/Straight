@@ -2450,6 +2450,18 @@ function buildDeck(colors, prismRanks){
   return deck;
 }
 
+// Final consonant of the last syllable (0 = none, 8 = ㄹ); digits and A read aloud (칠, 십, 에이).
+function jongOf(word){
+  var w = String(word).trim();
+  if(!w) return 0;
+  if(/10$/.test(w)) return 17;
+  var ch = w.charAt(w.length-1), code = ch.charCodeAt(0);
+  if(code>=0xAC00 && code<=0xD7A3) return (code-0xAC00) % 28;
+  return { "0":21, "1":8, "3":16, "6":1, "7":8, "8":8 }[ch] || 0;
+}
+function josa(word, withJong, withoutJong){ return word + (jongOf(word) ? withJong : withoutJong); }
+function josaRo(word){ var j = jongOf(word); return word + (j && j!==8 ? "으로" : "로"); }
+function logName(p){ return bareName(p && p.name ? p.name : "플레이어"); }
 function coinLabel(coin){
   if(coin.isReset) return "리셋 카드";
   if(coin.isJoker) return "조커";
@@ -2807,8 +2819,19 @@ function playBombBlast(){
   board.classList.remove("bomb-shake"); void board.offsetWidth; board.classList.add("bomb-shake");
   setTimeout(function(){ blast.remove(); board.classList.remove("bomb-shake"); }, 900);
 }
+var pendingRemoteState = null, pendingRemoteTimer = null;
 function applyRemoteRoomState(data){
   if(state.ceremonyPlaying) return;
+  if(state.animating){
+    pendingRemoteState = data;
+    if(!pendingRemoteTimer) pendingRemoteTimer = setInterval(function(){
+      if(state.animating) return;
+      clearInterval(pendingRemoteTimer); pendingRemoteTimer = null;
+      var d = pendingRemoteState; pendingRemoteState = null;
+      if(d) applyRemoteRoomState(d);
+    }, 120);
+    return;
+  }
   playRemoteFx(data.fx || []);
   state.fx = data.fx || [];
   var wasOver = state.gameOver;
@@ -2949,9 +2972,9 @@ function drawForStalled(idx){
   var n = Math.min(2, state.centerDeck.length);
   if(n>0){
     p.hand = p.hand.concat(state.centerDeck.splice(0, n));
-    pushLog(p.name+"의 시간이 초과되어 "+n+"장을 뽑고 턴을 넘깁니다.");
+    pushLog(logName(p)+"의 시간이 초과되어 "+n+"장을 뽑고 턴을 넘깁니다.");
   } else {
-    pushLog(p.name+"의 시간이 초과되어 턴을 넘깁니다.");
+    pushLog(logName(p)+"의 시간이 초과되어 턴을 넘깁니다.");
   }
   state.stagnantTurns++;
   render();
@@ -3242,7 +3265,7 @@ function startOnlineGame(){
   // Newest first: Grand Master announcements sit on top of the start lines.
   state.log = [].concat([
     "✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "),
-    "게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."]);
+    "게임을 시작합니다! 선공은 "+logName(lobbyPlayers[turnOrder[0]])+"입니다."]);
   var myIdx = -1;
   for(var i=0;i<lobbyPlayers.length;i++){ if(lobbyPlayers[i].clientId===myClientId){ myIdx=i; break; } }
   state.myIndex = myIdx>=0 ? myIdx : 0;
@@ -3774,7 +3797,7 @@ function startGame(players, order){
 
   buildRulebookPanel();
   switchScreen("game");
-  pushLog("게임을 시작합니다! 선공은 "+players[order[0]].name+" 입니다.");
+  pushLog("게임을 시작합니다! 선공은 "+logName(players[order[0]])+"입니다.");
   pushLog("✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "));
   render();
 
@@ -3883,7 +3906,7 @@ function startTurnTimer(){
     if(remaining<=0){
       clearTurnTimer();
       var player = state.players[state.myIndex];
-      pushLog(player.name+"의 시간이 초과되어 자동으로 2장을 뽑고 턴을 마칩니다.");
+      pushLog(logName(player)+"의 시간이 초과되어 자동으로 2장을 뽑고 턴을 마칩니다.");
       noteTimeout(state.myIndex);
       sfxTimeout();
       drawTwoAndEndTurn();
@@ -3923,7 +3946,7 @@ function declareDraw(){
 }
 
 function passWithEmptyDeck(player){
-  pushLog(player.name+"가 뽑을 카드가 없어 턴을 넘겼습니다.");
+  pushLog(josa(logName(player),"이","가")+" 뽑을 카드가 없어 턴을 넘겼습니다.");
   state.stagnantTurns++;
   render();
   endTurn();
@@ -4000,7 +4023,7 @@ function playWinCeremony(playerIdx, straight, cb){
   setTimeout(function(){
     duckBgm(2.2);
     if(playerIdx===state.myIndex) sfxWin(); else sfxLose();
-    pushLog("🎉 "+player.name+"가 "+COLOR_NAMES[straight.color]+" 스트레이트를 완성했습니다!");
+    pushLog("🎉 "+josa(logName(player),"이","가")+" "+COLOR_NAMES[straight.color]+" 스트레이트를 완성했습니다!");
   }, fanfareDelay);
   var totalDelay = fanfareDelay + 1500;
   setTimeout(function(){ state.ceremonyPlaying = false; cb(); }, totalDelay);
@@ -4564,7 +4587,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     if(capturedCoin.isPrism && playerIdx===state.myIndex) bumpStatAndCheck("prismBanked", 1);
     recordFx({ k:"cap", p:playerIdx, f:floorIdx, c:capturedCoin });
     state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, isReset:!!handCoin.isReset, color:handCoin.color, value:handCoin.value, isPrism:handCoin.isPrism };
-    pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
+    pushLog(josa(logName(player),"이","가")+" "+josaRo(coinLabel(handCoin))+" 바닥의 "+josa(coinLabel(capturedCoin),"을","를")+" 가져왔습니다!");
     announceReady(playerIdx, readyBefore);
     state.stagnantTurns = 0;
     state.floorResetStreak = 0;
@@ -4590,7 +4613,7 @@ function drawTwoAndEndTurn(){
   animateDrawFromDeck(n, $("hand-coins"), function(){
     var drawn = state.centerDeck.splice(0, n);
     player.hand = player.hand.concat(drawn);
-    pushLog(player.name+"가 중앙 덱에서 "+n+"장을 뽑고 턴을 마쳤습니다.");
+    pushLog(josa(logName(player),"이","가")+" 중앙 덱에서 "+n+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
     state.stagnantTurns++;
     render();
@@ -4606,7 +4629,7 @@ function bankJoker(handIdx){
   player.score.push(joker);
   state.balance.jokers++;
   bumpStatAndCheck("jokersBanked", 1);
-  pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
+  pushLog(josa(logName(player),"이","가")+" 조커를 점수덱에 내려놓았습니다!");
   announceReady(state.myIndex, readyBefore);
   clearSelectionState();
   render();
@@ -4644,7 +4667,7 @@ function useResetCard(playerIdx, handIdx, cb){
     render();
     animateDrawFromDeck(n, $("floor-board"), function(){
       state.floor = fresh;
-      pushLog(player.name+"가 💣 리셋 카드를 사용해 바닥 카드를 전부 새로 깔았습니다!");
+      pushLog(josa(logName(player),"이","가")+" 💣 리셋 카드를 사용해 바닥 카드를 전부 새로 깔았습니다!");
       state.animating = false;
       render();
       pushRoomState();
@@ -4812,7 +4835,7 @@ function aiTakeTurn(playerIdx){
       player.score.push(player.hand.splice(jokerIndices[ji],1)[0]);
       state.balance.jokers++;
     }
-    pushLog(player.name+"가 조커를 점수덱에 내려놓았습니다!");
+    pushLog(josa(logName(player),"이","가")+" 조커를 점수덱에 내려놓았습니다!");
     announceReady(playerIdx, readyBefore);
     pushRoomState();
     if(checkWin(playerIdx)) return;
@@ -4841,7 +4864,7 @@ function aiTakeTurn(playerIdx){
   animateDrawFromDeck(n2, destEl, function(){
     var drawn = state.centerDeck.splice(0, n2);
     player.hand = player.hand.concat(drawn);
-    pushLog(player.name+"가 중앙 덱에서 "+n2+"장을 뽑고 턴을 마쳤습니다.");
+    pushLog(josa(logName(player),"이","가")+" 중앙 덱에서 "+n2+"장을 뽑고 턴을 마쳤습니다.");
     state.animating = false;
     state.stagnantTurns++;
     render();
@@ -5157,7 +5180,7 @@ function onFloorTargetClick(fi){
     return;
   }
   if(state.mode==="eat-target"){
-    if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); pushLog("가져올 수 없는 조합입니다."); return; }
+    if(!isValidEat(handCoin, floorCoin)){ sfxInvalid(); coinToast("가져올 수 없는 카드예요"); return; }
     doEat(state.myIndex, handIdx, fi);
   } else if(state.mode==="joker-choice" && handCoin && handCoin.isJoker){
     doEat(state.myIndex, handIdx, fi);
@@ -5188,7 +5211,7 @@ function sendChatEmoji(emo){
   if(!state.players || !state.players.length) return;
   var player = state.players[state.myIndex];
   if(!player) return;
-  pushLog((player.name||"플레이어")+": "+emo);
+  pushLog(logName(player)+": "+emo);
   if(isMultiplayer() && fbDb && state.mpRoomCode){
     fbUpdateDoc(fbDoc(fbDb,"rooms",state.mpRoomCode), { log: state.log, updatedAt: Date.now() }).catch(function(e){ console.error("이모지 전송 실패", e); });
   }
