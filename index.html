@@ -56,7 +56,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .start-fan .card{position:absolute;left:50%;bottom:6px;width:56px;height:80px;margin-left:-28px;font-size:24px;border-radius:12px;cursor:default;transform-origin:50% 100%;animation:fanIn .6s cubic-bezier(.22,1,.36,1) both;}
 @keyframes fanIn{from{opacity:0;transform:translateX(0) translateY(30px) rotate(0);}}
 .start-fan .card.fan-prism{background:#D4537E;}
-.start-fan .card.fan-prism .card-num svg{width:32px;height:36px;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
+/* One prism size everywhere: 42% of the card width (center deck, title card, joker). */
+.start-fan .card.fan-prism .card-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.start-fan .card.fan-prism .card-num svg{width:23.5px;height:auto;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
 .start-me{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:calc(env(safe-area-inset-left) + 14px);z-index:5;max-width:55vw;text-align:left;}
 .start-me .name-tag{font-size:13px;height:34px;box-sizing:border-box;}
 .start-actions{display:flex;flex-direction:column;align-items:center;gap:18px;}
@@ -337,7 +339,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .deck-visual .layer:nth-child(2){transform:translate(3px,3px) rotate(2deg);opacity:.85;}
 .deck-visual .layer:nth-child(3){display:flex;align-items:center;justify-content:center;}
 .deck-emblem{position:relative;z-index:2;font-size:calc(var(--card-w) * 0.5);color:var(--accent);line-height:1;display:flex;}
-.deck-emblem svg{width:calc(var(--card-w) * 0.47);height:calc(var(--card-w) * 0.53);filter:drop-shadow(0 1px 3px rgba(0,0,0,.45));}
+.deck-emblem svg{width:calc(var(--card-w) * 0.42);height:auto;filter:drop-shadow(0 1px 3px rgba(0,0,0,.45));}
 .deck-label{display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--panel2);border:1.5px solid rgba(var(--line-rgb),.18);border-radius:10px;padding:3px 10px;white-space:nowrap;}
 .deck-label-k{font-size:9.5px;font-weight:700;color:var(--muted);}
 .deck-label b{font-family:var(--font-display);font-weight:400;font-size:20px;line-height:1;color:var(--text);}
@@ -526,9 +528,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.hand .reset-label{font-size:.5em;}
 .floor-board.reset-mode{border-color:rgba(255,154,61,.85);background:rgba(255,154,61,.07);}
 .card.reset-target{box-shadow:0 0 0 2px rgba(255,154,61,.85),0 3px 6px rgba(0,0,0,.45);}
-.joker-star{position:relative;z-index:2;font-size:1em;line-height:1;display:inline-flex;}
-.joker-star svg{width:.94em;height:1.05em;filter:drop-shadow(1px 0 0 rgba(255,255,255,.95)) drop-shadow(-1px 0 0 rgba(255,255,255,.95)) drop-shadow(0 1px 0 rgba(255,255,255,.95)) drop-shadow(0 -1px 0 rgba(255,255,255,.95)) drop-shadow(0 1px 2px rgba(36,31,61,.45));}
-.card.tiny .joker-star,.card.opp .joker-star{font-size:.85em;}
+.joker-star{position:absolute;inset:0;z-index:2;display:flex;align-items:center;justify-content:center;}
+/* B: a soft white glow behind the joker prism. */
+.joker-star::before{content:"";position:absolute;width:63%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.75),rgba(255,255,255,0) 68%);}
+.joker-star svg{position:relative;width:44.5%;height:auto;filter:drop-shadow(0 1px 2px rgba(36,31,61,.35));}
+
 /* Armed joker: same lift as a selected card plus a white/gold double ring and one slow
    light sweep — no rotation, so the card never slides out from under the finger. */
 .card.joker-armed{transform:translateY(-8px);box-shadow:0 0 0 2.5px #fff,0 0 0 5px var(--accent),0 6px 14px rgba(0,0,0,.5);z-index:3;overflow:hidden;}
