@@ -56,9 +56,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .start-fan .card{position:absolute;left:50%;bottom:6px;width:56px;height:80px;margin-left:-28px;font-size:24px;border-radius:12px;cursor:default;transform-origin:50% 100%;animation:fanIn .6s cubic-bezier(.22,1,.36,1) both;}
 @keyframes fanIn{from{opacity:0;transform:translateX(0) translateY(30px) rotate(0);}}
 .start-fan .card.fan-prism{background:#D4537E;}
-.start-fan .card.fan-prism .card-num svg{width:34px;height:38px;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
+.start-fan .card.fan-prism .card-num svg{width:32px;height:36px;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
 .start-me{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:calc(env(safe-area-inset-left) + 14px);z-index:5;max-width:55vw;text-align:left;}
-.start-me .name-tag{font-size:13px;}
+.start-me .name-tag{font-size:13px;height:34px;box-sizing:border-box;}
 .start-actions{display:flex;flex-direction:column;align-items:center;gap:18px;}
 .btn.start-cta{min-width:230px;padding:17px 40px;font-size:19px;font-weight:800;border-radius:999px;box-shadow:0 8px 18px rgba(0,0,0,.18);}
 .start-menu{display:flex;gap:12px;}
@@ -421,6 +421,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 @keyframes skinGridShift{from{transform:translateY(0);}to{transform:translateY(26px);}}
 @keyframes skinCausticsMove{from{transform:translate(-6%,-4%);}to{transform:translate(6%,4%);}}
 .theme-thumb::before,.theme-thumb::after{animation:none !important;}
+/* Every border/pattern, including ones added later, is still in the game: the classes are
+   matched by prefix so new items need no extra rule. Cards keep their state effects
+   (selected, joker armed, winning glow). */
+#screen-game [class*="border-"],#screen-game [class*="border-"]::before,#screen-game [class*="border-"]::after,#screen-game .card[class*="pattern-"]:not(.joker-armed)::after{animation:none !important;}
+/* Low-power mode (set automatically when the device can't keep a smooth frame rate, see
+   watchFrameRate): every decorative animation stops, everywhere. */
+.low-power [class*="border-"],.low-power [class*="border-"]::before,.low-power [class*="border-"]::after,.low-power [class*="board-skin-"]::before,.low-power [class*="board-skin-"]::after,.low-power [class*="board-skin-"] .floor-board,.low-power .coll-stage-floor,.low-power .start-fan .card,.low-power .title-main span{animation:none !important;}
 @media (prefers-reduced-motion: reduce){[class*="board-skin-"]::before,[class*="board-skin-"]::after,[class*="board-skin-"] .floor-board,.coll-stage-floor{animation:none !important;}}
 /* Let the table show through: theme-colored panels would clash with wood/marble. */
 #screen-game[class*="board-skin-"] .opponent-card,#screen-game[class*="board-skin-"] .status-panel,#screen-game[class*="board-skin-"] .log-emoji-btn{background:rgba(0,0,0,.32);}
@@ -517,7 +524,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.hand .reset-label{font-size:.5em;}
 .floor-board.reset-mode{border-color:rgba(255,154,61,.85);background:rgba(255,154,61,.07);}
 .card.reset-target{box-shadow:0 0 0 2px rgba(255,154,61,.85),0 3px 6px rgba(0,0,0,.45);}
-.joker-star{position:relative;z-index:2;font-size:.78em;line-height:1;color:#fff;text-shadow:0 1px 2px rgba(36,31,61,.55);}
+.joker-star{position:relative;z-index:2;font-size:1em;line-height:1;display:inline-flex;}
+.joker-star svg{width:.85em;height:.95em;filter:drop-shadow(0 1px 2px rgba(36,31,61,.5));}
 .card.tiny .joker-star,.card.opp .joker-star{font-size:.85em;}
 /* Armed joker: same lift as a selected card plus a white/gold double ring and one slow
    light sweep — no rotation, so the card never slides out from under the finger. */
@@ -675,8 +683,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coll-tab{font-size:13px;padding:7px 13px;}
 .coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
 .coin-pill{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:calc(env(safe-area-inset-right) + 14px);z-index:5;display:inline-flex;align-items:center;gap:5px;padding:4px 12px 4px 5px;border-radius:999px;background:var(--panel);border:1.5px solid rgba(239,159,39,.6);color:var(--text);font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);}
-.coin-pill{font-size:16px;padding:4px 14px 4px 5px;}
-.coin-pill .coin-ico{width:30px;height:30px;}
+.coin-pill{font-size:15px;padding:0;background:none !important;border:none !important;box-shadow:none !important;height:34px;}
+.coin-pill .coin-ico{width:28px;height:28px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
 .coin-modal{max-width:340px;text-align:center;}
 .coin-modal h2 .coin-ico{width:22px;height:22px;vertical-align:-4px;}
 .coin-balance{display:flex;align-items:center;justify-content:center;gap:8px;font-size:30px;font-weight:900;margin:4px 0 10px;}
@@ -696,6 +704,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .attend-gain .coin-ico{width:13px;height:13px;}
 @keyframes attendPop{0%{transform:scale(0) rotate(-30deg);}100%{transform:scale(1) rotate(0);}}
 .coin-perks b{color:var(--accent);}
+.wallet-member-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;padding:8px 10px;border-radius:12px;background:var(--panel2);font-size:13px;font-weight:700;}
+.wallet-price{display:inline-flex;align-items:center;gap:4px;font-size:15px;}
+.wallet-price .coin-ico{width:20px;height:20px;}
+.wallet-member-row .btn{padding:6px 14px;min-height:0;font-size:13px;}
+.bgm-picker{display:flex;align-items:center;justify-content:center;gap:10px;}
+.bgm-name{min-width:110px;text-align:center;font-size:15px;}
+.bgm-arrow{min-width:40px;padding:6px 0;font-size:20px;line-height:1;}
 .coin-price{display:flex;align-items:center;justify-content:center;gap:6px;font-size:24px;font-weight:900;margin:8px 0 2px;}
 .coin-price .coin-ico{width:26px;height:26px;}
 .charge-list{display:flex;flex-direction:column;gap:7px;margin-top:8px;}
@@ -877,7 +892,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
       <div class="opponents-row" id="opponents-row"></div>
       <div class="board-row">
         <div class="deck-stack">
-          <div class="deck-visual" id="deck-visual"><div class="layer"></div><div class="layer"></div><div class="layer"><span class="deck-emblem"><svg viewBox="4 2 36 40" aria-hidden="true"><path d="M8 16 L22 4 L36 16 Z" fill="#7F77DD"/><path d="M15 16 L22 4 L29 16 Z" fill="#CECBF6"/><path d="M19 16 L22 9 L25 16 Z" fill="#5DCAA5"/><path d="M8 16 L36 16 L22 40 Z" fill="#378ADD"/><path d="M15 16 L29 16 L22 40 Z" fill="#534AB7"/></svg></span></div></div>
+          <div class="deck-visual" id="deck-visual"><div class="layer"></div><div class="layer"></div><div class="layer"><span class="deck-emblem hidden"><svg viewBox="4 2 36 40" aria-hidden="true"><path d="M8 16 L22 4 L36 16 Z" fill="#7F77DD"/><path d="M15 16 L22 4 L29 16 Z" fill="#CECBF6"/><path d="M19 16 L22 9 L25 16 Z" fill="#5DCAA5"/><path d="M8 16 L36 16 L22 40 Z" fill="#378ADD"/><path d="M15 16 L29 16 L22 40 Z" fill="#534AB7"/></svg></span></div></div>
           <div class="deck-label"><span class="deck-label-k">남은 카드</span><b id="deck-count">0</b></div>
         </div>
         <div class="floor-board" id="floor-board"></div>
@@ -2044,7 +2059,16 @@ function switchScreen(name){
     $("screen-"+s).classList.toggle("hidden", s!==name);
   });
   if(name==="start"){ renderStartFan(); renderStartMe(); }
-  setBgmTrack(["game","win"].indexOf(name)!==-1 ? gameBgmIndex : MENU_BGM);
+  // Result screen: music off, and the next game moves on to the next track. Elsewhere it
+  // comes back on (산책 on menus, the picked track in a game).
+  if(name==="win"){
+    if(bgmPlaying) stopBgm();
+    var k = GAME_BGM_TRACKS.indexOf(gameBgmIndex);
+    setGameBgm(GAME_BGM_TRACKS[(k + 1) % GAME_BGM_TRACKS.length]);
+  } else {
+    setBgmTrack(name==="game" ? gameBgmIndex : MENU_BGM);
+    if(!bgmPlaying && audioCtx) startBgm();
+  }
 }
 
 // Title art: a fanned 3-4-5-6-7 straight drawn with the live card renderer, so it
@@ -2057,6 +2081,26 @@ function renderStartMe(){
   host.innerHTML = playerTagHTML(lobbySeatPlayer());
   fitNameTags(host);
 }
+// Adaptive quality: while the game is on screen, sample the frame rate now and then; if
+// the device can't hold ~40fps (hot phone, battery saver), switch to low-power mode for
+// the rest of the session. Applies to any current or future decorative effect.
+(function watchFrameRate(){
+  var sampling = false;
+  function sample(){
+    if(sampling || document.hidden || document.documentElement.classList.contains("low-power")) return;
+    sampling = true;
+    var frames = 0, start = performance.now();
+    (function tick(now){
+      frames++;
+      if(now - start < 2000){ requestAnimationFrame(tick); return; }
+      sampling = false;
+      var fps = frames * 1000 / (now - start);
+      if(fps < 40) document.documentElement.classList.add("low-power");
+    })(start);
+  }
+  setInterval(sample, 20000);
+  setTimeout(sample, 8000);
+})();
 function renderStartFan(){
   var host = $("start-fan");
   if(!host) return;
@@ -2089,6 +2133,8 @@ function requestFS(){
 
 /* ---------------- sound ---------------- */
 var audioCtx = null;
+// Master levels (1.2 = 20% louder than the original mix).
+var BGM_LEVEL = 1.2;
 var sfxOn = true;
 var bgmOn = true;
 try{
@@ -2118,7 +2164,10 @@ function sfxBus(){
   if(!sfxOut){
     sfxOut = audioCtx.createDynamicsCompressor();
     sfxOut.threshold.value = -16; sfxOut.ratio.value = 4;
-    sfxOut.connect(audioCtx.destination);
+    var sfxLevel = audioCtx.createGain();
+    sfxLevel.gain.value = 1.2;
+    sfxOut.connect(sfxLevel);
+    sfxLevel.connect(audioCtx.destination);
   }
   return sfxOut;
 }
@@ -2288,6 +2337,15 @@ try{
   if(GAME_BGM_TRACKS.indexOf(savedBgm)!==-1) gameBgmIndex = savedBgm;
 }catch(e){}
 var bgmTrackIndex = MENU_BGM;
+function setGameBgm(i){
+  gameBgmIndex = i;
+  try{ localStorage.setItem("straightGameBgm", String(i)); }catch(e){}
+}
+// After the settings preview: back to what the current screen should play.
+function restoreScreenBgm(){
+  var inGame = !$("screen-game").classList.contains("hidden");
+  setBgmTrack(inGame ? gameBgmIndex : MENU_BGM);
+}
 var bgmPlaying = false;
 var bgmTimer = null;
 var bgmStep = 0;
@@ -2301,7 +2359,7 @@ var bgmBus = null;
 function bgmOutput(){
   if(!bgmMasterGain){
     bgmMasterGain = audioCtx.createGain();
-    bgmMasterGain.gain.value = 1;
+    bgmMasterGain.gain.value = BGM_LEVEL;
     bgmFilter = audioCtx.createBiquadFilter();
     bgmFilter.type = "lowpass"; bgmFilter.frequency.value = 3200;
     bgmFilter.connect(bgmMasterGain);
@@ -2413,7 +2471,7 @@ function duckBgm(duration){
   bgmMasterGain.gain.cancelScheduledValues(t0);
   bgmMasterGain.gain.setValueAtTime(bgmMasterGain.gain.value, t0);
   bgmMasterGain.gain.linearRampToValueAtTime(0.25, t0+0.15);
-  bgmMasterGain.gain.linearRampToValueAtTime(1, t0+duration);
+  bgmMasterGain.gain.linearRampToValueAtTime(BGM_LEVEL, t0+duration);
 }
 
 function setBgmTrack(idx){
@@ -2504,10 +2562,10 @@ function coinLabel(coin){
   return COLOR_NAMES[coin.color] + " " + v;
 }
 
-function pointValue(coin){ if(coin.isReset) return 0; if(coin.isJoker) return 10; return coin.value; }
+function pointValue(coin){ if(coin.isReset) return 0; if(coin.isJoker) return 10; return captureValue(coin); }
 
 function rankLabel(v){
-  if(v===ACE) return "A";
+  if(v===ACE || v===1) return "A";
   return v;
 }
 
@@ -2519,22 +2577,26 @@ function rankLabel(v){
    - otherwise same color required, and hand value >= floor value
    - reset card: never captures from hand (it's used instead); on the floor any card takes it
 */
+// A captures as 1 (the lowest); only straights also read it as 11.
+function captureValue(c){ return c.value===ACE ? 1 : c.value; }
 function isValidEat(hand, floor){
   if(hand.isJoker || hand.isReset) return false;
   if(floor.isReset) return true;
   if(floor.isJoker) return hand.value === ACE;
   if(hand.value === floor.value) return true;
   if(!hand.isPrism && !floor.isPrism && hand.color !== floor.color) return false;
-  return hand.value >= floor.value;
+  return captureValue(hand) >= captureValue(floor);
 }
+// Straight windows run A(1)-2-3-4-5 up to 7-8-9-10-A(11): an A fills both ends.
+function markStraightValue(vals, v){ vals[v] = true; if(v===ACE) vals[1] = true; }
 
 function findStraight(score, colors){
   var jokerCount = score.filter(function(c){ return c.isJoker; }).length;
   for(var ci=0; ci<colors.length; ci++){
     var color = colors[ci];
     var vals = {};
-    score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) vals[c.value]=true; });
-    for(var start=2; start<=7; start++){
+    score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) markStraightValue(vals, c.value); });
+    for(var start=1; start<=7; start++){
       var missing=0;
       for(var k=0;k<5;k++){
         if(!vals[start+k]) missing++;
@@ -2552,8 +2614,8 @@ function straightProgress(score, colors){
   var best = { color:null, count:0 };
   colors.forEach(function(color){
     var vals = {};
-    score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) vals[c.value]=true; });
-    for(var start=2; start<=7; start++){
+    score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) markStraightValue(vals, c.value); });
+    for(var start=1; start<=7; start++){
       var have = 0;
       for(var k=0;k<5;k++){ if(vals[start+k]) have++; }
       var n = Math.min(5, have + jokerCount);
@@ -2735,7 +2797,7 @@ function sanitizeRoomData(data){
   var n = data.players.length;
   data.turnOrder = Array.isArray(data.turnOrder) ? data.turnOrder.map(Number).filter(function(i){ return i>=0 && i<n; }) : [];
   var ws = data.winnerStraight;
-  data.winnerStraight = (ws && typeof ws==="object" && ALL_COLORS.indexOf(ws.color)!==-1 && Number(ws.start)>=2 && Number(ws.start)<=7)
+  data.winnerStraight = (ws && typeof ws==="object" && ALL_COLORS.indexOf(ws.color)!==-1 && Number(ws.start)>=1 && Number(ws.start)<=7)
     ? { color:ws.color, start:Number(ws.start) } : null;
   data.turnDeadline = Math.max(0, Number(data.turnDeadline)||0);
   data.hostIndex = Math.min(Math.max(0, Math.floor(Number(data.hostIndex)||0)), Math.max(0, n-1));
@@ -4057,10 +4119,11 @@ function playWinCeremony(playerIdx, straight, cb){
   for(var k=0;k<5;k++) neededRanks.push(straight.start+k);
   var seenRanks = {};
   var realCards = player.score.filter(function(c){
-    if(c.isJoker || !(c.color===straight.color || c.isPrism) || neededRanks.indexOf(c.value)===-1 || seenRanks[c.value]) return false;
-    seenRanks[c.value] = true;
+    var r = (c.value===ACE && straight.start===1) ? 1 : c.value;
+    if(c.isJoker || !(c.color===straight.color || c.isPrism) || neededRanks.indexOf(r)===-1 || seenRanks[r]) return false;
+    seenRanks[r] = true;
     return true;
-  }).sort(function(a,b){ return a.value-b.value; });
+  }).sort(function(a,b){ return (a.value===ACE && straight.start===1 ? 1 : a.value)-(b.value===ACE && straight.start===1 ? 1 : b.value); });
   var missing = 5 - realCards.length;
   var jokersUsed = player.score.filter(function(c){ return c.isJoker; }).slice(0, missing);
   var targets = realCards.concat(jokersUsed);
@@ -4385,8 +4448,15 @@ function openWalletModal(){
   var member = w.membershipUntil > Date.now();
   coinModal("내 코인",
     "<div class=\"coin-balance\">"+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></div>"+
-    "<p class=\"coin-note\">👑 "+(member ? "남은 멤버십 기간 <b>"+fmtDate(w.membershipUntil)+"</b>까지" : "멤버십 없음")+"</p>",
-    [{ label:"멤버십 보기", primary:true, onClick:function(){ openMembershipModal(); } }, { label:"닫기" }]);
+    "<p class=\"coin-note\">👑 "+(member ? "남은 멤버십 기간 <b>"+fmtDate(w.membershipUntil)+"</b>까지" : "멤버십 없음")+"</p>"+
+    "<div class=\"wallet-member-row\"><span>멤버십 30일</span><span class=\"wallet-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></span><button class=\"btn primary\" id=\"wallet-buy-member\">"+(member ? "연장" : "구매")+"</button></div>",
+    [{ label:"멤버십 보기", onClick:function(){ openMembershipModal(); } }, { label:"닫기" }]);
+  $("wallet-buy-member").addEventListener("click", function(){
+    var btn = $("wallet-buy-member");
+    if(account.wallet.coins < MEMBERSHIP_COINS){ openChargeModal(); return; }
+    if(!confirm("멤버십 30일을 "+MEMBERSHIP_COINS+"코인에 "+(member ? "연장" : "구매")+"할까요?")) return;
+    walletAction(btn, buyMembership, function(){ coinToast("👑 멤버십 "+fmtDate(account.wallet.membershipUntil)+"까지"); });
+  });
 }
 // Attendance card: a 7-day row (day 7 carries the +5 bonus); days done so far this week are
 // stamped and today's stamp lands with a pop.
@@ -4410,7 +4480,7 @@ function openMembershipModal(onDone){
   var member = w.membershipUntil > Date.now();
   var enough = w.coins >= MEMBERSHIP_COINS;
   coinModal("👑 멤버십 30일",
-    "<ul class=\"coin-perks\"><li><b>상점 유료 아이템</b>을 전부 사용</li><li><b>멤버십 전용</b> 테마·캐릭터·테두리</li><li>네임태그에 <b>VIP 배지</b></li></ul>"+
+    "<ul class=\"coin-perks\"><li><b>모든 유료 아이템</b> 사용 가능</li><li><b>멤버십 전용 아이템</b> 사용 가능</li><li>멤버십 전용 <b>VIP 배지</b></li></ul>"+
     (member ? "<p class=\"coin-note\">"+fmtDate(w.membershipUntil)+"까지 이용 중 · 구매하면 30일 연장</p>" : "")+
     "<p class=\"coin-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></p>",
     [{ label: enough ? (member ? "30일 연장" : "멤버십 시작") : "💳 코인 충전", primary:true,
@@ -4764,8 +4834,8 @@ function straightNeed(score, colors, others){
   var best = 5;
   colors.forEach(function(color){
     var vals = {};
-    score.forEach(function(c){ if(!c.isJoker && !c.isReset && (c.color===color || c.isPrism)) vals[c.value] = true; });
-    for(var start=2; start<=7; start++){
+    score.forEach(function(c){ if(!c.isJoker && !c.isReset && (c.color===color || c.isPrism)) markStraightValue(vals, c.value); });
+    for(var start=1; start<=7; start++){
       var missing = 0, dead = false;
       for(var k=0;k<5;k++){
         var v = start+k;
@@ -4781,6 +4851,7 @@ function straightNeed(score, colors, others){
 // Copies that can fill (color, value): its colored copies plus that value's prisms
 // (a prism rank has 1 colored copy + 1 prism per color; other ranks 2 colored copies).
 function cardStillOut(color, v, colors, others){
+  if(v===1) v = ACE;
   var isPrismRank = (state.prismRanks||[]).indexOf(v)!==-1;
   var total = isPrismRank ? 1 + colors.length : 2;
   var taken = 0;
@@ -4955,7 +5026,7 @@ function cardEl(coin, opts){
   } else if(coin.isJoker){
     d.classList.add("joker");
     if(opts.wild) d.classList.add("wildfloor");
-    d.appendChild(el("span","joker-star","★"));
+    d.appendChild(el("span","joker-star", APP_PRISM_SVG));
   } else {
     if(coin.isPrism){
       d.classList.add("prism");
@@ -5324,7 +5395,7 @@ function buildRulebookPanel(){
   panel.innerHTML =
     "<h2>📖 게임 규칙 요약</h2>"+
     "<ul>"+
-    "<li><b>숫자 체계</b>: 2~10과 A. A는 11로, 가장 높은 숫자입니다. 스트레이트는 2-3-4-5-6부터 7-8-9-10-A까지 가능합니다.</li>"+
+    "<li><b>숫자 체계</b>: A(1), 2~10. 카드를 가져올 때 A는 1입니다. 스트레이트에서는 A가 1로도, 10 다음으로도 쓰여서 A-2-3-4-5부터 7-8-9-10-A까지 가능합니다.</li>"+
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
     "<li><b>오늘의 프리즘</b>: 매 게임 무작위로 숫자 2개가 뽑혀, 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 프리즘이 됩니다(카드 수는 그대로). 프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다. 이번 게임의 프리즘 숫자는 게임 시작 시 안내됩니다.</li>"+
@@ -5629,7 +5700,7 @@ var TUTORIAL_SLIDES = [
     title: "🎯 목표",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 2부터 10까지, 그리고 가장 높은 A(11)가 있습니다."));
+      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 A(1)부터 10까지이고, 스트레이트에서는 A가 10 다음으로도 이어집니다(7-8-9-10-A)."));
       var row = el("div","tutorial-card-row");
       [3,4,5,6,7].forEach(function(v){
         row.appendChild(cardEl({ id:"tut-goal-"+v, color:"PINK", value:v }, { cls:"tiny" }));
@@ -5792,22 +5863,22 @@ function openSettingsModal(){
   avBtns.appendChild(bgmBtn);
   avRow.appendChild(avBtns);
 
-  var trackLabel = el("div","section-label","🎼 게임 중 BGM");
-  var trackRow = el("div","settings-track-row");
-  GAME_BGM_TRACKS.forEach(function(i){
-    var track = BGM_TRACKS[i];
-    var tb = el("button","btn"+(i===gameBgmIndex?" primary":""), track.name);
-    tb.addEventListener("click", function(){
-      gameBgmIndex = i;
-      try{ localStorage.setItem("straightGameBgm", String(i)); }catch(e){}
-      // Heard right away in a game; on the menus 산책 keeps playing.
-      if(!$("screen-game").classList.contains("hidden")) setBgmTrack(i);
-      Array.prototype.forEach.call(trackRow.children, function(c){ c.classList.remove("primary"); });
-      tb.classList.add("primary");
-      sfxSelect();
-    });
-    trackRow.appendChild(tb);
-  });
+  // Game BGM: ‹ name › — the arrows switch (and play) the next/previous game track.
+  var trackLabel = el("div","");
+  var trackRow = el("div","settings-track-row bgm-picker");
+  var prevBtn = el("button","btn bgm-arrow","‹");
+  var nameEl = el("b","bgm-name", BGM_TRACKS[gameBgmIndex].name);
+  var nextBtn = el("button","btn bgm-arrow","›");
+  function stepTrack(dir){
+    var k = GAME_BGM_TRACKS.indexOf(gameBgmIndex);
+    setGameBgm(GAME_BGM_TRACKS[(k + dir + GAME_BGM_TRACKS.length) % GAME_BGM_TRACKS.length]);
+    nameEl.textContent = BGM_TRACKS[gameBgmIndex].name;
+    if(bgmOn){ unlockAudio(); startBgm(); setBgmTrack(gameBgmIndex); }
+    sfxSelect();
+  }
+  prevBtn.addEventListener("click", function(){ stepTrack(-1); });
+  nextBtn.addEventListener("click", function(){ stepTrack(1); });
+  trackRow.appendChild(prevBtn); trackRow.appendChild(nameEl); trackRow.appendChild(nextBtn);
 
   var nickRow = el("div","settings-row");
   nickRow.innerHTML = "<span>✏️ 닉네임</span>";
@@ -5845,7 +5916,7 @@ function openSettingsModal(){
   }
 
   var closeBtn = el("button","btn primary","닫기");
-  closeBtn.addEventListener("click", function(){ closeModal(); });
+  closeBtn.addEventListener("click", function(){ closeModal(); restoreScreenBgm(); });
   var actions = el("div","modal-actions");
   actions.appendChild(closeBtn);
 
@@ -5859,7 +5930,7 @@ function openSettingsModal(){
   if(quitRow) box.appendChild(quitRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
-  backdrop.addEventListener("click", function(e){ if(e.target===backdrop) closeModal(); });
+  backdrop.addEventListener("click", function(e){ if(e.target===backdrop){ closeModal(); restoreScreenBgm(); } });
   tooltipLayer.appendChild(backdrop);
 }
 
