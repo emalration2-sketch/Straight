@@ -115,7 +115,7 @@ service cloud.firestore {
     // or a developer grant (season rewards). Prices match COIN_PRICES in index.html.
     function kstToday(){ return math.floor((request.time.toMillis() + 32400000) / 86400000); }
     function paidItems(){
-      return ['pattern:diamond','pattern:onyx','pattern:stained','pattern:carbon','pattern:prism',
+      return ['pattern:diamond','pattern:onyx','pattern:stained','pattern:carbon','pattern:gingham',
               'theme:neon','theme:ocean','theme:felt',
               'border:chrome','border:dragon','border:foxfire','border:blackgold','border:stars'];
     }
