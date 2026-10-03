@@ -628,8 +628,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
   </div>
 
   <div class="screen hidden" id="screen-lobby">
-    <h1 style="font-size:18px;margin-bottom:0;">대기실</h1>
-    <p class="sub" style="margin:0;">방 코드를 카톡이나 문자로 공유하세요</p>
+    <h1 style="font-size:18px;margin-bottom:0;" id="lobby-title">대기실</h1>
+    <p class="sub" style="margin:0;" id="lobby-share-hint">방 코드를 카톡이나 문자로 공유하세요</p>
     <div style="font-family:var(--font-display);font-weight:400;font-size:32px;letter-spacing:8px;color:var(--accent);" id="lobby-code"></div>
     <button class="btn" id="lobby-copy-btn">🔗 링크 복사</button>
     <div class="order-list" id="lobby-players" style="min-width:280px;"></div>
@@ -2702,7 +2702,7 @@ function pickAvatar(ch, cb){
       var mine = -1;
       for(var i=0;i<players.length;i++){ if(players[i].clientId===myClientId){ mine=i; break; } }
       if(mine===-1) throw new Error("참가 정보를 찾을 수 없습니다.");
-      if(players[mine].avatarPicked) return;
+      if(players[mine].avatarPicked && players[mine].characterName===ch.name) return;
       var taken = players.some(function(p,i){ return i!==mine && p.avatarPicked && p.characterName===ch.name; });
       if(taken) throw new Error("이미 다른 플레이어가 선택한 캐릭터입니다.");
       var updated = {}; for(var k in players[mine]) updated[k]=players[mine][k];
@@ -3105,9 +3105,11 @@ function renderLobby(data){
     b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+(taken?" (선택됨)":"")+"</span>";
     if(locked && !mine){
       b.disabled = true;
-    } else if(taken || myPicked){
+    } else if(taken){
       b.disabled = true;
-      b.style.opacity = mine ? "1" : (taken ? ".3" : ".5");
+      b.style.opacity = ".3";
+      b.style.cursor = "default";
+    } else if(mine){
       b.style.cursor = "default";
     } else {
       b.addEventListener("click", function(){
@@ -3120,8 +3122,12 @@ function renderLobby(data){
     }
     grid.appendChild(b);
   });
-  grid.classList.toggle("hidden", myPicked);
-  $("lobby-avatar-hint").classList.toggle("hidden", myPicked);
+  // The picker stays open so you can see (and, before the start, change) your character.
+  var myCh = myPicked ? presetByName("avatar", me.characterName) : null;
+  $("lobby-avatar-hint").innerHTML = myCh ? ("내 캐릭터: <b>"+avatarIconHTML(myCh)+" "+myCh.name+"</b> · 다른 캐릭터를 눌러 바꿀 수 있어요") : "내 캐릭터를 선택하세요";
+  // Quick-match rooms are found automatically, so there is no code to share.
+  $("lobby-title").textContent = data.public ? "⚡ 빠른 매칭" : "대기실";
+  ["lobby-share-hint","lobby-code","lobby-copy-btn"].forEach(function(id){ $(id).classList.toggle("hidden", !!data.public); });
 
   var isHost = data.hostClientId===myClientId;
   var allPicked = data.players.length>0 && data.players.every(function(p){ return p.avatarPicked; });
