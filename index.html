@@ -83,8 +83,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .my-equip-summary.hidden{display:none;}
 .my-equip-ring{width:24px;height:24px;}
 .border-ring{position:relative;display:inline-flex;border-radius:50%;}
-.border-ring.border-silver{border:5px groove #b8bcc4;}
-.border-ring.border-rainbow{border-width:4px;border-style:solid;border-top-color:#d4537e;border-right-color:#7f77dd;border-bottom-color:#33d6c0;border-left-color:#f6a83c;}
 .border-ring.border-trophy{border:4px double #f6a83c;}
 .border-ring.border-trophy::after{content:"";position:absolute;top:-5px;left:50%;transform:translateX(-50%);width:6px;height:6px;border-radius:50%;background:#f6a83c;}
 .border-ring.border-flame{border:3px solid #d85a30;}
@@ -97,16 +95,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .border-ring.border-stars::before,.border-ring.border-stars::after{content:"★";position:absolute;font-size:8px;color:#ffe66d;line-height:1;}
 .border-ring.border-stars::before{top:-6px;left:18%;}
 .border-ring.border-stars::after{top:-1px;right:6%;}
-.border-ring.border-aurora{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,conic-gradient(#4ce0a0,#33d6c0,#7f9cff,#b48cff,#4ce0a0) border-box;}
 .border-ring.border-candy{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#ff7aa8 0 22.5deg,#ffffff 22.5deg 45deg) border-box;}
-.border-ring.border-blueberry{border:4px solid #5b6cff;box-shadow:inset 0 0 0 2px #b3bcff;}
 .border-ring.border-sprout{border:3px solid #7ed957;}
 .border-ring.border-sprout::before{content:"🌱";position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:13px;line-height:1;}
-.border-ring.border-emerald{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(135deg,#b6f5d2,#1fae6a 35%,#0b6b3f 60%,#5ee0a0) border-box;}
-.border-ring.border-ruby{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(135deg,#ffc2cf,#d7193f 35%,#7d0a22 60%,#ff5c7a) border-box;}
 .border-ring.border-neon{border:3px solid #39f3ff;box-shadow:0 0 6px #39f3ff,0 0 12px rgba(255,61,230,.7),inset 0 0 6px rgba(57,243,255,.6);}
 .border-ring.border-chrome{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(160deg,#ffffff,#55657a 20%,#eef4ff 35%,#151b24 52%,#d6e6ff 68%,#5d6b7e) border-box;}
-.border-ring.border-opal{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,conic-gradient(#f7a8c8,#9fd8ff,#b8f5a8,#ffe08a,#c9a8ff,#f7a8c8) border-box;box-shadow:0 0 6px rgba(214,240,255,.6);}
 .border-ring.border-blackgold{border:4px solid #111;box-shadow:inset 0 0 0 1.5px #e9b949,0 0 0 1.5px #e9b949;}
 
 /* name tag: every player is the same pill — avatar circle + name + optional title badge.
@@ -130,31 +123,18 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-coral{border-color:#ff7f6b;background:linear-gradient(90deg,rgba(255,127,107,.28),rgba(255,127,107,.05)),var(--panel2);}
 .name-tag.border-mint{border-color:#33e6c0;background:linear-gradient(90deg,rgba(51,230,192,.26),rgba(51,230,192,.05)),var(--panel2);}
 .name-tag.border-stars{border-color:#ffe66d;background:linear-gradient(90deg,rgba(255,230,109,.26),rgba(255,230,109,.05)),var(--panel2);}
-.name-tag.border-blueberry{border-color:#5b6cff;background:linear-gradient(90deg,rgba(91,108,255,.3),rgba(91,108,255,.06)),var(--panel2);}
 .name-tag.border-sprout{border-color:#7ed957;background:linear-gradient(90deg,rgba(126,217,87,.28),rgba(126,217,87,.05)),var(--panel2);}
-.name-tag.border-silver{border-color:#c3c7cf;background:linear-gradient(90deg,rgba(195,199,207,.26),rgba(195,199,207,.06)),var(--panel2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.22);}
-.name-tag.border-rainbow{border-color:transparent;background:linear-gradient(90deg,rgba(255,107,107,.18),rgba(255,215,107,.18) 25%,rgba(76,224,160,.18) 50%,rgba(51,214,192,.18) 75%,rgba(127,119,221,.2)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ff6b6b,#ffd76b,#4ce0a0,#33d6c0,#7f77dd,#d4537e,#ff6b6b) border-box;background-size:auto,auto,240% 100%;animation:tagSheen 2.4s linear infinite alternate;}
-.name-tag.border-aurora{border-color:transparent;background:linear-gradient(90deg,rgba(76,224,160,.22),rgba(180,140,255,.14)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#4ce0a0,#33d6c0,#7f9cff,#b48cff) border-box;}
 .name-tag.border-candy{border-color:transparent;background:linear-gradient(90deg,rgba(255,122,168,.24),rgba(255,122,168,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(45deg,#ff7aa8 0 5px,#ffffff 5px 10px) border-box;}
-.name-tag.border-emerald{border-color:transparent;background:linear-gradient(90deg,rgba(31,174,106,.3),rgba(31,174,106,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#b6f5d2,#1fae6a 35%,#0b6b3f 60%,#5ee0a0) border-box;}
-.name-tag.border-ruby{border-color:transparent;background:linear-gradient(90deg,rgba(215,25,63,.3),rgba(215,25,63,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#ffc2cf,#d7193f 35%,#7d0a22 60%,#ff5c7a) border-box;}
 .name-tag.border-neon{border-color:#39f3ff;background:linear-gradient(90deg,rgba(255,61,230,.24),rgba(57,243,255,.08)),var(--panel2);box-shadow:0 0 6px rgba(57,243,255,.8),0 0 12px rgba(255,61,230,.45);}
 .name-tag.border-chrome{border-color:transparent;background:linear-gradient(90deg,rgba(207,224,255,.22),rgba(207,224,255,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#ffffff,#55657a 16%,#eef4ff 28%,#151b24 46%,#d6e6ff 60%,#5d6b7e 78%,#ffffff) border-box;background-size:auto,auto,260% 100%;animation:tagSheen 1.8s ease-in-out infinite alternate;box-shadow:0 0 6px rgba(190,215,255,.35);}
-.name-tag.border-opal{border-color:transparent;background:linear-gradient(90deg,rgba(247,168,200,.24),rgba(159,216,255,.2),rgba(184,245,168,.14)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#f7a8c8,#9fd8ff,#b8f5a8,#ffe08a,#c9a8ff,#f7a8c8) border-box;background-size:auto,auto,240% 100%;animation:tagSheen 3.2s linear infinite alternate;}
 .name-tag.border-blackgold{border-color:#e9b949;background:linear-gradient(90deg,rgba(0,0,0,.6),rgba(0,0,0,.28)),var(--panel2);box-shadow:inset 0 0 0 1px #111;}
 .name-tag.border-blackgold .name-tag-text{color:#f6e7b8;}
 /* Border motifs: one small emoji/glyph perched on the tag's top-right rim. */
 .name-tag[class*="border-"]::before{position:absolute;top:-8px;right:7px;font-size:11px;line-height:1;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));z-index:1;}
 .name-tag.border-coral::before{content:"🐚";}
-.name-tag.border-blueberry::before{content:"🫐";}
 .name-tag.border-stars::before{content:"✨";animation:decoTwinkle 1.8s ease-in-out infinite;}
-.name-tag.border-aurora::before{content:"🌌";}
-.name-tag.border-rainbow::before{content:"🌈";}
 .name-tag.border-heart::before{content:"♥";color:#ff5c8a;font-size:12px;animation:decoBeat 1.4s ease-in-out infinite;}
-.name-tag.border-silver::before{content:"✦";color:#e6e9ef;font-size:12px;}
 .name-tag.border-flame::before{content:"🔥";animation:decoFlicker 1.1s ease-in-out infinite;}
-.name-tag.border-emerald::before{content:"💎";filter:hue-rotate(-75deg) saturate(1.3) drop-shadow(0 1px 1px rgba(0,0,0,.4));}
-.name-tag.border-ruby::before{content:"💎";filter:hue-rotate(150deg) saturate(1.6) drop-shadow(0 1px 1px rgba(0,0,0,.4));}
 .name-tag.border-legend::before{content:"☀️";animation:decoSpin 8s linear infinite;}
 .name-tag.border-candy::before{content:"🍬";}
 .name-tag.border-trophy::before{content:"🏆";}
@@ -162,12 +142,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-mint::before{content:"🍃";}
 .name-tag.border-neon::before{content:"⚡";animation:decoTwinkle 1.2s steps(2) infinite;}
 .name-tag.border-chrome::before{content:"✧";color:#d6e6ff;font-size:13px;text-shadow:0 0 4px #9fc3ff;}
-.name-tag.border-opal::before{content:"🫧";}
 .name-tag.border-blackgold::before{content:"♛";color:#e9b949;font-size:12px;}
 /* Motion: flame glows, neon flickers, aurora drifts. */
 .name-tag.border-flame{animation:flameGlow 1.6s ease-in-out infinite;}
 .name-tag.border-neon{animation:neonFlicker 3s linear infinite;}
-.name-tag.border-aurora{background-size:auto,auto,300% 100%;animation:tagSheen 4s ease-in-out infinite alternate;}
 @keyframes flameGlow{0%,100%{box-shadow:0 0 3px rgba(255,120,40,.45);}50%{box-shadow:0 0 9px rgba(255,140,40,.9);}}
 @keyframes neonFlicker{0%,18%,22%,62%,64%,100%{box-shadow:0 0 6px rgba(57,243,255,.8),0 0 12px rgba(255,61,230,.45);}20%,63%{box-shadow:none;}}
 @keyframes decoTwinkle{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(.8);}}
@@ -179,6 +157,64 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 /* 그랜드마스터 border: metallic gold rim; one light streak crosses the pill, then rests. */
 .name-tag.border-legend{border-color:transparent;background:linear-gradient(90deg,rgba(233,185,73,.3),rgba(233,185,73,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}
 .name-tag.border-legend::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.4) 50%,transparent 62%);background-size:260% 100%;animation:legendSweep 3.4s ease-in-out infinite;}
+/* ---- border effects v2: every border except 클래식 moves; avatar-set borders ---- */
+@keyframes tagGlow{0%,100%{box-shadow:0 0 2px var(--tag-glow,transparent);}50%{box-shadow:0 0 10px var(--tag-glow,transparent),0 0 3px var(--tag-glow,transparent);}}
+@keyframes decoBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-2.5px);}}
+@keyframes decoSway{0%,100%{transform:rotate(-12deg);}50%{transform:rotate(12deg);}}
+@keyframes decoGlow{0%,100%{filter:drop-shadow(0 0 1px var(--deco-glow,#fff));}50%{filter:drop-shadow(0 0 5px var(--deco-glow,#fff));}}
+@keyframes tagSweep{0%{background-position:130% 0;}50%,100%{background-position:-30% 0;}}
+@keyframes candyRoll{from{background-position:0 0,0 0,0 0;}to{background-position:0 0,0 0,28.28px 0;}}
+.name-tag.border-coral{--tag-glow:rgba(255,127,107,.85);animation:tagGlow 2.4s ease-in-out infinite;}
+.name-tag.border-coral::before{animation:decoBob 2.4s ease-in-out infinite;}
+.name-tag.border-sprout{--tag-glow:rgba(126,217,87,.8);animation:tagGlow 2.8s ease-in-out infinite;}
+.name-tag.border-sprout::before{transform-origin:50% 100%;animation:decoSway 2.2s ease-in-out infinite;}
+.name-tag.border-flame{border-color:transparent;background:linear-gradient(90deg,rgba(216,90,48,.34),rgba(216,90,48,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ff3d1f,#ffb03a,#ff6a2a,#ffd23a,#ff3d1f) border-box;background-size:auto,auto,300% 100%;animation:tagSheen 1.1s linear infinite alternate,flameGlow 1.6s ease-in-out infinite;}
+.name-tag.border-legend{--tag-glow:rgba(255,214,110,.75);animation:tagGlow 3s ease-in-out infinite;}
+.name-tag.border-chrome::before{animation:decoTwinkle 1.6s ease-in-out infinite;}
+.name-tag.border-chrome::after,.name-tag.border-blackgold::after,.name-tag.border-dragon::after,.name-tag.border-trophy::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.4) 50%,transparent 62%);background-size:260% 100%;animation:tagSweep 3s ease-in-out infinite;}
+.name-tag.border-blackgold{--tag-glow:rgba(233,185,73,.7);animation:tagGlow 3s ease-in-out infinite;}
+.name-tag.border-blackgold::after{background-image:linear-gradient(105deg,transparent 38%,rgba(255,215,120,.5) 50%,transparent 62%);animation-duration:3.6s;}
+.name-tag.border-blackgold::before{animation:decoBob 3s ease-in-out infinite;}
+.name-tag.border-stars{background:radial-gradient(1px 1px at 22% 30%,#fff,transparent),radial-gradient(1px 1px at 56% 72%,#fff,transparent),radial-gradient(1.4px 1.4px at 84% 34%,#ffe66d,transparent),linear-gradient(90deg,rgba(255,230,109,.2),rgba(40,44,90,.55)),var(--panel2);--tag-glow:rgba(255,230,109,.7);animation:tagGlow 2.2s ease-in-out infinite;}
+.name-tag.border-heart{--tag-glow:rgba(255,92,138,.9);animation:tagGlow 1.4s ease-in-out infinite;}
+.name-tag.border-neon::before{content:"★";color:#ff7af0;font-size:12px;filter:none;text-shadow:0 0 3px #ff3de6,0 0 7px #ff3de6,0 0 10px #39f3ff;animation:decoTwinkle 1.6s steps(2) infinite;}
+.name-tag.border-candy{background-size:auto,auto,auto;animation:candyRoll 1.2s linear infinite;}
+.name-tag.border-candy::before{animation:decoSway 1.8s ease-in-out infinite;}
+.name-tag.border-trophy{--tag-glow:rgba(246,168,60,.8);animation:tagGlow 2.6s ease-in-out infinite;}
+.name-tag.border-trophy::before{animation:decoBob 2s ease-in-out infinite;}
+.name-tag.border-mint{--tag-glow:rgba(51,230,192,.75);animation:tagGlow 2.6s ease-in-out infinite;}
+.name-tag.border-mint::before{transform-origin:50% 100%;animation:decoSway 2.6s ease-in-out infinite;}
+/* 🦉 달밤: a night sky in the pill, the moon rocking on the rim. */
+.name-tag.border-owlmoon{border-color:#9fb8ff;background:radial-gradient(1px 1px at 18% 30%,#fff,transparent),radial-gradient(1px 1px at 48% 75%,#dfe8ff,transparent),radial-gradient(1px 1px at 78% 28%,#fff,transparent),linear-gradient(90deg,rgba(40,52,120,.8),rgba(20,24,60,.6)),var(--panel2);--tag-glow:rgba(159,184,255,.75);animation:tagGlow 3.2s ease-in-out infinite;}
+.name-tag.border-owlmoon .name-tag-text{color:#eef2ff;}
+.name-tag.border-owlmoon::before{content:"🌙";transform-origin:50% 100%;animation:decoSway 3.2s ease-in-out infinite;}
+/* 🦁 사자 갈기: a striped golden mane rim that ripples. */
+.name-tag.border-mane{border-color:transparent;background:linear-gradient(90deg,rgba(246,168,60,.32),rgba(246,168,60,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(70deg,#ffd76a 0 3px,#e0861f 3px 6px,#a8541a 6px 8px) border-box;background-size:auto,auto,200% 100%;--tag-glow:rgba(255,170,60,.8);animation:tagSheen 2.4s ease-in-out infinite alternate,tagGlow 2.4s ease-in-out infinite;}
+.name-tag.border-mane::before{content:"♌";color:#ffd76a;font-size:12px;filter:none;text-shadow:0 0 4px rgba(255,170,60,.9);animation:decoBob 2.4s ease-in-out infinite;}
+/* 🐈‍⬛ 수정구: a shimmering crystal rim and a glowing ball. */
+.name-tag.border-crystal{border-color:transparent;background:linear-gradient(90deg,rgba(150,110,255,.3),rgba(80,220,230,.12)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#b48cff,#6ee7f0,#ff9ad5,#b48cff) border-box;background-size:auto,auto,300% 100%;box-shadow:0 0 8px rgba(180,140,255,.55);animation:tagSheen 2.6s linear infinite alternate;}
+.name-tag.border-crystal::before{content:"🔮";--deco-glow:#c9a8ff;animation:decoGlow 2s ease-in-out infinite;}
+/* 🐉 용비늘: green scales, an electric glint, a ⚡ for 볼트 드라코. */
+.name-tag.border-dragon{border-color:transparent;background:linear-gradient(90deg,rgba(31,174,106,.34),rgba(31,174,106,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(135deg,#7ff0b8 0 2px,#1fae6a 2px 5px,#0b6b3f 5px 7px) border-box;--tag-glow:rgba(94,224,160,.75);animation:tagGlow 2s ease-in-out infinite;}
+.name-tag.border-dragon::after{background-image:linear-gradient(105deg,transparent 40%,rgba(255,240,120,.55) 50%,transparent 60%);animation-duration:2.4s;}
+.name-tag.border-dragon::before{content:"⚡";animation:decoTwinkle 1.2s steps(2) infinite;}
+/* 🦊 여우불: a ghost-fire rim flowing orange → violet → blue. */
+.name-tag.border-foxfire{border-color:transparent;background:linear-gradient(90deg,rgba(255,140,60,.26),rgba(120,90,255,.16)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ff8a3c,#ffd06a,#7f6bff,#3cc8ff,#ff8a3c) border-box;background-size:auto,auto,300% 100%;box-shadow:0 0 8px rgba(127,107,255,.55);animation:tagSheen 1.6s ease-in-out infinite alternate;}
+.name-tag.border-foxfire::before{content:"🔥";filter:hue-rotate(200deg) saturate(1.5) drop-shadow(0 0 3px rgba(80,160,255,.9));animation:decoFlicker 1s ease-in-out infinite;}
+/* 🐳 파도: a rolling blue rim and a splash. */
+.name-tag.border-wave{border-color:transparent;background:linear-gradient(90deg,rgba(60,160,255,.3),rgba(60,160,255,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#1e6fd9,#5cc8ff,#e0f7ff,#5cc8ff,#1e6fd9) border-box;background-size:auto,auto,250% 100%;animation:tagSheen 2s ease-in-out infinite alternate;box-shadow:0 0 7px rgba(92,200,255,.5);}
+.name-tag.border-wave::before{content:"💦";animation:decoBob 1.6s ease-in-out infinite;}
+/* 🐢 등껍질: a woven shell rim, slow and steady. */
+.name-tag.border-shell{border-color:transparent;background:linear-gradient(90deg,rgba(120,170,60,.3),rgba(120,170,60,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(60deg,#9bd26a 0 3px,#5c8a2e 3px 4px) border-box;--tag-glow:rgba(155,210,106,.7);animation:tagGlow 3.6s ease-in-out infinite;}
+.name-tag.border-shell::before{content:"🌿";transform-origin:50% 100%;animation:decoSway 3.6s ease-in-out infinite;}
+.border-ring.border-owlmoon{border:3px solid #9fb8ff;box-shadow:0 0 5px rgba(159,184,255,.7);}
+.border-ring.border-mane{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#ffd76a 0 15deg,#e0861f 15deg 30deg) border-box;}
+.border-ring.border-crystal{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,conic-gradient(#b48cff,#6ee7f0,#ff9ad5,#b48cff) border-box;box-shadow:0 0 6px rgba(180,140,255,.6);}
+.border-ring.border-dragon{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#5ee0a0 0 20deg,#0b6b3f 20deg 40deg) border-box;}
+.border-ring.border-foxfire{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,conic-gradient(#ff8a3c,#ffd06a,#7f6bff,#3cc8ff,#ff8a3c) border-box;}
+.border-ring.border-wave{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,conic-gradient(#1e6fd9,#5cc8ff,#e0f7ff,#5cc8ff,#1e6fd9) border-box;}
+.border-ring.border-shell{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#9bd26a 0 30deg,#5c8a2e 30deg 60deg) border-box;}
+@media (prefers-reduced-motion: reduce){.name-tag[class*="border-"]::before,.name-tag[class*="border-"]::after{animation:none !important;}}
 @keyframes legendSweep{0%{background-position:130% 0;}45%,100%{background-position:-30% 0;}}
 @media (prefers-reduced-motion: reduce){.name-tag.border-legend::after{animation:none;opacity:0;}}
 .border-ring.border-legend{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}@media (prefers-reduced-motion: reduce){.name-tag{animation:none !important;}}
@@ -608,6 +644,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
 .coll-tip{position:fixed;z-index:99990;max-width:220px;padding:7px 11px;border-radius:9px;background:var(--text);color:var(--bg);font-size:12px;font-weight:700;line-height:1.35;text-align:center;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;box-shadow:0 4px 14px rgba(0,0,0,.3);}
 .coll-tip.show{opacity:1;transform:translateY(0);}
+.coll-grid.tab-avatar,.coll-grid.tab-title,.coll-grid.tab-pattern,.coll-grid.tab-theme{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
+.coll-grid.tab-avatar .achv-preview{font-size:30px;line-height:1.1;}
+.coll-grid.tab-avatar .coll-item-name,.coll-grid.tab-pattern .coll-item-name,.coll-grid.tab-theme .coll-item-name{font-size:11.5px;word-break:keep-all;}
 .coll-section{grid-column:1/-1;font-size:13px;font-weight:800;color:var(--text);margin:8px 2px 0;display:flex;align-items:center;gap:6px;}
 .coll-section:first-child{margin-top:0;}
 .coll-section span{font-size:11px;font-weight:700;color:var(--muted);background:rgba(var(--line-rgb),.08);padding:1px 7px;border-radius:999px;}
@@ -624,7 +663,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coll-item.locked .coll-item-name{opacity:.75;}
 .coll-item.locked::before{content:"🔒";position:absolute;top:4px;right:5px;font-size:12px;line-height:1;}
 .coll-item.equipped{border-color:var(--accent);}
-.coll-item.equipped::before{content:"✓";position:absolute;top:2px;left:5px;font-size:10px;font-weight:900;color:var(--accent);line-height:1;}
+/* Equipped: a ✓ badge pinned to the item itself, not the cell corner. */
+.coll-item.equipped .coll-item-preview{position:relative;}
+.coll-item.equipped .coll-item-preview::after{content:"✓";position:absolute;right:-10px;top:-6px;z-index:3;width:17px;height:17px;border-radius:50%;background:var(--accent);color:#1b1300;font-size:11px;font-weight:900;line-height:17px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.4);}
 .coll-item-preview{min-height:30px;display:flex;align-items:center;justify-content:center;}
 .coll-item-name{font-size:12.5px;font-weight:700;margin:0;min-height:15px;text-align:center;}
 .coll-cards{display:flex;gap:3px;}
@@ -1215,10 +1256,10 @@ var UNLOCK_MILESTONES = [
 
   { id:"win:1:border",    kind:"border", label:"코랄",      check:function(s){ return s.wins>=1; },            boolCond:true, detail:function(s){ return "첫 승리"; } },
   { id:"misc:tutorial",   kind:"border", label:"새싹",      check:function(s){ return s.tutorialDone; },       boolCond:true, detail:function(s){ return "튜토리얼 완주"; } },
-  { id:"misc:online10",   kind:"border", label:"블루베리",  check:function(s){ return s.onlineWins>=10; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,10)+"/10회"; } },
+  { id:"misc:online10",   kind:"border", label:"달밤",      check:function(s){ return s.onlineWins>=10; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,10)+"/10회"; } },
   { id:"misc:streak10",   kind:"border", label:"불꽃",      check:function(s){ return s.winStreak>=10; },      detail:function(s){ return "연승 "+Math.min(s.winStreak,10)+"/10회"; } },
-  { id:"misc:kstraight",  kind:"border", label:"실버",      check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "6-7-8-9-10 스트레이트"; } },
-  { id:"misc:prism50",    kind:"border", label:"오로라",    check:function(s){ return s.prismBanked>=50; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,50)+"/50개"; } },
+  { id:"misc:kstraight",  kind:"border", label:"사자 갈기", check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "6-7-8-9-10 스트레이트"; } },
+  { id:"misc:prism50",    kind:"border", label:"수정구",    check:function(s){ return s.prismBanked>=50; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,50)+"/50개"; } },
 
   { id:"misc:streak5",    kind:"title",  label:"연승 머신",  check:function(s){ return s.winStreak>=5; },       detail:function(s){ return "연승 "+Math.min(s.winStreak,5)+"/5회"; } },
   { id:"misc:draws10",    kind:"title",  label:"평화주의자", check:function(s){ return s.draws>=10; },          detail:function(s){ return "무승부 "+Math.min(s.draws,10)+"/10회"; } },
@@ -1676,24 +1717,25 @@ var BORDER_PRESETS = [
   { id:"basic", name:"클래식", cls:"border-basic" },
   { id:"coral", name:"코랄", cls:"border-coral" },
   { id:"sprout", name:"새싹", cls:"border-sprout" },
-  { id:"blueberry", name:"블루베리", cls:"border-blueberry" },
   { id:"flame", name:"불꽃", cls:"border-flame" },
-  { id:"silver", name:"실버", cls:"border-silver" },
-  { id:"aurora", name:"오로라", cls:"border-aurora" },
+  // Avatar sets: each matches a character (🦉 나이트올빼미, 🦁 바코드 라이언, 🐈‍⬛ 고양이 예언자).
+  { id:"owlmoon", name:"달밤", cls:"border-owlmoon" },
+  { id:"mane", name:"사자 갈기", cls:"border-mane" },
+  { id:"crystal", name:"수정구", cls:"border-crystal" },
   // Grand Master border.
   { id:"legend", name:"솔라리스", cls:"border-legend", gm:true },
   { id:"chrome", name:"크롬", cls:"border-chrome", paid:true },
-  { id:"opal", name:"오팔", cls:"border-opal", paid:true },
+  { id:"dragon", name:"용비늘", cls:"border-dragon", paid:true },
+  { id:"foxfire", name:"여우불", cls:"border-foxfire", paid:true },
   { id:"blackgold", name:"블랙골드", cls:"border-blackgold", paid:true },
   { id:"stars", name:"별자리", cls:"border-stars", paid:true },
-  { id:"rainbow", name:"레인보우", cls:"border-rainbow", paid:true },
   { id:"heart", name:"하트", cls:"border-heart", member:true },
   { id:"neon", name:"네온", cls:"border-neon", member:true },
   { id:"candy", name:"캔디", cls:"border-candy", event:true },
   { id:"trophy", name:"트로피", cls:"border-trophy", event:true },
   { id:"mint", name:"민트", cls:"border-mint", event:true },
-  { id:"emerald", name:"에메랄드", cls:"border-emerald", event:true },
-  { id:"ruby", name:"루비", cls:"border-ruby", event:true }
+  { id:"wave", name:"파도", cls:"border-wave", event:true },
+  { id:"shell", name:"등껍질", cls:"border-shell", event:true }
 ];
 
 function getActiveTitle(){
@@ -1707,7 +1749,9 @@ function getActiveBorder(){
   var id = null;
   try{ id = localStorage.getItem("straightActiveBorder"); }catch(e){}
   // 골드 was replaced by 코랄 (too close to the Grand Master border); keep it equipped.
-  return id==="gold" ? "coral" : id;
+  // Retired borders map to their replacement (골드 → 코랄; the 2026-10-03 avatar sets).
+  var RENAMED = { gold:"coral", blueberry:"owlmoon", silver:"mane", aurora:"crystal", rainbow:"dragon", opal:"foxfire", emerald:"wave", ruby:"shell" };
+  return RENAMED[id] || id;
 }
 function setActiveBorder(id){
   try{ localStorage.setItem("straightActiveBorder", id||""); }catch(e){}
@@ -2015,14 +2059,13 @@ var BGM_TRACKS = [
   // a tempo between 산책 and 터키 행진곡.
   {
     name: "세레나데",
-    stepSec: 0.17, barSteps: 8,
+    stepSec: 0.17, barSteps: 8, altOctave: 12,
     lead: { type:"triangle", vol:0.05, len:1.4 },
     bassType: "triangle", bassVol: 0.06, bassLen: 1.8,
-    melody: [67,0,0,62, 67,0,0,62,  67,62,67,71, 74,0,0,0,  72,0,0,69, 72,0,0,69,  72,69,66,69, 62,0,0,0,
-             67,0,67,0, 71,69,67,67,  66,0,66,0, 69,66,62,66,  67,0,67,0, 71,69,67,67,  66,69,72,66, 67,0,0,0],
-    bass:   [43,0,0,0,50,0,0,0, 43,0,0,0,50,0,0,0, 38,0,0,0,45,0,0,0, 38,0,0,0,45,0,0,0,
-             43,0,0,0,50,0,0,0, 38,0,0,0,45,0,0,0, 43,0,0,0,50,0,0,0, 38,0,0,0,43,0,0,0],
-    pads:   [[55,59,62],[55,59,62],[54,57,60],[54,57,60],[55,59,62],[54,57,60],[55,59,62],[55,59,62]],
+    // Theme twice, a gentle phrase on the dominant (our own), then the theme again.
+    melody: [67,0,0,62,67,0,0,62,67,62,67,71,74,0,0,0,72,0,0,69,72,0,0,69,72,69,66,69,62,0,0,0,67,0,67,0,71,69,67,67,66,0,66,0,69,66,62,66,67,0,67,0,71,69,67,67,66,69,72,66,67,0,0,0,67,0,0,62,67,0,0,62,67,62,67,71,74,0,0,0,72,0,0,69,72,0,0,69,72,69,66,69,62,0,0,0,67,0,67,0,71,69,67,67,66,0,66,0,69,66,62,66,67,0,67,0,71,69,67,67,66,69,72,66,67,0,0,0,74,0,76,0,78,0,79,0,81,0,0,0,78,0,74,0,76,0,78,0,79,0,81,0,83,0,0,0,79,0,76,0,74,0,79,0,78,0,76,0,74,0,72,0,71,0,69,0,67,0,71,0,74,0,79,0,69,0,66,0,62,0,0,0,67,0,0,62,67,0,0,62,67,62,67,71,74,0,0,0,72,0,0,69,72,0,0,69,72,69,66,69,62,0,0,0,67,0,67,0,71,69,67,67,66,0,66,0,69,66,62,66,67,0,67,0,71,69,67,67,66,69,72,66,67,0,0,0],
+    bass:   [43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,38,0,45,0,38,0,45,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0],
+    pads:   [[55,59,62],[55,59,62],[57,62,66],[57,62,66],[55,59,62],[57,62,66],[55,59,62],[55,59,62],[55,59,62],[55,59,62],[57,62,66],[57,62,66],[55,59,62],[57,62,66],[55,59,62],[55,59,62],[57,62,66],[57,62,66],[55,61,64],[55,59,64],[55,59,62],[54,60,62],[55,59,62],[54,60,62],[55,59,62],[55,59,62],[57,62,66],[57,62,66],[55,59,62],[57,62,66],[55,59,62],[55,59,62]],
     padVol: 0.013,
     kick: "x...x...",
     hat:  "..x...x."
@@ -2044,14 +2087,13 @@ var BGM_TRACKS = [
   // chiptune arrangement. One step = a 16th note, 8 steps = one 2/4 bar.
   {
     name: "터키 행진곡",
-    stepSec: 0.115, barSteps: 8,
+    stepSec: 0.115, barSteps: 8, altOctave: -12,
     lead: { type:"triangle", vol:0.055, len:1.6 },
     bassType: "triangle", bassVol: 0.06, bassLen: 1.4,
-    melody: [72,0,0,0,74,72,71,72,  76,0,0,0,77,76,75,76,  83,81,80,81,83,81,80,81,  84,0,0,0,81,0,84,0,
-             83,0,81,0,80,0,81,0,  76,0,77,0,74,0,72,0,  71,72,74,72,71,0,68,0,  69,0,0,0,71,69,68,69],
-    bass:   [45,0,52,0,45,0,52,0,  45,0,52,0,45,0,52,0,  40,0,47,0,40,0,47,0,  45,0,52,0,45,0,52,0,
-             40,0,47,0,40,0,47,0,  38,0,45,0,38,0,45,0,  40,0,47,0,40,0,47,0,  45,0,52,0,40,0,0,0],
-    pads:   [[57,60,64],[57,60,64],[56,59,64],[57,60,64],[56,59,64],[57,62,65],[56,59,64],[57,60,64]],
+    // A theme ×2, the C-major sequence, A theme, then a march refrain in A major (our own) ×2.
+    melody: [72,0,0,0,74,72,71,72,76,0,0,0,77,76,75,76,83,81,80,81,83,81,80,81,84,0,0,0,81,0,84,0,83,0,81,0,80,0,81,0,76,0,77,0,74,0,72,0,71,72,74,72,71,0,68,0,69,0,0,0,71,69,68,69,72,0,0,0,74,72,71,72,76,0,0,0,77,76,75,76,83,81,80,81,83,81,80,81,84,0,0,0,81,0,84,0,83,0,81,0,80,0,81,0,76,0,77,0,74,0,72,0,71,72,74,72,71,0,68,0,69,0,0,0,71,69,68,69,76,0,77,0,79,0,79,0,81,0,79,0,77,0,76,0,74,0,0,0,0,0,0,0,74,0,76,0,77,0,77,0,79,0,77,0,76,0,74,0,72,0,0,0,0,0,0,0,72,0,74,0,76,0,76,0,77,0,76,0,74,0,72,0,71,0,0,0,71,69,68,69,72,0,0,0,74,72,71,72,76,0,0,0,77,76,75,76,83,81,80,81,83,81,80,81,84,0,0,0,81,0,84,0,83,0,81,0,80,0,81,0,76,0,77,0,74,0,72,0,71,72,74,72,71,0,68,0,69,0,0,0,71,69,68,69,73,0,74,0,76,0,0,0,73,0,74,0,76,0,0,0,78,76,74,73,71,0,73,0,69,0,0,0,76,0,0,0,73,0,74,0,76,0,0,0,78,0,80,0,81,0,0,0,83,81,80,78,76,0,74,0,73,0,0,0,71,69,68,69,73,0,74,0,76,0,0,0,73,0,74,0,76,0,0,0,78,76,74,73,71,0,73,0,69,0,0,0,76,0,0,0,73,0,74,0,76,0,0,0,78,0,80,0,81,0,0,0,83,81,80,78,76,0,74,0,73,0,0,0,71,69,68,69],
+    bass:   [45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,38,0,45,0,38,0,45,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,38,0,45,0,38,0,45,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,48,0,55,0,48,0,55,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,48,0,55,0,48,0,55,0,45,0,52,0,45,0,52,0,38,0,45,0,38,0,45,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,38,0,45,0,38,0,45,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,38,0,45,0,38,0,45,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0,45,0,52,0,45,0,52,0,38,0,45,0,38,0,45,0,40,0,47,0,40,0,47,0,45,0,52,0,45,0,52,0],
+    pads:   [[57,60,64],[57,60,64],[56,59,64],[57,60,64],[56,59,64],[57,62,65],[56,59,64],[57,60,64],[57,60,64],[57,60,64],[56,59,64],[57,60,64],[56,59,64],[57,62,65],[56,59,64],[57,60,64],[55,60,64],[55,60,64],[55,59,62],[55,59,62],[55,59,62],[55,60,64],[57,60,64],[57,62,65],[56,59,64],[57,60,64],[57,60,64],[56,59,64],[57,60,64],[56,59,64],[57,62,65],[56,59,64],[57,60,64],[57,61,64],[57,61,64],[56,59,64],[57,61,64],[57,61,64],[57,62,66],[56,59,64],[57,61,64],[57,61,64],[57,61,64],[56,59,64],[57,61,64],[57,61,64],[57,62,66],[56,59,64],[57,61,64]],
     padVol: 0.011,
     kick:  "x...x...",
     hat:   "..x...x."
@@ -2130,6 +2172,8 @@ function bgmDrum(kind, t0){
 function playBgmStep(track, step, t0){
   var i = step % track.melody.length;
   var m = track.melody[i];
+  // Every other pass through the tune the lead moves an octave, so long sessions don't loop flat.
+  if(m && track.altOctave && Math.floor(step / track.melody.length) % 2===1) m += track.altOctave;
   if(m) bgmNote(midiHz(m), t0, track.stepSec*track.lead.len, track.lead.type, track.lead.vol);
   var b = track.bass[step % track.bass.length];
   if(b) bgmNote(midiHz(b), t0, track.stepSec*track.bassLen, track.bassType, track.bassVol);
@@ -4921,13 +4965,13 @@ document.addEventListener("click", function(e){
 });
 
 var COLLECTION_TABS = [
-  { kind:"pattern", label:"패턴" },
-  { kind:"title", label:"칭호" },
   { kind:"avatar", label:"아바타" },
+  { kind:"title", label:"칭호" },
+  { kind:"pattern", label:"패턴" },
   { kind:"border", label:"테두리" },
   { kind:"theme", label:"테마" }
 ];
-var collectionActiveTab = "pattern";
+var collectionActiveTab = "avatar";
 function collectionItemsFor(kind){
   if(kind==="avatar"){
     var avatarItems = CHARACTERS.map(function(ch){
@@ -5458,7 +5502,7 @@ $("collection-btn").addEventListener("click", function(){
   sfxSelect();
   var newIds = loadNewUnlocks();
   var firstNew = newIds.length ? findMilestoneById(newIds[0]) : null;
-  collectionActiveTab = firstNew ? firstNew.kind : "pattern";
+  collectionActiveTab = firstNew ? firstNew.kind : "avatar";
   collTry = {};
   renderCollectionScreen();
   switchScreen("collection");

@@ -82,7 +82,7 @@ service cloud.firestore {
     function paidItems(){
       return ['pattern:diamond','pattern:onyx','pattern:stained','pattern:carbon',
               'theme:neon','theme:ocean','theme:felt',
-              'border:chrome','border:opal','border:blackgold','border:stars','border:rainbow'];
+              'border:chrome','border:dragon','border:foxfire','border:blackgold','border:stars'];
     }
     function itemPrice(key){ return key.split(':')[0] == 'theme' ? 330 : 220; }
     function walletShape(n){
