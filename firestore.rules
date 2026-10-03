@@ -75,6 +75,76 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // Coin wallet. One action per write, each recomputed here: attendance (KST day from the
+    // server clock), buying one paid item at its fixed price, buying 30 days of membership,
+    // or a developer grant (season rewards). Prices match COIN_PRICES in index.html.
+    function kstToday(){ return math.floor((request.time.toMillis() + 32400000) / 86400000); }
+    function paidItems(){
+      return ['pattern:diamond','pattern:onyx','pattern:stained','pattern:carbon',
+              'theme:neon','theme:ocean','theme:felt',
+              'border:chrome','border:opal','border:blackgold','border:stars','border:rainbow'];
+    }
+    function itemPrice(key){ return key.split(':')[0] == 'theme' ? 330 : 220; }
+    function walletShape(n){
+      return n.keys().hasOnly(['coins','items','membershipUntil','attendDay','streak','lastBuy'])
+        && n.keys().hasAll(['coins','items','membershipUntil','attendDay','streak'])
+        && n.coins is int && n.coins >= 0 && n.items is list
+        && n.membershipUntil is int && n.attendDay is int && n.streak is int;
+    }
+    function sameExcept(n, o, fields){
+      return n.diff(o).affectedKeys().hasOnly(fields);
+    }
+    function isAttend(n, o){
+      return sameExcept(n, o, ['coins','attendDay','streak'])
+        && n.attendDay == kstToday() && o.attendDay < kstToday()
+        && ((o.attendDay == kstToday() - 1 && n.streak == o.streak + 1) || (o.attendDay < kstToday() - 1 && n.streak == 1))
+        && ((n.streak % 7 == 0 && n.coins == o.coins + 7) || (n.streak % 7 != 0 && n.coins == o.coins + 2));
+    }
+    function isBuy(n, o){
+      return sameExcept(n, o, ['coins','items','lastBuy'])
+        && n.lastBuy in paidItems() && !(n.lastBuy in o.items)
+        && n.items == o.items.concat([n.lastBuy])
+        && n.coins == o.coins - itemPrice(n.lastBuy);
+    }
+    function isMembership(n, o){
+      return sameExcept(n, o, ['coins','membershipUntil'])
+        && n.coins == o.coins - 330
+        && ((o.membershipUntil > request.time.toMillis() && n.membershipUntil == o.membershipUntil + 2592000000)
+          || (o.membershipUntil <= request.time.toMillis()
+            && n.membershipUntil >= request.time.toMillis() + 2592000000 - 600000
+            && n.membershipUntil <= request.time.toMillis() + 2592000000 + 600000));
+    }
+    function isGrant(n, o){
+      return devRole() && sameExcept(n, o, ['coins']) && n.coins > o.coins && n.coins <= o.coins + 100;
+    }
+    match /wallets/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if walletShape(request.resource.data) && (
+        (signedIn() && request.auth.uid == uid
+          && request.resource.data.coins == 2 && request.resource.data.streak == 1
+          && request.resource.data.attendDay == kstToday()
+          && request.resource.data.items.size() == 0 && request.resource.data.membershipUntil == 0
+          && !('lastBuy' in request.resource.data))
+        || (devRole()
+          && request.resource.data.coins >= 1 && request.resource.data.coins <= 100
+          && request.resource.data.streak == 0 && request.resource.data.attendDay == 0
+          && request.resource.data.items.size() == 0 && request.resource.data.membershipUntil == 0
+          && !('lastBuy' in request.resource.data)));
+      allow update: if walletShape(request.resource.data) && (
+        (signedIn() && request.auth.uid == uid && (
+          isAttend(request.resource.data, resource.data)
+          || isBuy(request.resource.data, resource.data)
+          || isMembership(request.resource.data, resource.data)))
+        || isGrant(request.resource.data, resource.data));
+      allow delete: if false;
+    }
+    // Ledger for the developer-run season payout: one doc per season, written once.
+    match /seasonRewards/{season} {
+      allow read: if signedIn();
+      allow create: if devRole() && season.matches('^[0-9]{4}-[0-9]{2}$');
+      allow update, delete: if false;
+    }
+
     match /rooms/{code} {
       allow get: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{5}$');
       // Quick match lists open public lobbies only; private rooms stay unlistable.

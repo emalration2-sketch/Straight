@@ -586,6 +586,21 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .theme-thumb .tt-hand i{width:7px;height:10px;}
 .coll-tab{font-size:13px;padding:7px 13px;}
 .coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
+.coin-pill{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:calc(env(safe-area-inset-right) + 14px);z-index:5;display:inline-flex;align-items:center;gap:5px;padding:4px 12px 4px 5px;border-radius:999px;background:var(--panel);border:1.5px solid rgba(239,159,39,.6);color:var(--text);font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.coin-pill .coin-ico{width:22px;height:22px;}
+.coin-modal{max-width:340px;text-align:center;}
+.coin-modal h2 .coin-ico{width:22px;height:22px;vertical-align:-4px;}
+.coin-balance{display:flex;align-items:center;justify-content:center;gap:8px;font-size:30px;font-weight:900;margin:4px 0 10px;}
+.coin-balance .coin-ico{width:36px;height:36px;}
+.coin-note{font-size:13px;margin:6px 0;line-height:1.55;}
+.coin-note.muted{color:var(--muted);font-size:12px;}
+.coin-note .coin-ico,.unlock-popup .coin-ico{vertical-align:-3px;}
+.coin-perks{text-align:left;font-size:13px;line-height:1.75;margin:4px 0 8px;padding-left:20px;}
+.coin-modal-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
+.coin-buy-preview{display:flex;justify-content:center;padding:14px 0;transform:scale(1.35);}
+.daily-payout{font-size:12.5px;}
+.price-pill{border:none;cursor:pointer;display:inline-flex;align-items:center;gap:3px;font-family:inherit;}
+.price-pill .coin-ico{width:13px;height:13px;}
 .price-pill{margin-top:3px;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;background:var(--accent);color:#2a1d00;line-height:1.4;}
 .coll-grid .coll-item{background:transparent;border-color:transparent;padding:6px 4px;}
 .coll-grid .coll-item.equipped{border-color:transparent;}
@@ -628,6 +643,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 <div id="app">
 
   <div class="screen" id="screen-start">
+    <button class="coin-pill hidden" aria-label="내 코인"></button>
     <div class="start-hero">
       <div class="start-fan" id="start-fan" aria-hidden="true"></div>
       <div class="title-block">
@@ -793,6 +809,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
   </div>
 
   <div class="screen hidden" id="screen-collection">
+    <button class="coin-pill hidden" aria-label="내 코인"></button>
     <h1 style="font-size:20px;">💎 수집품</h1>
     <div class="coll-stage" id="coll-stage"></div>
     <div class="coll-tabs" id="coll-tabs"></div>
@@ -966,22 +983,94 @@ function loadAccount(user){
   return Promise.all([
     F.getDoc(F.doc(fbDb,"users",user.uid)),
     F.getDoc(F.doc(fbDb,"entitlements",user.uid)).catch(function(){ return null; }),
+    F.getDoc(F.doc(fbDb,"wallets",user.uid)).catch(function(){ return null; }),
     (email && user.emailVerified) ? F.getDoc(F.doc(fbDb,"devAccounts",email)).catch(function(){ return null; }) : Promise.resolve(null)
   ]).then(function(r){
-    var userSnap = r[0], entSnap = r[1], devSnap = r[2];
+    var userSnap = r[0], entSnap = r[1], walletSnap = r[2], devSnap = r[3];
     var ent = entSnap && entSnap.exists() ? entSnap.data() : {};
     var dev = devSnap && devSnap.exists() ? devSnap.data() : {};
     account = {
       uid: user.uid, email: email,
       role: (dev.role==="dev" || dev.role==="tester") ? dev.role : null,
       items: Array.isArray(ent.items) ? ent.items.map(String) : [],
-      membershipUntil: toMillis(ent.membershipUntil)
+      membershipUntil: toMillis(ent.membershipUntil),
+      wallet: readWallet(walletSnap && walletSnap.exists() ? walletSnap.data() : null)
     };
     hydrateProgress(user.uid, userSnap.exists() ? userSnap.data() : null);
     return loadSeasonMedal(user.uid).then(function(medal){
       account.medal = medal;
       return userSnap.exists();
     });
+  });
+}
+// Coin wallet: wallets/{uid} {coins, items, membershipUntil, attendDay, streak, lastBuy}.
+// Each write is one action — attendance, buying one item, buying membership, or a developer
+// grant — and the security rules recompute it (server clock, fixed prices), so the client
+// can't mint coins. Prices must match paidItems()/itemPrice() in firestore.rules.
+var COIN_PRICES = { pattern:220, border:220, theme:330 };
+var MEMBERSHIP_COINS = 330;
+var MEMBERSHIP_MS = 30*86400000;
+function kstDayNum(){ return Math.floor((Date.now() + 9*3600000) / 86400000); }
+function emptyWallet(){ return { coins:0, items:[], membershipUntil:0, attendDay:0, streak:0 }; }
+function readWallet(d){
+  var w = emptyWallet();
+  if(!d) return w;
+  w.coins = Number(d.coins)||0;
+  w.items = Array.isArray(d.items) ? d.items.map(String) : [];
+  w.membershipUntil = Number(d.membershipUntil)||0;
+  w.attendDay = Number(d.attendDay)||0;
+  w.streak = Number(d.streak)||0;
+  if(typeof d.lastBuy==="string") w.lastBuy = d.lastBuy;
+  return w;
+}
+function walletTx(change){
+  var F = fbFs, ref = F.doc(fbDb,"wallets",account.uid);
+  return F.runTransaction(fbDb, function(tx){
+    return tx.get(ref).then(function(snap){
+      var w = snap.exists() ? readWallet(snap.data()) : null;
+      var next = change(w);
+      if(next) tx.set(ref, next);
+      return next;
+    });
+  }).then(function(next){
+    if(next) account.wallet = next;
+    return next;
+  });
+}
+// Once per KST day: 2 coins, and 5 more on every 7th day in a row.
+function claimAttendance(){
+  if(!account || !fbDb) return Promise.resolve(null);
+  var result = null;
+  return walletTx(function(w){
+    var today = kstDayNum();
+    if(w && w.attendDay >= today) return null;
+    var streak = (w && w.attendDay===today-1) ? w.streak+1 : 1;
+    var gain = 2 + (streak%7===0 ? 5 : 0);
+    var next = w ? readWallet(w) : emptyWallet();
+    next.coins += gain; next.attendDay = today; next.streak = streak;
+    result = { gain:gain, streak:streak };
+    return next;
+  }).then(function(){ return result; }, function(e){ console.error("출석 실패", e); return null; });
+}
+function buyItemWithCoins(kind, id){
+  var key = kind+":"+id;
+  return walletTx(function(w){
+    if(!w || w.coins < COIN_PRICES[kind]) throw new Error("coins");
+    if(w.items.indexOf(key)!==-1) return null;
+    var next = readWallet(w);
+    next.coins -= COIN_PRICES[kind];
+    next.items = w.items.concat([key]);
+    next.lastBuy = key;
+    return next;
+  });
+}
+function buyMembership(){
+  return walletTx(function(w){
+    if(!w || w.coins < MEMBERSHIP_COINS) throw new Error("coins");
+    var next = readWallet(w);
+    next.coins -= MEMBERSHIP_COINS;
+    next.membershipUntil = Math.max(w.membershipUntil, Date.now()) + MEMBERSHIP_MS;
+    return next;
   });
 }
 var gameStarted = false;
@@ -1469,10 +1558,15 @@ function isDevAccount(){ return accountRole()==="dev"; }
 function isSpecialAccount(){ var r = accountRole(); return r==="dev" || r==="tester"; }
 function hasMembership(){
   if(isSpecialAccount()) return true;
-  return !!account && !previewAsPlayer() && account.membershipUntil > Date.now();
+  if(!account) return false;
+  if(account.wallet && account.wallet.membershipUntil > Date.now()) return true;
+  return !previewAsPlayer() && account.membershipUntil > Date.now();
 }
 function ownsItem(kind, id){
-  return !!account && !previewAsPlayer() && account.items.indexOf(kind+":"+id)!==-1;
+  if(!account) return false;
+  var key = kind+":"+id;
+  if(account.wallet && account.wallet.items.indexOf(key)!==-1) return true;
+  return !previewAsPlayer() && account.items.indexOf(key)!==-1;
 }
 function isThemeOwned(theme){
   if(!theme) return false;
@@ -3706,6 +3800,7 @@ function dailyIdentity(){
 }
 function openDaily(){
   switchScreen("daily");
+  renderSeasonPayoutButton();
   var st = $("daily-status"), btn = $("daily-start-btn");
   btn.disabled = true;
   btn.textContent = "도전하기";
@@ -3822,6 +3917,161 @@ function finishDaily(outcome){
     });
   }).catch(function(e){ console.error("챌린지 기록 실패", e); });
 }
+/* ---------------- coins ---------------- */
+// Coin wallet UI: balance pill, attendance on entry, buying paid items and membership with
+// coins, and the developer-run season reward payout. Every wallet change is checked by
+// the security rules (see wallets/{uid} in firestore.rules), so no server is needed until
+// coins can be bought with money.
+function coinCount(){ return account && account.wallet ? account.wallet.coins : 0; }
+function renderCoinPills(){
+  Array.prototype.forEach.call(document.querySelectorAll(".coin-pill"), function(p){
+    p.innerHTML = COIN_SVG+"<b>"+coinCount().toLocaleString()+"</b>";
+    p.classList.toggle("hidden", !account);
+  });
+}
+function coinToast(html){
+  var toast = el("div","unlock-popup", html);
+  document.body.appendChild(toast);
+  requestAnimationFrame(function(){ toast.classList.add("show"); });
+  setTimeout(function(){
+    toast.classList.remove("show");
+    setTimeout(function(){ toast.remove(); }, 300);
+  }, 3200);
+}
+function fmtDate(ms){ var d = new Date(ms); return (d.getMonth()+1)+"월 "+d.getDate()+"일"; }
+function coinModal(title, bodyHTML, actions){
+  closeModal();
+  var backdrop = el("div","modal-backdrop");
+  var box = el("div","modal-box coin-modal");
+  box.innerHTML = "<h2>"+title+"</h2>"+bodyHTML;
+  var row = el("div","coin-modal-actions");
+  actions.forEach(function(a){
+    var b = el("button","btn"+(a.primary?" primary":""), a.label);
+    if(a.disabled) b.disabled = true;
+    b.addEventListener("click", function(){ if(a.onClick) a.onClick(b); else closeModal(); });
+    row.appendChild(b);
+  });
+  box.appendChild(row);
+  backdrop.appendChild(box);
+  backdrop.addEventListener("click", function(e){ if(e.target===backdrop) closeModal(); });
+  tooltipLayer.appendChild(backdrop);
+}
+function walletAction(btn, run, done){
+  btn.disabled = true;
+  run().then(function(){
+    closeModal();
+    renderCoinPills();
+    sfxCapture();
+    done();
+  }).catch(function(e){
+    btn.disabled = false;
+    console.error("코인 사용 실패", e);
+    coinToast(e && e.message==="coins" ? "코인이 부족해요" : "잠시 후 다시 시도해 주세요");
+  });
+}
+function openWalletModal(){
+  var w = account && account.wallet;
+  if(!w) return;
+  var member = w.membershipUntil > Date.now();
+  coinModal(COIN_SVG+" 내 코인",
+    "<div class=\"coin-balance\">"+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></div>"+
+    "<p class=\"coin-note\">📅 출석: 하루 2코인 · 7일 연속마다 +5코인"+(w.streak ? "<br>지금 연속 <b>"+w.streak+"일</b>째" : "")+"</p>"+
+    "<p class=\"coin-note\">🏆 챌린지: 매달 시즌 1위 30 · 2위 20 · 3위 10코인</p>"+
+    "<p class=\"coin-note\">👑 멤버십: "+(member ? fmtDate(w.membershipUntil)+"까지" : "없음")+"</p>"+
+    "<p class=\"coin-note muted\">💳 코인 충전은 곧 열려요</p>",
+    [{ label:"👑 멤버십", primary:true, onClick:function(){ openMembershipModal(); } }, { label:"닫기" }]);
+}
+function openMembershipModal(onDone){
+  var w = account && account.wallet;
+  if(!w) return;
+  var member = w.membershipUntil > Date.now();
+  var enough = w.coins >= MEMBERSHIP_COINS;
+  coinModal("👑 멤버십 30일",
+    "<ul class=\"coin-perks\"><li>상점의 유료 아이템 전부 사용</li><li>멤버십 전용 테마·캐릭터·테두리</li><li>이름표에 👑 VIP 배지</li></ul>"+
+    (member ? "<p class=\"coin-note\">"+fmtDate(w.membershipUntil)+"까지 이용 중 · 구매하면 30일 연장</p>" : "")+
+    "<p class=\"coin-note\">가격 "+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b> · 보유 "+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></p>"+
+    (enough ? "" : "<p class=\"coin-note muted\">출석과 챌린지로 코인을 모을 수 있어요. 충전은 곧 열려요.</p>"),
+    [{ label: enough ? (member ? "30일 연장" : "멤버십 시작") : "코인 부족", primary:true, disabled:!enough,
+       onClick:function(btn){ walletAction(btn, buyMembership, function(){
+         coinToast("👑 멤버십 "+fmtDate(account.wallet.membershipUntil)+"까지");
+         if(onDone) onDone();
+       }); } },
+     { label:"취소" }]);
+}
+function openBuyItemModal(kind, it, onDone){
+  var w = account && account.wallet;
+  if(!w) return;
+  var price = COIN_PRICES[kind];
+  var enough = w.coins >= price;
+  var kindLabel = { pattern:"패턴", border:"테두리", theme:"테마" }[kind];
+  coinModal(it.name+" "+kindLabel,
+    "<div class=\"coin-buy-preview\">"+it.preview+"</div>"+
+    "<p class=\"coin-note\">가격 "+COIN_SVG+"<b>"+price+"</b> · 보유 "+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></p>"+
+    "<p class=\"coin-note muted\">멤버십이면 구매하지 않아도 쓸 수 있어요.</p>"+
+    (enough ? "" : "<p class=\"coin-note muted\">출석과 챌린지로 코인을 모을 수 있어요. 충전은 곧 열려요.</p>"),
+    [{ label: enough ? "구매" : "코인 부족", primary:true, disabled:!enough,
+       onClick:function(btn){ walletAction(btn, function(){ return buyItemWithCoins(kind, it.id.replace(/^[a-z]+:/,"")); }, function(){
+         coinToast("🛍️ <b>"+it.name+"</b> 구매 완료!");
+         if(onDone) onDone();
+       }); } },
+     { label:"멤버십 보기", onClick:function(){ openMembershipModal(onDone); } },
+     { label:"취소" }]);
+}
+// Developer only: pay last season's challenge 1~3위 once (seasonRewards/{season} is the ledger).
+function payLastSeasonRewards(btn){
+  var F = fbFs, season = prevSeasonKey();
+  seasonBoardRows(season).then(function(rows){
+    var top = rows.slice(0, 3);
+    if(!top.length){ alert("지난 시즌 기록이 없어요."); return; }
+    var lines = top.map(function(r, i){ return (i+1)+"위 "+cleanText(r.data.name,16)+" · "+CHALLENGE_REWARDS[i]+"코인"; });
+    if(!confirm(season+" 시즌 보상을 지급할까요?\n"+lines.join("\n"))) return;
+    btn.disabled = true;
+    var ledger = F.doc(fbDb,"seasonRewards",season);
+    return F.runTransaction(fbDb, function(tx){
+      var refs = top.map(function(r){ return F.doc(fbDb,"wallets",r.id); });
+      return tx.get(ledger).then(function(l){
+        if(l.exists()) throw new Error("paid");
+        return Promise.all(refs.map(function(ref){ return tx.get(ref); }));
+      }).then(function(snaps){
+        snaps.forEach(function(snap, i){
+          var w = snap.exists() ? readWallet(snap.data()) : emptyWallet();
+          w.coins += CHALLENGE_REWARDS[i];
+          tx.set(refs[i], w);
+        });
+        tx.set(ledger, { paid: top.map(function(r){ return r.id; }), at: Date.now() });
+      });
+    }).then(function(){
+      btn.textContent = "✅ 지난 시즌 보상 지급 완료";
+      coinToast("🎁 시즌 보상을 지급했어요");
+    });
+  }).catch(function(e){
+    btn.disabled = false;
+    console.error("시즌 보상 지급 실패", e);
+    alert(e && e.message==="paid" ? "이미 지급했어요." : "지급하지 못했어요.");
+  });
+}
+function renderSeasonPayoutButton(){
+  var old = $("daily-payout-btn");
+  if(old) old.remove();
+  if(!isDevAccount() || !fbDb) return;
+  var btn = el("button","btn daily-payout","🎁 지난 시즌 보상 지급");
+  btn.id = "daily-payout-btn";
+  $("daily-back-btn").parentNode.insertBefore(btn, $("daily-back-btn"));
+  fbFs.getDoc(fbFs.doc(fbDb,"seasonRewards",prevSeasonKey())).then(function(s){
+    if(s.exists()){ btn.disabled = true; btn.textContent = "✅ 지난 시즌 보상 지급 완료"; }
+  }).catch(function(){});
+  btn.addEventListener("click", function(){ payLastSeasonRewards(btn); });
+}
+Array.prototype.forEach.call(document.querySelectorAll(".coin-pill"), function(p){
+  p.addEventListener("click", function(){ sfxSelect(); openWalletModal(); });
+});
+renderCoinPills();
+claimAttendance().then(function(r){
+  renderCoinPills();
+  if(!r) return;
+  coinToast("📅 출석 "+COIN_SVG+"<b>+"+r.gain+"</b>"+(r.gain>2 ? " · 7일 연속 보너스!" : "")+"<br><small>연속 "+r.streak+"일째</small>");
+});
+
 $("daily-back-btn").addEventListener("click", function(){ sfxSelect(); switchScreen("mode"); });
 $("daily-start-btn").addEventListener("click", function(){ sfxSelect(); startDailyChallenge(); });
 $("daily-rank-btn").addEventListener("click", function(){
@@ -4776,8 +5026,8 @@ function collItemValue(kind, it){
 
 function collectionItemDetailText(kind, name){
   if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
-  if(isMemberItem(kind, name)) return "👑 멤버십 전용";
-  if(isPaidItem(kind, name)) return PRICE_LABELS[kind]+" · 구매 아이템";
+  if(isMemberItem(kind, name)) return "👑 멤버십 전용 · 눌러서 멤버십 보기";
+  if(isPaidItem(kind, name)) return COIN_PRICES[kind]+"코인 · 가격표를 눌러 구매";
   if(kind==="theme") return "기본 테마";
   if(isGrandMasterItem(kind, name)){
     var gp = grandMasterProgress();
@@ -4893,7 +5143,18 @@ function renderCollectionScreen(){
     card.appendChild(el("div","coll-item-preview", it.preview));
     card.appendChild(el("p","coll-item-name", tab==="title" ? "" : it.name));
     // Paid and not owned: the price sits on the card as a pill.
-    if(!it.unlocked && isPaidItem(tab, it.name)) card.appendChild(el("span","price-pill", PRICE_LABELS[tab]));
+    if(!it.unlocked && account && (isPaidItem(tab, it.name) || isMemberItem(tab, it.name))){
+      var paid = isPaidItem(tab, it.name);
+      var pill = el("button","price-pill", paid ? (COIN_SVG+COIN_PRICES[tab]) : "👑 멤버십");
+      pill.addEventListener("click", function(e){
+        e.stopPropagation();
+        hideCollTip();
+        sfxSelect();
+        if(paid) openBuyItemModal(tab, it, renderCollectionScreen);
+        else openMembershipModal(renderCollectionScreen);
+      });
+      card.appendChild(pill);
+    }
     // How to get / price shows in a bubble on hover or tap, so the grid stays clean.
     var tipText = collectionItemDetailText(tab, it.name);
     // Owned without the achievement (special accounts): describe the condition, not the progress.
