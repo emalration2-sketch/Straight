@@ -913,6 +913,7 @@ const firebaseConfig = {
   messagingSenderId: "435687905535",
   appId: "1:435687905535:web:2dfc13e707ebdbbb7394ca"
 };
+var APP_CHECK_SITE_KEY = "";
 var fbDb = null, fbDoc = null, fbSetDoc = null, fbUpdateDoc = null, fbGetDoc = null, fbOnSnapshot = null, fbRunTransaction = null;
 var fbFs = null, fbAuth = null, fbAuthApi = null;
 var fbReadyPromise = null;
@@ -921,10 +922,16 @@ function ensureFirebase(){
   fbReadyPromise = Promise.all([
     import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"),
     import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"),
-    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js")
+    import("https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js"),
+    APP_CHECK_SITE_KEY ? import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check.js") : Promise.resolve(null)
   ]).then(function(mods){
-    var appMod = mods[0], fsMod = mods[1], authMod = mods[2];
+    var appMod = mods[0], fsMod = mods[1], authMod = mods[2], acMod = mods[3];
     var fbApp = appMod.initializeApp(firebaseConfig);
+    if(acMod){
+      // Local dev prints a debug token to register under App Check > Apps > Manage debug tokens.
+      if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      acMod.initializeAppCheck(fbApp, { provider: new acMod.ReCaptchaV3Provider(APP_CHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+    }
     fbDb = fsMod.getFirestore(fbApp);
     fbFs = fsMod;
     fbDoc = fsMod.doc;
@@ -3921,7 +3928,7 @@ function backfillSeasonBest(d){
     return tx.get(sref).then(function(snap){
       var cur = snap.exists() ? snap.data() : {};
       if(typeof cur.bestTurns==="number") return;
-      tx.set(sref, { name:me.name, avatar:me.avatar, bestTurns:d.turns, bestMs:typeof d.ms==="number" ? d.ms : 0, days:(cur.days||0)+1, updatedAt:Date.now() });
+      tx.set(sref, { name:me.name, avatar:me.avatar, bestTurns:d.turns, bestMs:typeof d.ms==="number" ? d.ms : 0, days:(cur.days||0)+1, lastDay:dailyKey(), updatedAt:Date.now() });
     });
   }).catch(function(e){ console.error("시즌 기록 옮기기 실패", e); });
 }
@@ -3998,7 +4005,7 @@ function finishDaily(outcome){
   state.daily.turns = state.turnSeq + 1;
   state.daily.ms = Math.max(0, Math.min(86400000, Date.now() - state.daily.startedAt));
   if(!account || !fbDb || localTestFlag("dailytest")) return;
-  var F = fbFs, turns = state.daily.turns, ms = state.daily.ms, me = dailyIdentity();
+  var F = fbFs, turns = state.daily.turns, ms = state.daily.ms, me = dailyIdentity(), dayKey = state.daily.key;
   var ref = F.doc(fbDb,"daily",state.daily.key,"scores",account.uid);
   var sref = F.doc(fbDb,"seasons",seasonKey(),"players",account.uid);
   dailySavePromise = F.updateDoc(ref, { turns:turns, ms:ms, failed:false }).then(function(){
@@ -4012,6 +4019,7 @@ function finishDaily(outcome){
           bestTurns: better ? turns : d.bestTurns,
           bestMs: better ? ms : (d.bestMs||0),
           days: (d.days||0) + 1,
+          lastDay: dayKey,
           updatedAt: Date.now()
         });
       });

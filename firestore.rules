@@ -40,10 +40,21 @@ service cloud.firestore {
 
     // Daily challenge: one score doc per player per day. Starting writes a "failed"
     // placeholder; finishing may fill in the turn count once.
+    // day must be today in KST by the server clock (10 minutes of slack either way for a
+    // client clock near midnight), so results can't be filed under other dates.
+    function isKstDay(day, t){
+      return int(day.split('-')[0]) == t.year() && int(day.split('-')[1]) == t.month() && int(day.split('-')[2]) == t.day();
+    }
+    function isKstToday(day){
+      return isKstDay(day, request.time + duration.value(9, 'h'))
+        || isKstDay(day, request.time + duration.value(9, 'h') - duration.value(10, 'm'))
+        || isKstDay(day, request.time + duration.value(9, 'h') + duration.value(10, 'm'));
+    }
     match /daily/{day}/scores/{uid} {
       allow read: if signedIn();
       allow create: if signedIn() && request.auth.uid == uid
         && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && isKstToday(day)
         && request.resource.data.keys().hasOnly(['name','avatar','failed','at'])
         && request.resource.data.failed == true;
       allow update: if signedIn() && request.auth.uid == uid
@@ -51,27 +62,43 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['name','avatar','failed','at','turns','ms'])
         && request.resource.data.failed == false
         && request.resource.data.turns is int
-        && request.resource.data.turns >= 1 && request.resource.data.turns <= 200
+        && request.resource.data.turns >= 3 && request.resource.data.turns <= 200
         && request.resource.data.ms is int
-        && request.resource.data.ms >= 0 && request.resource.data.ms <= 86400000;
+        && request.resource.data.ms >= 0 && request.resource.data.ms <= 86400000
+        && request.resource.data.at == resource.data.at
+        && request.resource.data.ms <= request.time.toMillis() - resource.data.at.toMillis() + 5000;
       allow delete: if false;
     }
-    // Monthly season: each player's best game (fewest turns, then shortest time) plus days played.
+    // A season write must carry a finished daily result (lastDay) from that month, once per
+    // day, and its best can only become that day's turns/time when it is actually better.
+    function dailyResult(day, uid){
+      return get(/databases/$(database)/documents/daily/$(day)/scores/$(uid)).data;
+    }
     match /seasons/{season}/players/{uid} {
       allow read: if signedIn();
       allow create: if signedIn() && request.auth.uid == uid
         && season.matches('^[0-9]{4}-[0-9]{2}$')
-        && request.resource.data.keys().hasOnly(['name','avatar','bestTurns','bestMs','days','updatedAt'])
-        && request.resource.data.bestTurns is int
-        && request.resource.data.bestTurns >= 1 && request.resource.data.bestTurns <= 200
-        && request.resource.data.bestMs is int
+        && request.resource.data.keys().hasOnly(['name','avatar','bestTurns','bestMs','days','lastDay','updatedAt'])
+        && request.resource.data.lastDay is string
+        && request.resource.data.lastDay.matches('^' + season + '-[0-9]{2}$')
+        && dailyResult(request.resource.data.lastDay, uid).failed == false
+        && request.resource.data.bestTurns == dailyResult(request.resource.data.lastDay, uid).turns
+        && request.resource.data.bestMs == dailyResult(request.resource.data.lastDay, uid).get('ms', 0)
         && request.resource.data.days == 1;
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name','avatar','bestTurns','bestMs','days','updatedAt'])
-        && request.resource.data.bestTurns is int && request.resource.data.bestTurns >= 1
-        && request.resource.data.bestMs is int
+        && request.resource.data.keys().hasOnly(['name','avatar','bestTurns','bestMs','days','lastDay','updatedAt'])
+        && request.resource.data.lastDay is string
+        && request.resource.data.lastDay.matches('^' + season + '-[0-9]{2}$')
+        && request.resource.data.lastDay > resource.data.get('lastDay', '')
         && request.resource.data.days == resource.data.get('days', 0) + 1
-        && request.resource.data.bestTurns <= resource.data.get('bestTurns', 200);
+        && dailyResult(request.resource.data.lastDay, uid).failed == false
+        && ((request.resource.data.bestTurns == resource.data.get('bestTurns', -1)
+              && request.resource.data.bestMs == resource.data.get('bestMs', 0))
+          || (request.resource.data.bestTurns == dailyResult(request.resource.data.lastDay, uid).turns
+              && request.resource.data.bestMs == dailyResult(request.resource.data.lastDay, uid).get('ms', 0)
+              && (request.resource.data.bestTurns < resource.data.get('bestTurns', 200)
+                || (request.resource.data.bestTurns == resource.data.get('bestTurns', 200)
+                  && request.resource.data.bestMs < resource.data.get('bestMs', 0)))));
       allow delete: if false;
     }
 
