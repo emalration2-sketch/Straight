@@ -191,6 +191,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
 /* order cutscene */
 .order-list{display:flex;flex-direction:column;gap:6px;min-width:240px;}
+.lobby-kick{margin-left:6px;font-size:10.5px;padding:2px 7px;border-radius:7px;}
+.lobby-ready{font-size:11px;font-weight:800;color:#4ce0a0;margin-left:4px;}
 .order-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border-radius:10px;padding:6px 12px;font-size:14px;opacity:0;animation:riseIn .4s forwards;}
 @keyframes riseIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 
@@ -560,6 +562,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
       <button class="btn primary big" id="online-create-btn">➕ 방 만들기</button>
       <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
+      <button class="btn primary big" id="online-quick-btn">⚡ 빠른 매칭</button>
     </div>
     <button class="btn" id="online-back-btn">← 뒤로</button>
   </div>
@@ -590,6 +593,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <p class="sub" id="lobby-avatar-hint" style="margin:4px 0 0;">내 캐릭터를 선택하세요</p>
     <div class="avatar-grid" id="lobby-avatar-grid"></div>
     <button class="btn primary big hidden" id="lobby-start-btn">게임 시작 (부족 인원 AI 채움)</button>
+    <button class="btn big hidden" id="lobby-ready-btn">✋ 준비</button>
+    <p class="sub hidden" id="lobby-auto-msg"></p>
     <p class="sub hidden" id="lobby-wait-msg">모두 캐릭터를 선택하면 호스트가 게임을 시작합니다</p>
     <button class="btn" id="lobby-leave-btn">← 나가기</button>
   </div>
@@ -667,6 +672,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div class="win-emoji">🏆</div>
     <h1 id="win-title" style="font-size:24px;"></h1>
     <p class="sub" id="win-reason"></p>
+    <button class="btn primary big hidden" id="rematch-btn">🔁 같은 멤버로 한 판 더</button>
     <button class="btn primary big" id="restart-btn">다시하기</button>
   </div>
 
@@ -1582,6 +1588,10 @@ function $(id){ return document.getElementById(id); }
 function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 function switchScreen(name){
+  if(name==="win"){
+    var rb = $("rematch-btn");
+    if(rb) rb.classList.toggle("hidden", !(state.mpRoomCode && state.players[state.myIndex] && !state.players[state.myIndex].aiTakeover));
+  }
   ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win","collection"].forEach(function(s){
     $("screen-"+s).classList.toggle("hidden", s!==name);
   });
@@ -2180,6 +2190,7 @@ function cleanPlayer(p){
   out.timeoutStreak = Math.min(99, Math.max(0, Math.floor(Number(p.timeoutStreak)||0)));
   out.aiTurns = Math.min(999, Math.max(0, Math.floor(Number(p.aiTurns)||0)));
   out.aiTakeover = !!p.aiTakeover;
+  out.ready = !!p.ready;
   out.isAI = !!p.isAI;
   out.hand = cleanCards(p.hand);
   out.score = cleanCards(p.score);
@@ -2209,11 +2220,33 @@ function sanitizeRoomData(data){
 function handleRoomSnapshot(data){
   sanitizeRoomData(data);
   if(data.phase==="lobby"){
+    var mine = -1;
+    (data.players || []).forEach(function(p, i){ if(p.clientId===myClientId) mine = i; });
+    if(mine<0){
+      // Not in the room any more: the host sent us out.
+      leaveRoom();
+      stopLobbyTimers();
+      alert("방장이 방에서 내보냈어요.");
+      switchScreen("online-choice");
+      return;
+    }
     state.players = data.players || [];
     state.mpMaxPlayers = data.maxPlayers;
+    state.myIndex = mine;
+    state.hostIndex = 0;
+    // Back from a finished game (한 판 더): reset the per-game flags and show the lobby.
+    if($("screen-lobby").classList.contains("hidden")){
+      state.gameOver = false;
+      state.ceremonyShown = false;
+      state.ceremonyPlaying = false;
+      state.statsRecorded = false;
+      clearTurnTimer();
+      switchScreen("lobby");
+    }
     renderLobby(data);
     return;
   }
+  stopLobbyTimers();
   applyRemoteRoomState(data);
 }
 
@@ -2487,12 +2520,13 @@ function forfeitOnline(){
   return pushRoomState();
 }
 
-function createRoom(maxPlayers, cb){
+function createRoom(maxPlayers, cb, opts){
+  opts = opts || {};
   ensureFirebase().then(function(){
     var code = genRoomCode();
     var me = { clientId: myClientId, uid: account ? account.uid : null, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
     var roomData = {
-      code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
+      code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby", public: !!opts.public,
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
       gameOver: false, log: [], createdAt: Date.now(), updatedAt: Date.now()
     };
@@ -2904,8 +2938,30 @@ $("lobby-start-btn").addEventListener("click", function(){
   startOnlineGame();
 });
 $("lobby-leave-btn").addEventListener("click", function(){
-  leaveRoom();
+  leaveLobby();
   switchScreen("online-choice");
+});
+$("lobby-ready-btn").addEventListener("click", function(){
+  sfxSelect();
+  var me = state.players[state.myIndex];
+  setMyReady(!(me && me.ready));
+});
+$("online-quick-btn").addEventListener("click", function(){
+  sfxSelect();
+  requestFS();
+  var b = $("online-quick-btn");
+  b.disabled = true;
+  b.textContent = "⚡ 찾는 중...";
+  quickMatch(function(err){
+    b.disabled = false;
+    b.textContent = "⚡ 빠른 매칭";
+    if(err){ alert("빠른 매칭 실패: "+err); return; }
+    switchScreen("lobby");
+  });
+});
+$("rematch-btn").addEventListener("click", function(){
+  sfxSelect();
+  rematch();
 });
 
 function renderLobby(data){
@@ -2917,7 +2973,17 @@ function renderLobby(data){
     row.style.opacity = "1";
     var isMe = p.clientId===myClientId;
     var label = p.avatarPicked ? playerTagHTML(p) : "⏳ 캐릭터 선택 중...";
-    row.innerHTML = "<span>"+label+(p.clientId===data.hostClientId?" · 방장":"")+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
+    var isHostRow = p.clientId===data.hostClientId;
+    var readyMark = (!isHostRow && p.ready && !data.public) ? "<span class=\"lobby-ready\">✔ 준비</span>" : "";
+    row.innerHTML = "<span>"+label+(isHostRow?" · 방장":"")+readyMark+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
+    if(data.hostClientId===myClientId && !isMe){
+      var kick = el("button","btn lobby-kick","내보내기");
+      kick.addEventListener("click", function(){
+        if(!confirm("이 플레이어를 내보낼까요?")) return;
+        kickPlayer(p.clientId);
+      });
+      row.lastChild.appendChild(kick);
+    }
     list.appendChild(row);
   });
   var slotsLeft = data.maxPlayers - data.players.length;
@@ -2964,9 +3030,158 @@ function renderLobby(data){
 
   var isHost = data.hostClientId===myClientId;
   var allPicked = data.players.length>0 && data.players.every(function(p){ return p.avatarPicked; });
+  // Friends' rooms wait for everyone's 준비; quick-match rooms just need characters picked.
+  var allReady = data.public || data.players.every(function(p){ return p.clientId===data.hostClientId || p.ready; });
   $("lobby-start-btn").classList.toggle("hidden", !isHost);
-  $("lobby-start-btn").disabled = !allPicked;
+  $("lobby-start-btn").disabled = !(allPicked && allReady);
   $("lobby-wait-msg").classList.toggle("hidden", isHost);
+  var readyBtn = $("lobby-ready-btn");
+  readyBtn.classList.toggle("hidden", isHost || !myPicked || !!data.public);
+  readyBtn.classList.toggle("primary", !!(me && me.ready));
+  readyBtn.textContent = (me && me.ready) ? "✔ 준비 완료 (누르면 취소)" : "✋ 준비";
+  updateLobbyAutoStart(data, isHost, allPicked);
+}
+
+/* ---- lobby extras: 준비, 내보내기, 나가기, 빠른 매칭 자동 시작 ---- */
+function updateRoomPlayers(mutate){
+  if(!state.mpRoomCode || !fbDb) return Promise.resolve();
+  var ref = fbDoc(fbDb,"rooms",state.mpRoomCode);
+  return fbRunTransaction(fbDb, function(tx){
+    return tx.get(ref).then(function(snap){
+      if(!snap.exists()) return;
+      var data = snap.data();
+      if(data.phase!=="lobby") return;
+      var upd = mutate((data.players || []).slice(), data);
+      if(!upd) return;
+      upd.updatedAt = Date.now();
+      tx.update(ref, upd);
+    });
+  }).catch(function(e){ console.error("대기실 갱신 실패", e); });
+}
+function setMyReady(ready){
+  return updateRoomPlayers(function(players){
+    var i = players.findIndex(function(p){ return p.clientId===myClientId; });
+    if(i<0) return null;
+    players[i] = Object.assign({}, players[i], { ready:ready });
+    return { players:players };
+  });
+}
+function kickPlayer(clientId){
+  return updateRoomPlayers(function(players, data){
+    if(data.hostClientId!==myClientId) return null;
+    return { players: players.filter(function(p){ return p.clientId!==clientId; }) };
+  });
+}
+// Leaving the lobby takes you off the list; a leaving host hands the room to the next
+// player (moved to the front, since the host plays from seat 0).
+function leaveLobby(){
+  var p = updateRoomPlayers(function(players, data){
+    var rest = players.filter(function(x){ return x.clientId!==myClientId; });
+    var upd = { players: rest };
+    if(data.hostClientId===myClientId && rest.length) upd.hostClientId = rest[0].clientId;
+    return upd;
+  });
+  stopLobbyTimers();
+  leaveRoom();
+  return p;
+}
+var lobbyAutoTimer = null, lobbyHeartbeat = null, lobbyAutoKey = "", lobbyAutoDone = false;
+function stopLobbyTimers(){
+  if(lobbyAutoTimer){ clearInterval(lobbyAutoTimer); lobbyAutoTimer = null; }
+  if(lobbyHeartbeat){ clearInterval(lobbyHeartbeat); lobbyHeartbeat = null; }
+  lobbyAutoKey = "";
+  lobbyAutoDone = false;
+  $("lobby-auto-msg").classList.add("hidden");
+}
+// Quick-match rooms start on their own: 30 s after the last change in who's there, the
+// host starts with AI in the empty seats. The host also keeps the room fresh so it stays
+// findable.
+var QUICK_START_SECONDS = 30;
+function updateLobbyAutoStart(data, isHost, allPicked){
+  var msg = $("lobby-auto-msg");
+  if(!data.public){ stopLobbyTimers(); return; }
+  if(lobbyAutoDone && isHost && allPicked){ lobbyAutoDone = false; startOnlineGame(); return; }
+  var key = data.players.map(function(p){ return p.clientId; }).join(",");
+  if(key===lobbyAutoKey) return;
+  stopLobbyTimers();
+  lobbyAutoKey = key;
+  var left = QUICK_START_SECONDS;
+  msg.classList.remove("hidden");
+  var paint = function(){ msg.textContent = "⚡ 빠른 매칭: "+left+"초 뒤 시작해요 (빈 자리는 AI)"; };
+  paint();
+  lobbyAutoTimer = setInterval(function(){
+    left--;
+    if(left>0){ paint(); return; }
+    clearInterval(lobbyAutoTimer); lobbyAutoTimer = null;
+    msg.textContent = "⚡ 곧 시작해요!";
+    lobbyAutoDone = true;
+    // Still no character? Take a free one so the game can start.
+    var me = state.players[state.myIndex];
+    if(me && !me.avatarPicked){
+      var taken = {};
+      state.players.forEach(function(p){ if(p.avatarPicked) taken[p.characterName] = true; });
+      var free = CHARACTERS.filter(function(ch){ return !taken[ch.name] && isAvatarUnlocked(ch.name, straightUnlocks); });
+      if(free.length) pickAvatar(free[Math.floor(Math.random()*free.length)], function(){});
+    } else if(isHost && state.players.every(function(p){ return p.avatarPicked; })){
+      lobbyAutoDone = false;
+      startOnlineGame();
+    }
+  }, 1000);
+  if(isHost){
+    lobbyHeartbeat = setInterval(function(){
+      if(!state.mpRoomCode || !fbDb) return;
+      fbUpdateDoc(fbDoc(fbDb,"rooms",state.mpRoomCode), { updatedAt: Date.now() }).catch(function(){});
+    }, 20000);
+  }
+}
+// ⚡ 빠른 매칭: join an open quick-match room that is still alive, or open a new one.
+function quickMatch(cb){
+  ensureFirebase().then(function(){
+    var F = fbFs;
+    var q = F.query(F.collection(fbDb,"rooms"), F.where("public","==",true), F.where("phase","==","lobby"), F.limit(20));
+    return F.getDocs(q).then(function(snap){
+      var now = Date.now(), pick = null;
+      snap.forEach(function(d){
+        var r = d.data();
+        var open = Array.isArray(r.players) && r.players.length < (r.maxPlayers||4);
+        var fresh = (now - (Number(r.updatedAt)||0)) < 60000;
+        var mineAlready = (r.players||[]).some(function(p){ return p.clientId===myClientId; });
+        if(!pick && open && fresh && !mineAlready) pick = d.id;
+      });
+      if(pick) joinRoom(pick, cb);
+      else createRoom(4, cb, { public:true });
+    }, function(e){
+      // Listing open rooms isn't allowed yet (rules not published) — just open one.
+      console.warn("빠른 매칭 조회 실패, 새 방을 엽니다", e);
+      createRoom(4, cb, { public:true });
+    });
+  }).catch(function(e){ cb("네트워크 연결에 실패했습니다: "+(e&&e.message?e.message:e)); });
+}
+
+// 🔁 한 판 더: whoever presses first turns the room back into a lobby with the people
+// still here (AI seats and players who left are dropped) and becomes its host.
+function rematch(){
+  if(!state.mpRoomCode || !fbDb) return;
+  var ref = fbDoc(fbDb,"rooms",state.mpRoomCode);
+  $("rematch-btn").disabled = true;
+  fbRunTransaction(fbDb, function(tx){
+    return tx.get(ref).then(function(snap){
+      if(!snap.exists()) throw new Error("방을 찾을 수 없습니다.");
+      var data = snap.data();
+      if(data.phase==="lobby") return;
+      var humans = (data.players || []).filter(function(p){ return p && p.clientId && !p.isAI; });
+      var meFirst = humans.filter(function(p){ return p.clientId===myClientId; }).concat(humans.filter(function(p){ return p.clientId!==myClientId; }));
+      var players = meFirst.map(function(p){
+        return { clientId:p.clientId, uid:p.uid||null, name:p.name, characterName:p.characterName, avatar:p.avatar,
+          avatarPicked:true, title:p.title||null, border:p.border||null, vip:!!p.vip, master:!!p.master,
+          ready:false, isAI:false, hand:[], score:[] };
+      });
+      tx.update(ref, { phase:"lobby", hostClientId:myClientId, players:players, floor:[], centerDeck:[], turnOrder:[],
+        currentTurnPos:0, turnSeq:0, gameOver:false, winnerIndex:null, winnerStraight:null, isDraw:false,
+        log:[], hostIndex:0, claimSeq:-1, turnDeadline:0, updatedAt:Date.now() });
+    });
+  }).catch(function(e){ alert(e && e.message ? e.message : String(e)); })
+    .then(function(){ $("rematch-btn").disabled = false; });
 }
 
 function runOrderCutscene(){
