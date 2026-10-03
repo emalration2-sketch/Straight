@@ -2346,8 +2346,8 @@ var BGM_TRACKS = [
   },
   {
     name: "산책",
-    stepSec: 0.2, barSteps: 8, swing: 0.16,
-    lead: { type:"triangle", vol:0.05, len:0.9 },
+    stepSec: 0.2, barSteps: 8, swing: 0.16, drumVol: 0.45,
+    lead: { type:"triangle", vol:0.03, len:0.9 },
     bassType: "triangle", bassVol: 0.06, bassLen: 1.8,
     melody: [69,72,76,0, 74,72,69,0,  67,71,74,0, 76,74,71,67,  65,69,72,76, 74,0,69,72,  71,0,67,64, 67,0,0,0,
              69,72,76,0, 74,72,69,0,  67,71,74,0, 76,74,71,67,  65,69,72,76, 74,0,69,72,  76,74,72,71, 72,0,0,0],
@@ -2451,12 +2451,14 @@ function bgmNote(freq, t0, duration, type, vol, attack){
   osc.connect(g); g.connect(bgmOutput());
   osc.start(t0); osc.stop(t0+duration+0.02);
 }
-function bgmDrum(kind, t0){
+// level: per-track drum volume (track.drumVol, default 1).
+function bgmDrum(kind, t0, level){
+  level = level===undefined ? 1 : level;
   if(kind==="kick"){
     var osc = audioCtx.createOscillator(), g = audioCtx.createGain();
     osc.frequency.setValueAtTime(130, t0);
     osc.frequency.exponentialRampToValueAtTime(48, t0+0.12);
-    g.gain.setValueAtTime(0.09, t0);
+    g.gain.setValueAtTime(0.09*level, t0);
     g.gain.exponentialRampToValueAtTime(0.0001, t0+0.16);
     osc.connect(g); g.connect(bgmOutput());
     osc.start(t0); osc.stop(t0+0.18);
@@ -2469,7 +2471,7 @@ function bgmDrum(kind, t0){
   var dur = kind==="hat" ? 0.035 : 0.09;
   f.type = kind==="hat" ? "highpass" : "bandpass";
   f.frequency.value = kind==="hat" ? 7000 : 1800;
-  g2.gain.setValueAtTime(kind==="hat" ? 0.018 : 0.035, t0);
+  g2.gain.setValueAtTime((kind==="hat" ? 0.018 : 0.035)*level, t0);
   g2.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
   src.connect(f); f.connect(g2); g2.connect(bgmOutput());
   src.start(t0, Math.random()*0.5); src.stop(t0+dur+0.02);
@@ -2489,7 +2491,7 @@ function playBgmStep(track, step, t0){
   }
   ["kick","snare","hat"].forEach(function(kind){
     var pat = track[kind];
-    if(pat && pat.charAt(step % pat.length)==="x") bgmDrum(kind, t0);
+    if(pat && pat.charAt(step % pat.length)==="x") bgmDrum(kind, t0, track.drumVol);
   });
 }
 
