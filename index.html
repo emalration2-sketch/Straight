@@ -187,11 +187,21 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .count-row{display:flex;gap:10px;}
 .count-btn{width:56px;height:56px;border-radius:50%;font-size:20px;font-weight:800;background:var(--panel2);border:2px solid transparent;color:var(--text);}
 .count-btn.selected{border-color:var(--pink);}
-.count-btn.diff-btn{font-size:11px;}
+.count-btn.diff-btn{width:auto;min-width:76px;height:44px;border-radius:22px;padding:0 16px;font-size:14px;}
+.setup-block{display:flex;flex-direction:column;align-items:center;gap:10px;padding:14px 18px;border-radius:14px;background:rgba(var(--line-rgb),.05);width:min(320px,90vw);}
+.setup-block .count-btn{background:var(--panel);box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.setup-label{margin:0;font-size:14px;font-weight:800;color:var(--text);}
+.setup-hint{margin:0;font-size:11.5px;color:var(--muted);text-align:center;}
+.mode-list{display:flex;flex-direction:column;gap:10px;width:min(300px,88vw);}
+.mode-btn{display:flex;align-items:center;gap:14px;text-align:left;padding:14px 18px;}
+.mode-ico{font-size:26px;line-height:1;}
+.mode-text{display:flex;flex-direction:column;gap:1px;}
+.mode-text b{font-size:16px;}
+.mode-text small{font-size:11.5px;font-weight:600;opacity:.75;}
 
 /* order cutscene */
 .order-list{display:flex;flex-direction:column;gap:6px;min-width:240px;}
-.daily-rules{max-width:340px;text-align:center;line-height:1.5;margin:4px 0;}
+.daily-rules{word-break:keep-all;max-width:340px;text-align:center;line-height:1.5;margin:4px 0;}
 .daily-status{font-size:13px;font-weight:700;color:var(--text);min-height:1.4em;text-align:center;}
 .daily-board{min-width:280px;max-width:360px;width:100%;max-height:38vh;overflow-y:auto;}
 .daily-row{display:flex;align-items:center;gap:8px;}
@@ -338,8 +348,16 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .score-area{flex:1;background:rgba(var(--line-rgb),.04);border-radius:12px;padding:5px;overflow:hidden;display:flex;flex-direction:column;gap:4px;min-width:0;}
 .hand-actions{display:flex;flex-direction:row;gap:4px;flex-shrink:0;}
 .hand-actions .btn{flex:1;font-size:12px;padding:9px 4px;border-radius:10px;line-height:1.35;min-width:0;text-align:center;word-break:keep-all;}
-.btn.exchange-big{flex:1.25;font-size:12px;font-weight:800;padding:9px 4px;border-radius:10px;background:linear-gradient(135deg,#4dd0ff,#2f8fd1);color:#04202b;border:none;}
-.btn.exchange-big:active{transform:scale(.95);}
+/* Turn actions follow the theme: 턴 종료 is a solid accent button, 정렬 an outlined one. */
+.hand-actions .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;}
+.btn.exchange-big{flex:1.4;font-weight:800;background:var(--accent);color:#2a1d00;border:none;box-shadow:0 3px 0 rgba(0,0,0,.25),0 4px 10px rgba(0,0,0,.18);}
+.btn.exchange-big .act-ico{font-size:15px;font-weight:900;line-height:1;}
+.btn.exchange-big .act-label{font-size:11px;font-weight:800;}
+.btn.exchange-big:active{transform:translateY(2px);box-shadow:0 1px 0 rgba(0,0,0,.25);}
+.btn.act-sort{background:transparent;border:1.5px solid rgba(var(--line-rgb),.35);color:var(--text);}
+.btn.act-sort .act-ico{font-size:15px;line-height:1;}
+.btn.act-sort .act-label{font-size:11px;font-weight:700;}
+.btn.act-sort:active{background:rgba(var(--line-rgb),.08);}
 .sort-btn-inner{display:inline-flex;align-items:center;justify-content:center;gap:5px;}
 .score-body{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;min-height:0;overflow:hidden;border-radius:10px;}
 .score-body.bank-target{cursor:pointer;position:relative;background:rgba(255,215,107,.07);box-shadow:inset 0 0 0 1.5px rgba(255,215,107,.75);}
@@ -514,9 +532,16 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .achv-title-chip{font-size:10px;background:var(--accent);color:#3a2604;width:auto;padding:3px 8px;border-radius:8px;white-space:nowrap;}
 .theme-light .name-tag-title{color:#9a5f0e;}
 .coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
-.coll-tab{font-size:12px;padding:6px 12px;}
-.coll-grid{width:100%;max-width:480px;max-height:68vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(84px, 1fr));gap:6px;padding:4px;}
-.coll-item{background:var(--panel2);border-radius:9px;padding:6px 4px 5px;display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid transparent;}
+.coll-tab{font-size:13px;padding:7px 13px;}
+.coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
+.coll-section{grid-column:1/-1;font-size:13px;font-weight:800;color:var(--text);margin:8px 2px 0;display:flex;align-items:center;gap:6px;}
+.coll-section:first-child{margin-top:0;}
+.coll-section span{font-size:11px;font-weight:700;color:var(--muted);background:rgba(var(--line-rgb),.08);padding:1px 7px;border-radius:999px;}
+.coll-event-strip{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;padding:8px;border-radius:10px;background:rgba(var(--line-rgb),.05);}
+.coll-event-item{display:flex;flex-direction:column;align-items:center;gap:2px;width:64px;opacity:.6;filter:grayscale(.3);}
+.coll-event-item p{margin:0;font-size:10.5px;color:var(--muted);text-align:center;}
+.coll-event-item .coll-item-preview{transform:scale(.85);}
+.coll-item{background:var(--panel2);border-radius:10px;padding:9px 5px 8px;display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid transparent;}
 .coll-item.owned{cursor:pointer;}
 .coll-item.locked .coll-item-preview{opacity:.6;filter:grayscale(.35);}
 /* A locked title stays legible: outlined chip instead of a faded one. */
@@ -527,13 +552,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coll-item.equipped{border-color:var(--accent);}
 .coll-item.equipped::before{content:"✓";position:absolute;top:2px;left:5px;font-size:10px;font-weight:900;color:var(--accent);line-height:1;}
 .coll-item-preview{min-height:30px;display:flex;align-items:center;justify-content:center;}
-.coll-item-name{font-size:10.5px;font-weight:700;margin:0;min-height:13px;text-align:center;}
+.coll-item-name{font-size:12.5px;font-weight:700;margin:0;min-height:15px;text-align:center;}
 .coll-cards{display:flex;gap:3px;}
 .coll-item-preview .name-tag.coll-tag{margin-top:6px;}
 .card.coll-card{width:34px;height:48px;font-size:18px;border-radius:5px;border-width:1.5px;cursor:default;box-shadow:0 1px 3px rgba(0,0,0,.35);}
 .card.coll-card.back::after{font-size:.7em;}
 .coll-item-state{font-size:10px;color:var(--muted);margin:0;}
-.coll-item-detail{font-size:9px;color:var(--muted);margin:0;text-align:center;line-height:1.25;}
+.coll-item-detail{font-size:10.5px;color:var(--muted);margin:0;text-align:center;line-height:1.3;}
 .coll-equip-btn{font-size:10.5px;padding:5px 10px;border-radius:8px;}
 @keyframes trophyBounce{0%{transform:scale(0) rotate(-20deg);opacity:0;}60%{transform:scale(1.15) rotate(8deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
 .confetti-piece{position:fixed;top:-20px;opacity:.95;pointer-events:none;z-index:99997;animation:confettiFall linear forwards;}
@@ -554,9 +579,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div class="start-actions">
       <button class="btn primary big start-cta" id="start-btn">게임 시작</button>
       <div class="start-menu">
-        <button class="start-tile" id="daily-btn"><span class="start-tile-ico">📅</span><span>데일리</span></button>
         <button class="start-tile" id="tutorial-btn"><span class="start-tile-ico">📖</span><span>튜토리얼</span></button>
-        <button class="start-tile" id="collection-btn"><span class="start-tile-ico">🏆</span><span>수집품</span></button>
+        <button class="start-tile" id="collection-btn"><span class="start-tile-ico">🎴</span><span>수집품</span></button>
         <button class="start-tile" id="start-settings-btn"><span class="start-tile-ico">⚙️</span><span>설정</span></button>
       </div>
     </div>
@@ -565,9 +589,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
   <div class="screen hidden" id="screen-mode">
     <h1 style="font-size:20px;">플레이 방식 선택</h1>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
-      <button class="btn primary big" id="mode-solo-btn">🤖 혼자하기 (AI 상대)</button>
-      <button class="btn primary big" id="mode-online-btn">🌐 온라인 멀티플레이</button>
+    <div class="mode-list">
+      <button class="btn primary big mode-btn" id="mode-solo-btn"><span class="mode-ico">🤖</span><span class="mode-text"><b>혼자하기</b><small>AI와 대결</small></span></button>
+      <button class="btn primary big mode-btn" id="mode-online-btn"><span class="mode-ico">🌐</span><span class="mode-text"><b>멀티플레이</b><small>친구·빠른 매칭</small></span></button>
+      <button class="btn primary big mode-btn" id="mode-challenge-btn"><span class="mode-ico">🏆</span><span class="mode-text"><b>챌린지</b><small>오늘의 한 판 · 랭킹</small></span></button>
     </div>
     <button class="btn" id="mode-back-btn">← 뒤로</button>
   </div>
@@ -615,11 +640,16 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
   </div>
 
   <div class="screen hidden" id="screen-count">
-    <h1 style="font-size:20px;">플레이 인원 선택</h1>
-    <p class="sub">부족한 인원은 AI가 대신 플레이합니다 · 인원수만큼 색상이 사용됩니다</p>
-    <div class="count-row" id="count-row"></div>
-    <p class="sub" style="margin-top:14px;">AI 난이도</p>
-    <div class="count-row" id="difficulty-row"></div>
+    <h1 style="font-size:20px;">혼자하기</h1>
+    <div class="setup-block">
+      <p class="setup-label">AI 난이도</p>
+      <div class="count-row" id="difficulty-row"></div>
+    </div>
+    <div class="setup-block">
+      <p class="setup-label">플레이 인원</p>
+      <div class="count-row" id="count-row"></div>
+      <p class="setup-hint">나머지 자리는 AI · 인원수만큼 색이 쓰여요</p>
+    </div>
     <button class="btn primary big" id="count-next-btn" disabled>다음</button>
     <button class="btn" id="count-back-btn">← 뒤로</button>
   </div>
@@ -667,8 +697,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
         <div class="score-area" id="score-area">
           <div class="score-body" id="score-body"></div>
           <div class="hand-actions">
-            <button class="btn exchange-big" id="exchange-btn">2장 뽑고<br>턴 종료</button>
-            <button class="btn" id="sort-hand-btn"><span class="sort-btn-inner"><span>↕</span><span>정렬</span></span></button>
+            <button class="btn exchange-big" id="exchange-btn"></button>
+            <button class="btn act-sort" id="sort-hand-btn"><span class="act-ico">⇅</span><span class="act-label">정렬</span></button>
             <button class="btn hidden" id="cancel-action-btn">✖ 취소</button>
           </div>
         </div>
@@ -687,28 +717,28 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div class="win-emoji">🏆</div>
     <h1 id="win-title" style="font-size:24px;"></h1>
     <p class="sub" id="win-reason"></p>
-    <button class="btn primary big hidden" id="daily-rank-btn">📅 순위 보기</button>
+    <button class="btn primary big hidden" id="daily-rank-btn">🏆 순위 보기</button>
     <button class="btn primary big hidden" id="rematch-btn">🔁 같은 멤버로 한 판 더</button>
     <button class="btn primary big" id="restart-btn">다시하기</button>
   </div>
 
   <div class="screen hidden" id="screen-daily">
-    <h1 style="font-size:20px;margin-bottom:0;">📅 데일리 챌린지</h1>
+    <h1 style="font-size:20px;margin-bottom:0;">🏆 챌린지</h1>
     <p class="sub" id="daily-date" style="margin:0;"></p>
-    <p class="sub daily-rules">모두 같은 카드로 혼자 풀어요. <b>가장 적은 턴</b>에 스트레이트를 완성하세요!<br>하루 1번 · 완성하면 시즌 점수(21 − 턴 수) · 시즌 1~3위는 다음 시즌 내내 🥇🥈🥉 배지</p>
+    <p class="sub daily-rules">같은 카드로 <b>가장 적은 턴</b>에 스트레이트 완성!<br>하루 한 번 · 매달 1~3위 🥇🥈🥉 배지</p>
     <div class="daily-status" id="daily-status"></div>
     <button class="btn primary big" id="daily-start-btn">도전하기</button>
     <div class="coll-tabs" id="daily-tabs">
       <button class="btn coll-tab primary" data-board="today">오늘 순위</button>
-      <button class="btn coll-tab" data-board="season">이번 시즌</button>
-      <button class="btn coll-tab" data-board="last">지난 시즌 수상</button>
+      <button class="btn coll-tab" data-board="season">이번 달</button>
+      <button class="btn coll-tab" data-board="last">지난달 1~3위</button>
     </div>
     <div class="order-list daily-board" id="daily-board"></div>
     <button class="btn" id="daily-back-btn">← 뒤로</button>
   </div>
 
   <div class="screen hidden" id="screen-collection">
-    <h1 style="font-size:20px;">🏆 수집품</h1>
+    <h1 style="font-size:20px;">🎴 수집품</h1>
     <div class="coll-tabs" id="coll-tabs"></div>
     <div class="coll-grid" id="coll-grid"></div>
     <button class="btn" id="coll-back-btn">← 뒤로</button>
@@ -1532,7 +1562,7 @@ function activeBorderCls(){
 function playerTagHTML(p, extraCls){
   var titleHTML = p.title ? ("<span class=\"name-tag-title\">"+p.title+"</span>") : "";
   var crownHTML = p.vip ? "<span class=\"vip-crown\" title=\"멤버십\">👑</span>" : "";
-  var medalHTML = p.medal ? "<span class=\"season-medal\" title=\"지난 시즌 데일리 "+p.medal+"위\">"+(["","🥇","🥈","🥉"][p.medal]||"")+"</span>" : "";
+  var medalHTML = p.medal ? "<span class=\"season-medal\" title=\"지난달 챌린지 "+p.medal+"위\">"+(["","🥇","🥈","🥉"][p.medal]||"")+"</span>" : "";
   return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+crownHTML+"</span>"+
     "<span class=\"name-tag-label\">"+titleHTML+"<span class=\"name-tag-text\">"+medalHTML+p.name+"</span></span></span>";
 }
@@ -1799,32 +1829,22 @@ function sfxReady(){ tone(660, 0.09, { type:"triangle", vol:0.09 }); tone(880, 0
 // are per-step patterns ("x" = hit). swing lengthens even steps / shortens odd ones.
 function midiHz(m){ return 440*Math.pow(2,(m-69)/12); }
 
-// 프렐류드: the broken-chord figure of Bach's C major prelude (BWV 846, public domain),
-// each chord's 5 voices played as 0-1-2-3-4-2-3-4 twice per bar over a held bass.
-var PRELUDE_CHORDS = [
-  [60,64,67,72,76],[60,62,69,74,77],[59,62,67,74,77],[60,64,67,72,76],
-  [60,64,69,76,81],[60,62,66,69,74],[59,62,67,74,79],[59,60,64,67,72]
-];
-var PRELUDE_FIG = [0,1,2,3,4,2,3,4,0,1,2,3,4,2,3,4];
-function preludeMelody(){
-  var out = [];
-  PRELUDE_CHORDS.forEach(function(ch){ PRELUDE_FIG.forEach(function(k){ out.push(ch[k]); }); });
-  return out;
-}
-function preludeBass(){
-  var out = [];
-  PRELUDE_CHORDS.forEach(function(ch){ for(var i=0;i<16;i++) out.push(i===0 ? ch[0]-12 : 0); });
-  return out;
-}
-
 var BGM_TRACKS = [
+  // 세레나데: the opening of Mozart's Eine kleine Nachtmusik (K. 525, public domain) —
+  // a tempo between 산책 and 축제.
   {
-    name: "프렐류드",
-    stepSec: 0.15, barSteps: 16,
-    lead: { type:"triangle", vol:0.042, len:2.2 },
-    bassType: "sine", bassVol: 0.07, bassLen: 14,
-    melody: preludeMelody(),
-    bass: preludeBass()
+    name: "세레나데",
+    stepSec: 0.17, barSteps: 8,
+    lead: { type:"triangle", vol:0.05, len:1.4 },
+    bassType: "triangle", bassVol: 0.06, bassLen: 1.8,
+    melody: [67,0,0,62, 67,0,0,62,  67,62,67,71, 74,0,0,0,  72,0,0,69, 72,0,0,69,  72,69,66,69, 62,0,0,0,
+             67,0,67,0, 71,69,67,67,  66,0,66,0, 69,66,62,66,  67,0,67,0, 71,69,67,67,  66,69,72,66, 67,0,0,0],
+    bass:   [43,0,0,0,50,0,0,0, 43,0,0,0,50,0,0,0, 38,0,0,0,45,0,0,0, 38,0,0,0,45,0,0,0,
+             43,0,0,0,50,0,0,0, 38,0,0,0,45,0,0,0, 43,0,0,0,50,0,0,0, 38,0,0,0,43,0,0,0],
+    pads:   [[55,59,62],[55,59,62],[54,57,60],[54,57,60],[55,59,62],[54,57,60],[55,59,62],[55,59,62]],
+    padVol: 0.013,
+    kick: "x...x...",
+    hat:  "..x...x."
   },
   {
     name: "산책",
@@ -2910,6 +2930,7 @@ $("mode-solo-btn").addEventListener("click", function(){
   sfxSelect();
   switchScreen("count");
 });
+$("mode-challenge-btn").addEventListener("click", function(){ sfxSelect(); dailyBoardTab = "today"; openDaily(); });
 $("mode-online-btn").addEventListener("click", function(){
   sfxSelect();
   switchScreen("online-choice");
@@ -3605,7 +3626,7 @@ function showWinScreen(player, straight){
   var myTag = "<span class=\"win-tag\">"+playerTagHTML(state.players[state.myIndex])+"</span>";
   if(isMe){
     $("win-title").innerHTML = tag+"<span class=\"win-word\">"+(state.daily ? "완성!" : "승리!")+"</span>";
-    $("win-reason").innerHTML = state.daily ? ("📅 "+(state.turnSeq+1)+"턴 만에 완성! 시즌 +"+dailyPoints(state.turnSeq+1)+"점") : "";
+    $("win-reason").innerHTML = state.daily ? ("🏆 "+(state.turnSeq+1)+"턴 만에 완성! (+"+dailyPoints(state.turnSeq+1)+"점)") : "";
   } else {
     $("win-title").innerHTML = myTag+"<span class=\"win-word\">패배!</span>";
     $("win-reason").innerHTML = tag+"<span>님이 먼저 스트레이트를 완성했어요</span>";
@@ -3638,7 +3659,8 @@ function dailyIdentity(){
 }
 function openDaily(){
   switchScreen("daily");
-  $("daily-date").textContent = dailyKey().replace(/-/g,".")+" 문제 · 시즌 "+seasonKey().replace("-",".");
+  var dk = dailyKey().split("-");
+  $("daily-date").textContent = Number(dk[1])+"월 "+Number(dk[2])+"일";
   var st = $("daily-status"), btn = $("daily-start-btn");
   btn.disabled = true;
   btn.textContent = "도전하기";
@@ -3648,7 +3670,7 @@ function openDaily(){
   (dailySavePromise || Promise.resolve()).then(function(){
     var F = fbFs, key = dailyKey();
     return F.getDoc(F.doc(fbDb,"daily",key,"scores",account.uid)).then(function(snap){
-      if(!snap.exists()){ st.textContent = "오늘 문제를 아직 풀지 않았어요."; btn.disabled = false; return; }
+      if(!snap.exists()){ st.textContent = "오늘 아직 도전하지 않았어요."; btn.disabled = false; return; }
       var d = snap.data();
       btn.textContent = "내일 다시 도전";
       if(d.failed || !d.turns){ st.textContent = "오늘은 도전 완료 · 완성하지 못했어요"; return; }
@@ -3685,7 +3707,7 @@ function renderDailyBoard(){
     // Same turn count: whoever finished first ranks higher.
     if(tab==="today") rows.sort(function(a, b){ return (a.data.turns-b.data.turns) || (toMillis(a.data.at)-toMillis(b.data.at)); });
     if(!rows.length){
-      board.appendChild(el("div","order-row", tab==="last" ? "지난 시즌 기록이 없어요." : "아직 기록이 없어요. 첫 번째가 되어 보세요!"));
+      board.appendChild(el("div","order-row", tab==="last" ? "지난달 기록이 없어요." : "아직 기록이 없어요. 첫 번째가 되어 보세요!"));
       return;
     }
     rows.slice(0, 20).forEach(function(r, i){
@@ -3720,7 +3742,7 @@ function startDailyGame(key, ch){
   var mf = myMemberFields();
   var me = { idx:0, name:(chosenNickname||ch.name)+" (나)", characterName:ch.name, avatar:avatarIconHTML(ch), title:activeTitleLabel(), border:activeBorderCls(), vip:mf.vip, master:mf.master, medal:mf.medal, isAI:false, hand:[], score:[] };
   startGame([me], [0]);
-  pushLog("📅 데일리 챌린지 "+key.replace(/-/g,".")+" — 가장 적은 턴으로 완성하세요!");
+  pushLog("🏆 오늘의 챌린지 — 가장 적은 턴으로 완성하세요!");
 }
 function finishDaily(outcome){
   if(!account || !fbDb || !state.daily || outcome!=="win" || localTestFlag("dailytest")) return;
@@ -3741,8 +3763,7 @@ function finishDaily(outcome){
     });
   }).catch(function(e){ console.error("데일리 기록 실패", e); });
 }
-$("daily-btn").addEventListener("click", function(){ unlockAudio(); sfxSelect(); dailyBoardTab = "today"; openDaily(); });
-$("daily-back-btn").addEventListener("click", function(){ sfxSelect(); switchScreen("start"); });
+$("daily-back-btn").addEventListener("click", function(){ sfxSelect(); switchScreen("mode"); });
 $("daily-start-btn").addEventListener("click", function(){ sfxSelect(); startDailyChallenge(); });
 $("daily-rank-btn").addEventListener("click", function(){
   sfxSelect();
@@ -4402,7 +4423,7 @@ function renderHand(){
     wrap.appendChild(d);
   });
 
-  $("exchange-btn").innerHTML = "2장 뽑고<br>턴 종료";
+  $("exchange-btn").innerHTML = "<span class=\"act-ico\">＋2</span><span class=\"act-label\">뽑고 턴 종료</span>";
   $("exchange-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("sort-hand-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
   $("cancel-action-btn").classList.toggle("hidden", state.mode==="idle" || state.animating);
@@ -4685,12 +4706,33 @@ function renderCollectionScreen(){
   }
   // Equipping only flips the equipped state in place. A full re-render reset the grid's
   // scroll position and restarted every animated preview, so the other items twitched.
+  var cards = [];
   function refreshEquipped(){
-    Array.prototype.forEach.call(grid.children, function(card, k){
-      card.classList.toggle("equipped", isEquippedItem(items[k]));
-    });
+    cards.forEach(function(c){ c.card.classList.toggle("equipped", isEquippedItem(c.it)); });
   }
-  items.forEach(function(it){
+  // Sections: what you own first, then goals, the shop, and a compact strip of event items.
+  function sectionOf(it){
+    if(it.unlocked) return "owned";
+    if(isEventItem(tab, it.name)) return "event";
+    if(isPaidItem(tab, it.name) || isMemberItem(tab, it.name)) return "shop";
+    return "goal";
+  }
+  var SECTIONS = [["owned","보유"],["goal","도전해서 얻기"],["shop","상점 · 멤버십"],["event","🎉 이벤트로 만나요"]];
+  SECTIONS.forEach(function(sec){
+    var list = items.filter(function(it){ return sectionOf(it)===sec[0]; });
+    if(!list.length) return;
+    grid.appendChild(el("div","coll-section", sec[1]+" <span>"+list.length+"</span>"));
+    if(sec[0]==="event"){
+      var strip = el("div","coll-event-strip");
+      list.forEach(function(it){
+        strip.appendChild(el("div","coll-event-item", "<div class=\"coll-item-preview\">"+it.preview+"</div><p>"+(tab==="title" ? "" : it.name)+"</p>"));
+      });
+      grid.appendChild(strip);
+      return;
+    }
+    list.forEach(addCard);
+  });
+  function addCard(it){
     var isEquipped = isEquippedItem(it);
 
     var card = el("div","coll-item"+(it.unlocked?"":" locked")+(isEquipped?" equipped":""));
@@ -4702,7 +4744,8 @@ function renderCollectionScreen(){
     }
     card.appendChild(el("div","coll-item-preview", it.preview));
     card.appendChild(el("p","coll-item-name", tab==="title" ? "" : it.name));
-    card.appendChild(el("p","coll-item-detail", collectionItemDetailText(tab, it.name)));
+    // Owned items don't need the how-to-get line.
+    if(!it.unlocked) card.appendChild(el("p","coll-item-detail", collectionItemDetailText(tab, it.name)));
     // Owned items equip on tap; the lock corner and the ✓ badge carry the state.
     if(it.unlocked){
       card.classList.add("owned");
@@ -4716,8 +4759,9 @@ function renderCollectionScreen(){
         refreshEquipped();
       });
     }
+    cards.push({ card:card, it:it });
     grid.appendChild(card);
-  });
+  }
   if(revealed.length) saveNewUnlocks(newIds.filter(function(id){ return revealed.indexOf(id)===-1; }));
 }
 
@@ -4900,32 +4944,6 @@ function openSettingsModal(){
     trackRow.appendChild(tb);
   });
 
-  var cardThemeLabel = el("div","section-label","🃏 카드 테마");
-  var cardThemeRow = el("div","swatch-grid");
-  CARD_THEMES.forEach(function(theme, i){
-    var owned = isThemeOwned(theme);
-    var tb = el("button","swatch-btn theme-swatch"+(i===cardThemeIndex?" primary":"")+(owned?"":" locked"));
-    var preview = el("span","theme-preview"+(theme.skin?" "+theme.skin:""));
-    if(theme.skin) preview.style.background = "var(--skin-bg)";
-    else preview.style.background = theme.bg;
-    preview.style.borderColor = theme.panel2;
-    ["PINK","BLUE","YELLOW","GREEN"].forEach(function(c){
-      var chip = el("i","theme-card");
-      chip.style.background = theme.colors[c];
-      preview.appendChild(chip);
-    });
-    tb.appendChild(preview);
-    tb.appendChild(el("span","pattern-name", (theme.member?"👑 ":theme.paid?"💎 ":"")+theme.name));
-    tb.addEventListener("click", function(){
-      if(!owned){ sfxInvalid(); return; }
-      setCardTheme(i);
-      Array.prototype.forEach.call(cardThemeRow.children, function(c){ c.classList.remove("primary"); });
-      tb.classList.add("primary");
-      sfxSelect();
-    });
-    cardThemeRow.appendChild(tb);
-  });
-
   var nickRow = el("div","settings-row");
   nickRow.innerHTML = "<span>✏️ 닉네임</span>";
   var nickInput = document.createElement("input");
@@ -4986,10 +5004,6 @@ function openSettingsModal(){
   box.appendChild(avRow);
   box.appendChild(trackLabel);
   box.appendChild(trackRow);
-  if(!inGame){
-    box.appendChild(cardThemeLabel);
-    box.appendChild(cardThemeRow);
-  }
   if(!nickLocked) box.appendChild(nickRow);
   if(!inGame && account) box.appendChild(logoutRow);
   if(quitRow) box.appendChild(quitRow);
