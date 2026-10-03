@@ -538,11 +538,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
-.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-stained::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-stained::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:25% 17.857%;background-position:0 0,16.667% 10.87%;}
-.pattern-diamond::after{background:radial-gradient(circle 2px at 18% 14%,#fff 60%,transparent),radial-gradient(circle 1.5px at 82% 86%,#fff 60%,transparent),radial-gradient(circle at 50% 50%,rgba(255,255,255,.28) 0 16%,transparent 17%),repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,255,255,.24) 0 15deg,rgba(0,0,0,.16) 15deg 30deg),radial-gradient(ellipse at 50% 50%,transparent 55%,rgba(0,0,0,.2));}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
 .pattern-diagonal::after{background-image:linear-gradient(135deg,transparent 0 50%,rgba(0,0,0,.18) 50% 100%);}
 .pattern-ripple::after{background-image:repeating-radial-gradient(circle at 25% 30%,transparent 0 5px,rgba(0,0,0,.14) 5px 6px);}
@@ -551,24 +550,22 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.5) 15% 19%, transparent 19% 45%, rgba(255,255,255,.35) 45% 48%, transparent 48% 75%, rgba(255,255,255,.45) 75% 78%, transparent 78% 100%);}
 .pattern-cosmic::after{background:radial-gradient(circle 4px at 80% 14%,rgba(255,246,220,.95) 90%,transparent 100%),radial-gradient(circle 9px at 80% 14%,rgba(255,240,200,.3),transparent 100%),radial-gradient(circle 1.2px at 16% 20%,#fff 96%,transparent),radial-gradient(circle 1px at 28% 9%,rgba(255,255,255,.8) 96%,transparent),radial-gradient(circle 1.3px at 22% 86%,#fff 96%,transparent),radial-gradient(circle 1px at 70% 90%,rgba(255,255,255,.8) 96%,transparent),radial-gradient(circle 1px at 88% 72%,rgba(255,255,255,.7) 96%,transparent),linear-gradient(150deg,rgba(26,16,70,.55),transparent 42%),linear-gradient(330deg,rgba(26,16,70,.5),transparent 40%);}
 /* Event patterns. */
-.pattern-sakura::after{background:radial-gradient(ellipse 3px 2px at 50% 50%,rgba(255,190,214,.8) 98%,transparent) 0 0/20px 20px,radial-gradient(ellipse 2px 3px at 50% 50%,rgba(255,255,255,.55) 98%,transparent) 10px 11px/20px 20px;}
+.pattern-sakura::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20transform%3D%27translate(20%2020)%27%3E%3Cg%20fill%3D%27%23ffd1e1%27%20stroke%3D%27%23ff8fb6%27%20stroke-width%3D%27.8%27%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(72)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(144)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(216)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(288)%27%2F%3E%3C%2Fg%3E%3Ccircle%20r%3D%273.2%27%20fill%3D%27%23ffe066%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 6% 6%/40% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20transform%3D%27translate(20%2020)%27%3E%3Cg%20fill%3D%27%23ffd1e1%27%20stroke%3D%27%23ff8fb6%27%20stroke-width%3D%27.8%27%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(72)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(144)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(216)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(288)%27%2F%3E%3C%2Fg%3E%3Ccircle%20r%3D%273.2%27%20fill%3D%27%23ffe066%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 96% 40%/30% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20transform%3D%27translate(20%2020)%27%3E%3Cg%20fill%3D%27%23ffd1e1%27%20stroke%3D%27%23ff8fb6%27%20stroke-width%3D%27.8%27%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(72)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(144)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(216)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(288)%27%2F%3E%3C%2Fg%3E%3Ccircle%20r%3D%273.2%27%20fill%3D%27%23ffe066%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 14% 96%/34% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cellipse%20cx%3D%2720%27%20cy%3D%2720%27%20rx%3D%275%27%20ry%3D%279%27%20fill%3D%27%23ffd1e1%27%20transform%3D%27rotate(35%2020%2020)%27%2F%3E%3C%2Fsvg%3E") 78% 8%/16% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cellipse%20cx%3D%2720%27%20cy%3D%2720%27%20rx%3D%275%27%20ry%3D%279%27%20fill%3D%27%23ffd1e1%27%20transform%3D%27rotate(35%2020%2020)%27%2F%3E%3C%2Fsvg%3E") 60% 88%/14% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cellipse%20cx%3D%2720%27%20cy%3D%2720%27%20rx%3D%275%27%20ry%3D%279%27%20fill%3D%27%23ffd1e1%27%20transform%3D%27rotate(35%2020%2020)%27%2F%3E%3C%2Fsvg%3E") 30% 52%/12% auto no-repeat;}
 .pattern-snowflake::after{background:radial-gradient(rgba(255,255,255,.6) 1px,transparent 1.4px) 0 0/14px 14px,radial-gradient(rgba(255,255,255,.35) .8px,transparent 1.1px) 7px 7px/14px 14px;}
 /* Paid patterns: premium materials — stone, carbon, glass. */
 .pattern-onyx::after{background:radial-gradient(ellipse at 28% 18%,rgba(255,255,255,.3),transparent 42%),linear-gradient(125deg,transparent 0 40%,rgba(255,215,120,.6) 40.6% 41.3%,transparent 41.9%),linear-gradient(58deg,transparent 0 66%,rgba(255,215,120,.45) 66.3% 66.9%,transparent 67.4%),linear-gradient(160deg,transparent 0 22%,rgba(255,240,200,.35) 22.2% 22.7%,transparent 23.1%),radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.08) 30%,rgba(0,0,0,.5));}
 .pattern-stained::after{background:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/25% 17.857%,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/25% 17.857%,conic-gradient(from 45deg,rgba(255,90,120,.18) 0 25%,rgba(80,160,255,.18) 0 50%,rgba(255,210,80,.18) 0 75%,rgba(90,220,150,.18) 0) 0 0/50% 35.714%;}
-.pattern-harlequin::after,.pattern-refract::after,.pattern-framecut::after,.pattern-crystal::after,.pattern-fireworks::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-harlequin::after,.pattern-framecut::after,.pattern-crystal::after,.pattern-fireworks::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 /* 할리퀸: big alternating diamonds, two per row. */
 .pattern-harlequin::after{background:conic-gradient(from 45deg at 50% 50%,rgba(255,255,255,.2) 0 25%,rgba(0,0,0,.18) 0 50%,rgba(255,255,255,.2) 0 75%,rgba(0,0,0,.18) 0) 0 0/50% 35.714%;}
-/* 굴절광선: rainbow light fanning in from the top-left corner. */
-.pattern-refract::after{background:conic-gradient(from 195deg at 0 0,transparent 0 6deg,rgba(255,130,170,.55) 12deg,rgba(255,235,130,.55) 22deg,rgba(130,225,255,.55) 32deg,rgba(190,150,255,.4) 40deg,transparent 48deg),radial-gradient(circle at 0 0,rgba(255,255,255,.35),transparent 30%);}
 /* 프레임컷: bevelled corners like a cut stone — light from the top, shade below. */
 .pattern-framecut::after{background:linear-gradient(135deg,rgba(255,255,255,.4) 0 14%,transparent 14%),linear-gradient(225deg,rgba(255,255,255,.4) 0 14%,transparent 14%),linear-gradient(315deg,rgba(0,0,0,.25) 0 14%,transparent 14%),linear-gradient(45deg,rgba(0,0,0,.25) 0 14%,transparent 14%);}
-/* 크리스탈: angular shards of light and shade. */
+/* 샤드: angular shards of light and shade. */
 .pattern-crystal::after{background:linear-gradient(110deg,transparent 0 30%,rgba(255,255,255,.28) 30% 46%,transparent 46%),linear-gradient(200deg,transparent 0 55%,rgba(0,0,0,.2) 55% 72%,transparent 72%),linear-gradient(20deg,transparent 0 62%,rgba(255,255,255,.18) 62% 80%,transparent 80%);}
 /* 폭죽: little bursts scattered over the card. */
-.pattern-fireworks::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%23ffe39a%27%20stroke-opacity%3D%27.75%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%204v8M20%2028v8M4%2020h8M28%2020h8M8.7%208.7l5.6%205.6M25.7%2025.7l5.6%205.6M8.7%2031.3l5.6-5.6M25.7%2014.3l5.6-5.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%272%27%20fill%3D%27white%27%20fill-opacity%3D%27.85%27%2F%3E%3C%2Fsvg%3E") 10% 8%/42% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%23ffe39a%27%20stroke-opacity%3D%27.75%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%204v8M20%2028v8M4%2020h8M28%2020h8M8.7%208.7l5.6%205.6M25.7%2025.7l5.6%205.6M8.7%2031.3l5.6-5.6M25.7%2014.3l5.6-5.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%272%27%20fill%3D%27white%27%20fill-opacity%3D%27.85%27%2F%3E%3C%2Fsvg%3E") 92% 50%/34% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%23ffe39a%27%20stroke-opacity%3D%27.75%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%204v8M20%2028v8M4%2020h8M28%2020h8M8.7%208.7l5.6%205.6M25.7%2025.7l5.6%205.6M8.7%2031.3l5.6-5.6M25.7%2014.3l5.6-5.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%272%27%20fill%3D%27white%27%20fill-opacity%3D%27.85%27%2F%3E%3C%2Fsvg%3E") 18% 94%/30% auto no-repeat,radial-gradient(circle 1.2px at 70% 16%,#fff 70%,transparent),radial-gradient(circle 1px at 40% 70%,#fff 70%,transparent);}
+.pattern-fireworks::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%23ffe066%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%202v9M20%2029v9M2%2020h9M29%2020h9M7.3%207.3l6.4%206.4M26.3%2026.3l6.4%206.4M7.3%2032.7l6.4-6.4M26.3%2013.7l6.4-6.4%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27%23ffe066%27%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%273%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2737%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%273%27%20cy%3D%2720%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%2737%27%20cy%3D%2720%27%20r%3D%271.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%273%27%20fill%3D%27white%27%2F%3E%3C%2Fsvg%3E") 4% 4%/52% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%23ff9ad5%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%202v9M20%2029v9M2%2020h9M29%2020h9M7.3%207.3l6.4%206.4M26.3%2026.3l6.4%206.4M7.3%2032.7l6.4-6.4M26.3%2013.7l6.4-6.4%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27%23ff9ad5%27%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%273%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2737%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%273%27%20cy%3D%2720%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%2737%27%20cy%3D%2720%27%20r%3D%271.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%273%27%20fill%3D%27white%27%2F%3E%3C%2Fsvg%3E") 100% 48%/42% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%239ff0ff%27%20stroke-width%3D%272.2%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%202v9M20%2029v9M2%2020h9M29%2020h9M7.3%207.3l6.4%206.4M26.3%2026.3l6.4%206.4M7.3%2032.7l6.4-6.4M26.3%2013.7l6.4-6.4%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27%239ff0ff%27%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%273%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2737%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%273%27%20cy%3D%2720%27%20r%3D%271.6%27%2F%3E%3Ccircle%20cx%3D%2737%27%20cy%3D%2720%27%20r%3D%271.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%273%27%20fill%3D%27white%27%2F%3E%3C%2Fsvg%3E") 10% 100%/38% auto no-repeat,radial-gradient(circle 1.6px at 70% 14%,#fff 70%,transparent),radial-gradient(circle 1.3px at 44% 72%,#fff 70%,transparent),radial-gradient(circle 1.2px at 86% 86%,#ffe066 70%,transparent);filter:drop-shadow(0 0 2px rgba(255,240,180,.7));}
 /* Patterns with marks all over fade out toward the middle so the number stays readable. */
-.pattern-sakura::after,.pattern-snowflake::after,.pattern-stained::after{-webkit-mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);}
+.pattern-snowflake::after,.pattern-stained::after{-webkit-mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);}
 .pattern-preview{width:34px;height:34px;border-radius:7px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
 .card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
 .card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 1px 2px rgba(0,0,0,.55);opacity:.95;}
@@ -1359,13 +1356,11 @@ var CARD_BACK_PRESETS = [
   { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
   // Grand Master pattern (gold foil).
   { id:"goldfoil", name:"로열", cls:"pattern-goldfoil", gm:true },
-  { id:"diamond", name:"다이아몬드", cls:"pattern-diamond", paid:true },
   { id:"onyx", name:"오닉스", cls:"pattern-onyx", paid:true },
   { id:"stained", name:"스테인드글라스", cls:"pattern-stained", paid:true },
   { id:"harlequin", name:"할리퀸", cls:"pattern-harlequin", paid:true },
-  { id:"refract", name:"굴절광선", cls:"pattern-refract", paid:true },
   { id:"framecut", name:"프레임컷", cls:"pattern-framecut", paid:true },
-  { id:"crystal", name:"크리스탈", cls:"pattern-crystal", paid:true },
+  { id:"crystal", name:"샤드", cls:"pattern-crystal", paid:true },
   { id:"fireworks", name:"폭죽", cls:"pattern-fireworks" },
   { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal", event:true },
   { id:"sakura", name:"벚꽃", cls:"pattern-sakura", event:true },
@@ -1395,10 +1390,10 @@ var UNLOCK_MILESTONES = [
   // 100 games rewards both a pattern and a title.
   { id:"games:100:pattern", kind:"pattern", label:"허니콤", check:function(s){ return s.games>=100; }, detail:function(s){ return "플레이 "+Math.min(s.games,100)+"/100판"; } },
   { id:"games:100",  kind:"title",   label:"개근상",   check:function(s){ return s.games>=100; },  detail:function(s){ return "플레이 "+Math.min(s.games,100)+"/100판"; } },
-  { id:"games:200",  kind:"pattern", label:"지그재그", check:function(s){ return s.games>=200; },  detail:function(s){ return "플레이 "+Math.min(s.games,200)+"/200판"; } },
+  { id:"games:200",  kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=200; },  detail:function(s){ return "플레이 "+Math.min(s.games,200)+"/200판"; } },
   { id:"games:400",  kind:"title",   label:"카드에 진심", check:function(s){ return s.games>=400; },  detail:function(s){ return "플레이 "+Math.min(s.games,400)+"/400판"; } },
   { id:"games:500",  kind:"pattern", label:"루나",   check:function(s){ return s.games>=500; },  detail:function(s){ return "플레이 "+Math.min(s.games,500)+"/500판"; } },
-  { id:"games:1000", kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
+  { id:"games:1000", kind:"pattern", label:"지그재그", check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
 
   { id:"misc:tutorial",   kind:"border", label:"새싹",      check:function(s){ return s.tutorialDone; },       boolCond:true, detail:function(s){ return "튜토리얼 완료"; } },
   { id:"misc:online10",   kind:"border", label:"크롬",      check:function(s){ return s.onlineWins>=20; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,20)+"/20회"; } },
@@ -1416,7 +1411,7 @@ var UNLOCK_MILESTONES = [
   { id:"misc:hard30",     kind:"title",  label:"고수",      check:function(s){ return s.hardWins>=30; },       detail:function(s){ return "어려움 AI 승리 "+Math.min(s.hardWins,30)+"/30회"; } },
   { id:"misc:podium",     kind:"title",  label:"챌린저",    check:function(s){ return s.seasonPodium; },       boolCond:true, detail:function(s){ return "챌린지 시즌 1~3위 달성"; } },
   { id:"misc:champion",   kind:"border", label:"트로피",    check:function(s){ return s.seasonChampion; },     boolCond:true, detail:function(s){ return "챌린지 시즌 1위 달성"; } },
-  { id:"misc:colors20",   kind:"title",  label:"정복자",    check:function(s){ return colorsAt20(s)>=4; },     detail:function(s){ return "색깔마다 20승 "+colorsAt20(s)+"/4색"; } }
+  { id:"misc:colors20",   kind:"title",  label:"정복자",    check:function(s){ return s.hard4Wins>=20; },     detail:function(s){ return "4인전 어려움 AI 상대 "+Math.min(s.hard4Wins,20)+"/20승"; } }
 ];
 // Runs during startup unlock migration, before ALL_COLORS is assigned — so list colors here.
 function colorsAt20(s){
@@ -1430,7 +1425,7 @@ function loadStats(){
     wins: p.wins||0, games: p.games||0, draws: p.draws||0,
     winStreak: p.winStreak||0, prismBanked: p.prismBanked||0,
     jokersBanked: p.jokersBanked||0, hardWins: p.hardWins||0,
-    onlineWins: p.onlineWins||0, fourPOnlineWins: p.fourPOnlineWins||0,
+    onlineWins: p.onlineWins||0, fourPOnlineWins: p.fourPOnlineWins||0, hard4Wins: p.hard4Wins||0,
     winsByColor: Object.assign({ PINK:0, BLUE:0, YELLOW:0, GREEN:0 }, p.winsByColor||{}),
     bombsUsed: p.bombsUsed||0,
     challengeClears: p.challengeClears||0,
@@ -1487,7 +1482,7 @@ function initUnlocksIfNeeded(){
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
 // "10": 달밤 needs 20 online wins; A became 11 — re-derive once.
-var UNLOCK_SCHEMA_VERSION = "11";
+var UNLOCK_SCHEMA_VERSION = "12";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
@@ -1504,6 +1499,7 @@ function recordGameResult(outcome, meta){
     stats.winStreak = stats.winStreak+1;
     if(meta){
       if(meta.difficulty==="hard") stats.hardWins = stats.hardWins+1;
+      if(meta.difficulty==="hard" && !meta.isOnline && meta.playerCount===4) stats.hard4Wins = stats.hard4Wins+1;
       if(meta.isOnline) stats.onlineWins = stats.onlineWins+1;
       if(meta.isOnline && meta.playerCount===4) stats.fourPOnlineWins = stats.fourPOnlineWins+1;
       if(meta.straight && meta.straight.start===7) stats.hasKStraightWin = true;
@@ -4443,21 +4439,25 @@ var COIN_PACKS = [
   { won:1100, coins:110, bonus:0 }, { won:3300, coins:345, bonus:5 }, { won:5500, coins:605, bonus:10 },
   { won:11000, coins:1265, bonus:15 }, { won:33000, coins:3960, bonus:20 }, { won:55000, coins:6875, bonus:25 }
 ];
-function openChargeModal(){
+// 💳 코인 충전: the packs. back() returns to the window that opened it.
+function openChargeModal(back){
   var rows = COIN_PACKS.map(function(p, i){
     return "<button class=\"charge-pack\" data-pack=\""+i+"\"><span class=\"charge-coins\">"+COIN_SVG+"<b>"+p.coins.toLocaleString()+"</b></span>"+
       (p.bonus ? "<span class=\"charge-bonus\">+"+p.bonus+"%</span>" : "<span></span>")+
       "<span class=\"charge-won\">"+p.won.toLocaleString()+"원</span></button>";
   }).join("");
-  coinModal("💳 코인 충전", "<div class=\"charge-list\">"+rows+"</div>", [{ label:"닫기" }]);
+  coinModal("💳 코인 충전", "<div class=\"charge-list\">"+rows+"</div>",
+    [{ label:"← 뒤로", onClick:function(){ if(back) back(); else closeModal(); } }]);
   Array.prototype.forEach.call(document.querySelectorAll(".charge-pack"), function(b){
     b.addEventListener("click", function(){
       sfxSelect();
-      // Payment (토스페이먼츠) connects here once the server side is ready.
+      // Payment connects here once the server side is ready.
       coinToast("💳 결제는 곧 열려요. 조금만 기다려 주세요!");
     });
   });
 }
+// 내 코인: balance, membership status and the membership row (구입 or 연장), with the
+// benefits and charging one tap away.
 function openWalletModal(){
   var w = account && account.wallet;
   if(!w) return;
@@ -4465,14 +4465,29 @@ function openWalletModal(){
   coinModal("내 코인",
     "<div class=\"coin-balance\">"+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></div>"+
     "<p class=\"coin-note\">👑 "+(member ? "남은 멤버십 기간 <b>"+fmtDate(w.membershipUntil)+"</b>까지" : "멤버십 없음")+"</p>"+
-    "<div class=\"wallet-member-row\"><span>멤버십 30일</span><span class=\"wallet-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></span><button class=\"btn primary\" id=\"wallet-buy-member\">"+(member ? "연장" : "구매")+"</button></div>",
-    [{ label:"멤버십 보기", onClick:function(){ openMembershipModal(); } }, { label:"닫기" }]);
-  $("wallet-buy-member").addEventListener("click", function(){
-    var btn = $("wallet-buy-member");
-    if(account.wallet.coins < MEMBERSHIP_COINS){ openChargeModal(); return; }
-    if(!confirm("멤버십 30일을 "+MEMBERSHIP_COINS+"코인에 "+(member ? "연장" : "구매")+"할까요?")) return;
-    walletAction(btn, buyMembership, function(){ coinToast("👑 멤버십 "+fmtDate(account.wallet.membershipUntil)+"까지"); });
-  });
+    "<div class=\"wallet-member-row\"><span>멤버십 30일</span><span class=\"wallet-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></span><button class=\"btn primary\" id=\"wallet-buy-member\">"+(member ? "연장" : "구입")+"</button></div>",
+    [{ label:"멤버십 혜택", onClick:function(){ openMembershipModal(openWalletModal); } },
+     { label:"💳 코인 충전", onClick:function(){ openChargeModal(openWalletModal); } },
+     { label:"닫기" }]);
+  $("wallet-buy-member").addEventListener("click", function(){ sfxSelect(); openMembershipBuyModal(); });
+}
+// Confirm step for 구입/연장. Short on coins → offer charging instead.
+function openMembershipBuyModal(){
+  var w = account.wallet, member = w.membershipUntil > Date.now();
+  var verb = member ? "연장" : "구입";
+  if(w.coins < MEMBERSHIP_COINS){
+    coinModal("코인이 부족해요",
+      "<p class=\"coin-note\">멤버십 "+verb+"에 "+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b>이 필요해요.<br>지금 "+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b> · <b>"+(MEMBERSHIP_COINS-w.coins)+"</b>코인 더 필요해요.</p>",
+      [{ label:"💳 코인 충전", primary:true, onClick:function(){ openChargeModal(openWalletModal); } },
+       { label:"← 뒤로", onClick:openWalletModal }]);
+    return;
+  }
+  var until = Math.max(w.membershipUntil, Date.now()) + MEMBERSHIP_MS;
+  coinModal("👑 멤버십 "+verb,
+    "<p class=\"coin-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></p>"+
+    "<p class=\"coin-note\"><b>"+fmtDate(until)+"</b>까지 이용할 수 있어요.<br>남는 코인 "+COIN_SVG+"<b>"+(w.coins-MEMBERSHIP_COINS).toLocaleString()+"</b></p>",
+    [{ label:verb+"하기", primary:true, onClick:function(btn){ walletAction(btn, buyMembership, function(){ coinToast("👑 멤버십 "+fmtDate(account.wallet.membershipUntil)+"까지"); }); } },
+     { label:"← 뒤로", onClick:openWalletModal }]);
 }
 // Attendance card: a 7-day row (day 7 carries the +5 bonus); days done so far this week are
 // stamped and today's stamp lands with a pop.
@@ -4490,21 +4505,12 @@ function openAttendanceModal(r){
     "<p class=\"coin-note\">오늘 "+COIN_SVG+"<b>+"+r.gain+"</b> 받았어요"+(r.gain>2 ? " · 7일 연속 보너스!" : "")+"</p>",
     [{ label:"확인", primary:true }]);
 }
-function openMembershipModal(onDone){
-  var w = account && account.wallet;
-  if(!w) return;
-  var member = w.membershipUntil > Date.now();
-  var enough = w.coins >= MEMBERSHIP_COINS;
-  coinModal("👑 멤버십 30일",
+// 멤버십 혜택: what membership gives; only a way back.
+function openMembershipModal(back){
+  coinModal("👑 멤버십 혜택",
     "<ul class=\"coin-perks\"><li><b>모든 유료 아이템</b> 사용 가능</li><li><b>멤버십 전용 아이템</b> 사용 가능</li><li>멤버십 전용 <b>VIP 배지</b></li></ul>"+
-    (member ? "<p class=\"coin-note\">"+fmtDate(w.membershipUntil)+"까지 이용 중 · 구매하면 30일 연장</p>" : "")+
-    "<p class=\"coin-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></p>",
-    [{ label: enough ? (member ? "30일 연장" : "멤버십 시작") : "💳 코인 충전", primary:true,
-       onClick:function(btn){ if(!enough){ openChargeModal(); return; } walletAction(btn, buyMembership, function(){
-         coinToast("👑 멤버십 "+fmtDate(account.wallet.membershipUntil)+"까지");
-         if(onDone) onDone();
-       }); } },
-     { label:"취소" }]);
+    "<p class=\"coin-note\">30일 "+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></p>",
+    [{ label:"← 뒤로", onClick:function(){ if(back) back(); else closeModal(); } }]);
 }
 function openBuyItemModal(kind, it, onDone){
   var w = account && account.wallet;
@@ -4518,11 +4524,11 @@ function openBuyItemModal(kind, it, onDone){
     "<p class=\"coin-note muted\">멤버십이면 구매하지 않아도 쓸 수 있어요.</p>"+
     "",
     [{ label: enough ? "구매" : "💳 코인 충전", primary:true,
-       onClick:function(btn){ if(!enough){ openChargeModal(); return; } walletAction(btn, function(){ return buyItemWithCoins(kind, it.id.replace(/^[a-z]+:/,"")); }, function(){
+       onClick:function(btn){ if(!enough){ openChargeModal(function(){ openBuyItemModal(kind, it, onDone); }); return; } walletAction(btn, function(){ return buyItemWithCoins(kind, it.id.replace(/^[a-z]+:/,"")); }, function(){
          coinToast("🛍️ <b>"+it.name+"</b> 구매 완료!");
          if(onDone) onDone();
        }); } },
-     { label:"멤버십 보기", onClick:function(){ openMembershipModal(onDone); } },
+     { label:"멤버십 혜택", onClick:function(){ openMembershipModal(function(){ openBuyItemModal(kind, it, onDone); }); } },
      { label:"취소" }]);
 }
 // Developer only: pay last season's challenge 1~3위 once (seasonRewards/{season} is the ledger).
@@ -5544,7 +5550,7 @@ function collItemValue(kind, it){
 
 function collectionItemDetailText(kind, name){
   if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
-  if(isMemberItem(kind, name)) return "👑 멤버십 전용 · 눌러서 멤버십 보기";
+  if(isMemberItem(kind, name)) return "👑 멤버십 전용";
   if(isPaidItem(kind, name)) return COIN_PRICES[kind]+"코인 · 가격표를 눌러 구매";
   if(kind==="theme") return "기본 테마";
   if(isGrandMasterItem(kind, name)){
@@ -5669,7 +5675,7 @@ function renderCollectionScreen(){
         hideCollTip();
         sfxSelect();
         if(paid) openBuyItemModal(tab, it, renderCollectionScreen);
-        else openMembershipModal(renderCollectionScreen);
+        else openWalletModal();
       });
       card.appendChild(pill);
     }
