@@ -2829,6 +2829,14 @@ function handleRoomSnapshot(data){
     state.mpMaxPlayers = data.maxPlayers;
     state.myIndex = mine;
     state.hostIndex = 0;
+    // Only the lobby itself, or a finished game coming back for 한 판 더, follows the room.
+    // Anywhere else (main menu, collection …) the player has moved on: leave the room
+    // instead of pulling them back into the waiting room.
+    var onScreen = function(n){ return !$("screen-"+n).classList.contains("hidden"); };
+    if(!onScreen("lobby") && !onScreen("win") && !onScreen("game") && !onScreen("join") && !onScreen("room-create") && !onScreen("online-choice")){
+      leaveLobby();
+      return;
+    }
     // Back from a finished game (한 판 더): reset the per-game flags and show the lobby.
     if($("screen-lobby").classList.contains("hidden")){
       state.gameOver = false;
@@ -3450,11 +3458,19 @@ $("start-btn").addEventListener("click", function(){
   startBgm();
   requestFS();
   if(urlRoomCode){
+    // An invite link is used once: drop ?room= from the address so later visits (or a
+    // bookmarked page) don't keep pulling this browser into that room.
+    var inviteCode = urlRoomCode;
+    urlRoomCode = null;
+    try{
+      var q = new URLSearchParams(location.search); q.delete("room");
+      history.replaceState(null, "", location.pathname + (q.toString() ? "?"+q.toString() : "") + location.hash);
+    }catch(e){}
     $("join-error").textContent = "참가하는 중...";
     switchScreen("join");
-    $("join-code-input").value = urlRoomCode;
-    joinRoom(urlRoomCode, function(err, joinedCode, rejoined){
-      if(err){ $("join-error").textContent = err; urlRoomCode=null; return; }
+    $("join-code-input").value = inviteCode;
+    joinRoom(inviteCode, function(err, joinedCode, rejoined){
+      if(err){ $("join-error").textContent = err; return; }
       if(!rejoined) switchScreen("lobby");
     });
     return;
