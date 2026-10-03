@@ -207,7 +207,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .daily-row{display:flex;align-items:center;gap:8px;}
 .daily-row .daily-rank{width:28px;text-align:center;font-weight:800;}
 .daily-row .daily-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
-.daily-row .daily-val{font-weight:800;color:var(--accent);}
+.daily-row .daily-val{font-weight:800;color:var(--accent);white-space:nowrap;}
+.daily-row .daily-val small{font-size:10.5px;font-weight:600;color:var(--muted);}
+.daily-reward{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:800;color:#EF9F27;white-space:nowrap;}
+.coin-ico{width:15px;height:15px;flex-shrink:0;}
 .daily-row.me{outline:2px solid var(--accent);}
 .season-medal{margin-right:2px;}
 .lobby-kick{margin-left:6px;font-size:10.5px;padding:2px 7px;border-radius:7px;}
@@ -731,14 +734,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
   <div class="screen hidden" id="screen-daily">
     <h1 style="font-size:20px;margin-bottom:0;">🏆 챌린지</h1>
-    <p class="sub" id="daily-date" style="margin:0;"></p>
-    <p class="sub daily-rules">같은 카드로 <b>가장 적은 턴</b>에 스트레이트 완성!<br>하루 한 번 · 매달 1~3위 🥇🥈🥉 배지</p>
+    <p class="sub daily-rules"><b>가장 빠른 턴에 스트레이트 완성하기!</b><br>하루 한 번 도전 가능, 매달 1~3위에 보상</p>
     <div class="daily-status" id="daily-status"></div>
     <button class="btn primary big" id="daily-start-btn">도전하기</button>
     <div class="coll-tabs" id="daily-tabs">
-      <button class="btn coll-tab primary" data-board="today">오늘 순위</button>
-      <button class="btn coll-tab" data-board="season">이번 달</button>
-      <button class="btn coll-tab" data-board="last">지난달 1~3위</button>
+      <button class="btn coll-tab primary" data-board="season">이번 시즌</button>
+      <button class="btn coll-tab" data-board="last">지난 시즌</button>
     </div>
     <div class="order-list daily-board" id="daily-board"></div>
     <button class="btn" id="daily-back-btn">← 뒤로</button>
@@ -826,10 +827,12 @@ function prevSeasonKey(){
 // Last season's top 3 wear 🥇🥈🥉 for the whole of this season.
 function loadSeasonMedal(uid){
   var F = fbFs;
-  var q = F.query(F.collection(fbDb,"seasons",prevSeasonKey(),"players"), F.orderBy("points","desc"), F.limit(3));
+  var q = F.query(F.collection(fbDb,"seasons",prevSeasonKey(),"players"), F.orderBy("bestTurns"), F.limit(20));
   return F.getDocs(q).then(function(snap){
+    var rows = snap.docs.map(function(d){ return { id:d.id, t:d.data().bestTurns, ms:d.data().bestMs||0 }; })
+      .sort(function(a, b){ return (a.t-b.t) || (a.ms-b.ms); });
     var medal = 0;
-    snap.docs.forEach(function(d, i){ if(d.id===uid) medal = i+1; });
+    rows.slice(0,3).forEach(function(r, i){ if(r.id===uid) medal = i+1; });
     return medal;
   }, function(){ return 0; });
 }
@@ -2966,7 +2969,7 @@ $("mode-solo-btn").addEventListener("click", function(){
   sfxSelect();
   switchScreen("count");
 });
-$("mode-challenge-btn").addEventListener("click", function(){ sfxSelect(); dailyBoardTab = "today"; openDaily(); });
+$("mode-challenge-btn").addEventListener("click", function(){ sfxSelect(); dailyBoardTab = "season"; openDaily(); });
 $("mode-online-btn").addEventListener("click", function(){
   sfxSelect();
   switchScreen("online-choice");
@@ -3667,7 +3670,7 @@ function showWinScreen(player, straight){
   var myTag = "<span class=\"win-tag\">"+playerTagHTML(state.players[state.myIndex])+"</span>";
   if(isMe){
     $("win-title").innerHTML = tag+"<span class=\"win-word\">"+(state.daily ? "완성!" : "승리!")+"</span>";
-    $("win-reason").innerHTML = state.daily ? ("🏆 "+(state.turnSeq+1)+"턴 만에 완성! (+"+dailyPoints(state.turnSeq+1)+"점)") : "";
+    $("win-reason").innerHTML = state.daily ? ("🏆 "+(state.turnSeq+1)+"턴 만에 완성! ("+fmtPlayTime(state.daily.ms)+")") : "";
   } else {
     $("win-title").innerHTML = myTag+"<span class=\"win-word\">패배!</span>";
     $("win-reason").innerHTML = tag+"<span>님이 먼저 스트레이트를 완성했어요</span>";
@@ -3685,44 +3688,65 @@ function showWinScreen(player, straight){
 
 $("restart-btn").addEventListener("click", function(){ location.reload(); });
 
-/* ---------------- daily challenge ---------------- */
-// One seeded deal per day (KST), solo, 2 colors. The first attempt is the only one:
-// starting writes a "failed" placeholder to daily/{day}/scores/{uid}, and a finish
-// fills in the turn count (rules allow that single update). Finishing also adds
-// 21 − turns (min 1) to this month's season score; the top 3 of a season wear
-// 🥇🥈🥉 through the next one (see loadSeasonMedal).
-var dailyBoardTab = "today";
+/* ---------------- challenge ---------------- */
+// One seeded deal per day (KST) — every player gets the same game that day — solo, 2
+// colors, one attempt: starting writes a "failed" placeholder to daily/{day}/scores/{uid}
+// and a finish fills in turns + play time once (rules allow that single update). The
+// season (a calendar month) ranks each player's best game: fewest turns, then shortest
+// play time. Season 1~3위 get coins (paid out with the coin system) and wear 🥇🥈🥉
+// through the next season (see loadSeasonMedal).
+var dailyBoardTab = "season";
 var dailySavePromise = null;
-function dailyPoints(turns){ return Math.max(1, 21 - turns); }
+var CHALLENGE_REWARDS = [30, 20, 10];
+var COIN_SVG = "<svg class=\"coin-ico\" viewBox=\"0 0 44 44\" aria-hidden=\"true\"><circle cx=\"22\" cy=\"22\" r=\"18\" fill=\"#BA7517\"/><circle cx=\"22\" cy=\"21\" r=\"17\" fill=\"#EF9F27\"/><circle cx=\"22\" cy=\"21\" r=\"12.5\" fill=\"none\" stroke=\"#FAC775\" stroke-width=\"2\"/>"+
+  "<g transform=\"translate(14 12) scale(0.37)\"><path d=\"M8 16 L22 4 L36 16 Z\" fill=\"#7F77DD\"/><path d=\"M15 16 L22 4 L29 16 Z\" fill=\"#CECBF6\"/><path d=\"M19 16 L22 9 L25 16 Z\" fill=\"#5DCAA5\"/><path d=\"M8 16 L36 16 L22 40 Z\" fill=\"#378ADD\"/><path d=\"M15 16 L29 16 L22 40 Z\" fill=\"#534AB7\"/></g></svg>";
+function fmtPlayTime(ms){
+  var sec = Math.max(0, Math.round((Number(ms)||0)/1000));
+  return Math.floor(sec/60)+":"+(sec%60<10?"0":"")+(sec%60);
+}
 function dailyIdentity(){
   var ch = chosenCharacter || presetByName("avatar", getDefaultAvatarName()) || CHARACTERS[0];
   return { ch:ch, name:cleanNick(chosenNickname || ch.name), avatar:ch.name };
 }
 function openDaily(){
   switchScreen("daily");
-  var dk = dailyKey().split("-");
-  $("daily-date").textContent = Number(dk[1])+"월 "+Number(dk[2])+"일";
   var st = $("daily-status"), btn = $("daily-start-btn");
   btn.disabled = true;
   btn.textContent = "도전하기";
-  if(localTestFlag("dailytest")){ btn.disabled = false; st.textContent = "(로컬 테스트: 기록 저장 안 함)"; return; }
+  if(localTestFlag("dailytest")){ btn.disabled = false; st.textContent = "(로컬 테스트: 기록 저장 안 함)"; renderDailyBoard(); return; }
   if(!account || !fbDb){ st.textContent = "로그인하면 도전할 수 있어요."; renderDailyBoard(); return; }
   st.textContent = "불러오는 중...";
   (dailySavePromise || Promise.resolve()).then(function(){
-    var F = fbFs, key = dailyKey();
-    return F.getDoc(F.doc(fbDb,"daily",key,"scores",account.uid)).then(function(snap){
+    var F = fbFs;
+    return F.getDoc(F.doc(fbDb,"daily",dailyKey(),"scores",account.uid)).then(function(snap){
       if(!snap.exists()){ st.textContent = "오늘 아직 도전하지 않았어요."; btn.disabled = false; return; }
       var d = snap.data();
       btn.textContent = "내일 다시 도전";
-      if(d.failed || !d.turns){ st.textContent = "오늘은 도전 완료 · 완성하지 못했어요"; return; }
-      st.textContent = "오늘 기록: "+d.turns+"턴";
-      var q = F.query(F.collection(fbDb,"daily",key,"scores"), F.where("turns","<",d.turns));
-      F.getCountFromServer(q).then(function(c){
-        st.textContent = "오늘 기록: "+d.turns+"턴 · "+(c.data().count+1)+"위";
-      }).catch(function(){});
+      st.textContent = (d.failed || !d.turns) ? "오늘 도전 완료 · 완성하지 못했어요" : ("오늘 도전 완료 · "+d.turns+"턴"+(typeof d.ms==="number" ? " · "+fmtPlayTime(d.ms) : ""));
+      if(!d.failed && d.turns) return backfillSeasonBest(d);
     });
-  }).catch(function(e){ st.textContent = "불러오지 못했어요."; console.error("데일리 불러오기 실패", e); })
+  }).catch(function(e){ st.textContent = "불러오지 못했어요."; console.error("챌린지 불러오기 실패", e); })
     .then(renderDailyBoard);
+}
+// Today's finished game recorded before season bests existed: copy it into the season once.
+function backfillSeasonBest(d){
+  var F = fbFs, sref = F.doc(fbDb,"seasons",seasonKey(),"players",account.uid), me = dailyIdentity();
+  return F.runTransaction(fbDb, function(tx){
+    return tx.get(sref).then(function(snap){
+      var cur = snap.exists() ? snap.data() : {};
+      if(typeof cur.bestTurns==="number") return;
+      tx.set(sref, { name:me.name, avatar:me.avatar, bestTurns:d.turns, bestMs:typeof d.ms==="number" ? d.ms : 0, days:(cur.days||0)+1, updatedAt:Date.now() });
+    });
+  }).catch(function(e){ console.error("시즌 기록 옮기기 실패", e); });
+}
+// Best game of the season per player, sorted by turns then play time.
+function seasonBoardRows(season){
+  var F = fbFs;
+  var q = F.query(F.collection(fbDb,"seasons",season,"players"), F.orderBy("bestTurns"), F.limit(50));
+  return F.getDocs(q).then(function(snap){
+    return snap.docs.map(function(d){ return { id:d.id, data:d.data() }; })
+      .sort(function(a, b){ return (a.data.bestTurns-b.data.bestTurns) || ((a.data.bestMs||0)-(b.data.bestMs||0)); });
+  });
 }
 function renderDailyBoard(){
   var board = $("daily-board");
@@ -3731,78 +3755,76 @@ function renderDailyBoard(){
     b.classList.toggle("primary", b.getAttribute("data-board")===dailyBoardTab);
   });
   if(!account || !fbDb) return;
-  var F = fbFs, tab = dailyBoardTab, q, valueOf;
-  if(tab==="today"){
-    q = F.query(F.collection(fbDb,"daily",dailyKey(),"scores"), F.orderBy("turns"), F.limit(50));
-    valueOf = function(d){ return d.turns+"턴"; };
-  } else {
-    var season = tab==="season" ? seasonKey() : prevSeasonKey();
-    q = F.query(F.collection(fbDb,"seasons",season,"players"), F.orderBy("points","desc"), F.limit(tab==="last" ? 3 : 50));
-    valueOf = function(d){ return d.points+"점"; };
-  }
+  var tab = dailyBoardTab;
   board.appendChild(el("div","order-row","불러오는 중..."));
-  F.getDocs(q).then(function(snap){
+  seasonBoardRows(tab==="season" ? seasonKey() : prevSeasonKey()).then(function(rows){
     if(tab!==dailyBoardTab) return;
     board.innerHTML = "";
-    var rows = snap.docs.map(function(d){ return { id:d.id, data:d.data() }; });
-    // Same turn count: whoever finished first ranks higher.
-    if(tab==="today") rows.sort(function(a, b){ return (a.data.turns-b.data.turns) || (toMillis(a.data.at)-toMillis(b.data.at)); });
     if(!rows.length){
-      board.appendChild(el("div","order-row", tab==="last" ? "지난달 기록이 없어요." : "아직 기록이 없어요. 첫 번째가 되어 보세요!"));
+      board.appendChild(el("div","order-row", tab==="last" ? "지난 시즌 기록이 없어요." : "아직 기록이 없어요. 첫 번째가 되어 보세요!"));
       return;
     }
-    rows.slice(0, 20).forEach(function(r, i){
+    rows.slice(0, 10).forEach(function(r, i){
       var ch = presetByName("avatar", r.data.avatar);
-      var rank = tab==="last" ? ["🥇","🥈","🥉"][i] : String(i+1);
+      var rank = i<3 ? ["🥇","🥈","🥉"][i] : String(i+1);
+      var reward = i<3 ? ("<span class=\"daily-reward\">"+COIN_SVG+CHALLENGE_REWARDS[i]+"</span>") : "";
       var row = el("div","order-row daily-row"+(r.id===account.uid ? " me" : ""));
       row.innerHTML = "<span class=\"daily-rank\">"+rank+"</span><span>"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
-        "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span><span class=\"daily-val\">"+valueOf(r.data)+"</span>";
+        "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span>"+reward+
+        "<span class=\"daily-val\">"+r.data.bestTurns+"턴"+(r.data.bestMs ? " <small>"+fmtPlayTime(r.data.bestMs)+"</small>" : "")+"</span>";
       board.appendChild(row);
     });
   }).catch(function(e){
     if(tab!==dailyBoardTab) return;
     board.innerHTML = "";
     board.appendChild(el("div","order-row","순위를 불러오지 못했어요."));
-    console.error("데일리 순위 실패", e);
+    console.error("챌린지 순위 실패", e);
   });
 }
 function startDailyChallenge(){
   if(!account || !fbDb){ if(!localTestFlag("dailytest")) return; }
   var btn = $("daily-start-btn");
   btn.disabled = true;
-  var F = fbFs, key = dailyKey(), me = dailyIdentity();
+  var key = dailyKey(), me = dailyIdentity();
   // ?dailytest on a local server plays today's deal without using up the attempt.
   if(localTestFlag("dailytest")){ startDailyGame(key, me.ch); return; }
+  var F = fbFs;
   F.setDoc(F.doc(fbDb,"daily",key,"scores",account.uid), { name:me.name, avatar:me.avatar, failed:true, at:F.serverTimestamp() })
     .then(function(){ startDailyGame(key, me.ch); })
-    .catch(function(e){ $("daily-status").textContent = "오늘은 이미 도전했어요."; console.error("데일리 시작 실패", e); });
+    .catch(function(e){ $("daily-status").textContent = "오늘은 이미 도전했어요."; console.error("챌린지 시작 실패", e); });
 }
 function startDailyGame(key, ch){
   gameRng = seededRng("straight-daily-"+key);
-  state.daily = { key:key };
+  state.daily = { key:key, startedAt:Date.now() };
   var mf = myMemberFields();
   var me = { idx:0, name:(chosenNickname||ch.name)+" (나)", characterName:ch.name, avatar:avatarIconHTML(ch), title:activeTitleLabel(), border:activeBorderCls(), vip:mf.vip, master:mf.master, medal:mf.medal, isAI:false, hand:[], score:[] };
   startGame([me], [0]);
-  pushLog("🏆 오늘의 챌린지 — 가장 적은 턴으로 완성하세요!");
+  pushLog("🏆 오늘의 챌린지 — 가장 빠른 턴에 스트레이트를 완성하세요!");
 }
 function finishDaily(outcome){
-  if(!account || !fbDb || !state.daily || outcome!=="win" || localTestFlag("dailytest")) return;
-  var F = fbFs, turns = state.turnSeq + 1, me = dailyIdentity();
+  if(!state.daily || outcome!=="win") return;
+  state.daily.turns = state.turnSeq + 1;
+  state.daily.ms = Math.max(0, Math.min(86400000, Date.now() - state.daily.startedAt));
+  if(!account || !fbDb || localTestFlag("dailytest")) return;
+  var F = fbFs, turns = state.daily.turns, ms = state.daily.ms, me = dailyIdentity();
   var ref = F.doc(fbDb,"daily",state.daily.key,"scores",account.uid);
   var sref = F.doc(fbDb,"seasons",seasonKey(),"players",account.uid);
-  dailySavePromise = F.updateDoc(ref, { turns:turns, failed:false }).then(function(){
+  dailySavePromise = F.updateDoc(ref, { turns:turns, ms:ms, failed:false }).then(function(){
     return F.runTransaction(fbDb, function(tx){
       return tx.get(sref).then(function(snap){
-        var pts = dailyPoints(turns);
-        if(snap.exists()){
-          var d = snap.data();
-          tx.update(sref, { name:me.name, avatar:me.avatar, points:(d.points||0)+pts, days:(d.days||0)+1, updatedAt:Date.now() });
-        } else {
-          tx.set(sref, { name:me.name, avatar:me.avatar, points:pts, days:1, updatedAt:Date.now() });
-        }
+        var d = snap.exists() ? snap.data() : {};
+        var hasBest = typeof d.bestTurns==="number";
+        var better = !hasBest || turns < d.bestTurns || (turns===d.bestTurns && ms < (d.bestMs||0));
+        tx.set(sref, {
+          name:me.name, avatar:me.avatar,
+          bestTurns: better ? turns : d.bestTurns,
+          bestMs: better ? ms : (d.bestMs||0),
+          days: (d.days||0) + 1,
+          updatedAt: Date.now()
+        });
       });
     });
-  }).catch(function(e){ console.error("데일리 기록 실패", e); });
+  }).catch(function(e){ console.error("챌린지 기록 실패", e); });
 }
 $("daily-back-btn").addEventListener("click", function(){ sfxSelect(); switchScreen("mode"); });
 $("daily-start-btn").addEventListener("click", function(){ sfxSelect(); startDailyChallenge(); });
@@ -3810,7 +3832,7 @@ $("daily-rank-btn").addEventListener("click", function(){
   sfxSelect();
   gameRng = null;
   state.daily = null;
-  dailyBoardTab = "today";
+  dailyBoardTab = "season";
   openDaily();
 });
 Array.prototype.forEach.call($("daily-tabs").children, function(b){

@@ -48,27 +48,30 @@ service cloud.firestore {
         && request.resource.data.failed == true;
       allow update: if signedIn() && request.auth.uid == uid
         && resource.data.failed == true
-        && request.resource.data.keys().hasOnly(['name','avatar','failed','at','turns'])
+        && request.resource.data.keys().hasOnly(['name','avatar','failed','at','turns','ms'])
         && request.resource.data.failed == false
         && request.resource.data.turns is int
-        && request.resource.data.turns >= 1 && request.resource.data.turns <= 200;
+        && request.resource.data.turns >= 1 && request.resource.data.turns <= 200
+        && request.resource.data.ms is int
+        && request.resource.data.ms >= 0 && request.resource.data.ms <= 86400000;
       allow delete: if false;
     }
-    // Monthly season totals: each finished daily adds 1–20 points and one day.
+    // Monthly season: each player's best game (fewest turns, then shortest time) plus days played.
     match /seasons/{season}/players/{uid} {
       allow read: if signedIn();
       allow create: if signedIn() && request.auth.uid == uid
         && season.matches('^[0-9]{4}-[0-9]{2}$')
-        && request.resource.data.keys().hasOnly(['name','avatar','points','days','updatedAt'])
-        && request.resource.data.points is int
-        && request.resource.data.points >= 1 && request.resource.data.points <= 20
+        && request.resource.data.keys().hasOnly(['name','avatar','bestTurns','bestMs','days','updatedAt'])
+        && request.resource.data.bestTurns is int
+        && request.resource.data.bestTurns >= 1 && request.resource.data.bestTurns <= 200
+        && request.resource.data.bestMs is int
         && request.resource.data.days == 1;
       allow update: if signedIn() && request.auth.uid == uid
-        && request.resource.data.keys().hasOnly(['name','avatar','points','days','updatedAt'])
-        && request.resource.data.days == resource.data.days + 1
-        && request.resource.data.points is int
-        && request.resource.data.points > resource.data.points
-        && request.resource.data.points <= resource.data.points + 20;
+        && request.resource.data.keys().hasOnly(['name','avatar','bestTurns','bestMs','days','updatedAt'])
+        && request.resource.data.bestTurns is int && request.resource.data.bestTurns >= 1
+        && request.resource.data.bestMs is int
+        && request.resource.data.days == resource.data.get('days', 0) + 1
+        && request.resource.data.bestTurns <= resource.data.get('bestTurns', 200);
       allow delete: if false;
     }
 
