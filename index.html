@@ -415,6 +415,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .floor-hint.joker{background:var(--accent);color:#241f3d;border-color:transparent;}
 .floor-hint.reset{background:#ff9a3d;color:#2a1405;border-color:transparent;}
 .floor-slot{display:flex;align-items:center;justify-content:center;position:relative;}
+.bomb-blast{position:fixed;z-index:99999;transform:translate(-50%,-50%) scale(.2);font-size:120px;line-height:1;pointer-events:none;animation:bombBlast .85s ease-out forwards;filter:drop-shadow(0 0 18px rgba(255,170,60,.9));}
+@keyframes bombBlast{0%{transform:translate(-50%,-50%) scale(.2);opacity:1;}35%{transform:translate(-50%,-50%) scale(1.25);opacity:1;}100%{transform:translate(-50%,-50%) scale(1.6);opacity:0;}}
+.floor-board.bomb-shake{animation:bombShake .5s ease;}
+@keyframes bombShake{0%,100%{transform:translate(0,0);}20%{transform:translate(-6px,3px);}40%{transform:translate(5px,-4px);}60%{transform:translate(-4px,2px);}80%{transform:translate(3px,-1px);}}
 .floor-slot.impact .card{animation:impactPulse .22s ease;}
 @keyframes impactPulse{0%{transform:scale(1);}50%{transform:scale(1.22);}100%{transform:scale(1);}}
 .floor-slot.impact::after{content:"";position:absolute;inset:-6px;border-radius:16px;background:var(--accent);opacity:0;animation:impactRing .22s ease;pointer-events:none;}
@@ -2509,7 +2513,8 @@ var state = {
   hostIndex: 0,
   claimSeq: -1,
   turnTimedOut: false,
-  prismRanks: []
+  prismRanks: [],
+  fx: []
 };
 
 var chosenCharacter = null;
@@ -2535,11 +2540,13 @@ function getClientId(){
   var seat = (location.search.match(/[?&]seat=(\d)/) || [])[1];
   var h = location.hostname;
   if(seat && (h==="localhost" || h==="127.0.0.1")) return "seat"+seat+"-"+(localStorage.getItem("straightClientId")||"local");
+  // Per tab (sessionStorage survives a reload of the same tab): two tabs or windows of one
+  // browser used to share an id and both controlled the same seat.
   var id = null;
-  try{ id = localStorage.getItem("straightClientId"); }catch(e){}
+  try{ id = sessionStorage.getItem("straightClientId"); }catch(e){}
   if(!id){
     id = "c" + Math.random().toString(36).slice(2,10) + Date.now().toString(36);
-    try{ localStorage.setItem("straightClientId", id); }catch(e){}
+    try{ sessionStorage.setItem("straightClientId", id); }catch(e){}
   }
   return id;
 }
@@ -2581,6 +2588,7 @@ function pushRoomState(){
     winnerStraight: state.winnerStraight,
     isDraw: state.isDraw,
     log: state.log,
+    fx: state.fx || [],
     phase: "playing",
     updatedAt: Date.now()
   }).catch(function(e){ console.error("동기화 실패", e); });
@@ -2616,6 +2624,7 @@ function cleanPlayer(p){
   out.timeouts = Math.min(99, Math.max(0, Math.floor(Number(p.timeouts)||0)));
   out.timeoutStreak = Math.min(99, Math.max(0, Math.floor(Number(p.timeoutStreak)||0)));
   out.aiTurns = Math.min(999, Math.max(0, Math.floor(Number(p.aiTurns)||0)));
+  out.aiTurnSeq = Number.isFinite(Number(p.aiTurnSeq)) ? Number(p.aiTurnSeq) : -1;
   out.aiTakeover = !!p.aiTakeover;
   out.ready = !!p.ready;
   out.medal = [1,2,3].indexOf(Number(p.medal))!==-1 ? Number(p.medal) : 0;
@@ -2640,6 +2649,11 @@ function sanitizeRoomData(data){
   data.turnDeadline = Math.max(0, Number(data.turnDeadline)||0);
   data.hostIndex = Math.min(Math.max(0, Math.floor(Number(data.hostIndex)||0)), Math.max(0, n-1));
   data.claimSeq = Number.isFinite(Number(data.claimSeq)) ? Number(data.claimSeq) : -1;
+  data.fx = Array.isArray(data.fx) ? data.fx.slice(-6).map(function(e){
+    if(!e || typeof e!=="object" || ["cap","bomb"].indexOf(e.k)===-1) return null;
+    return { n:Math.floor(Number(e.n)||0), by:String(e.by||"").slice(0,40), k:e.k,
+      p:Math.max(0, Math.floor(Number(e.p)||0)), f:Math.min(7, Math.max(0, Math.floor(Number(e.f)||0))), c:cleanCard(e.c) };
+  }).filter(Boolean) : [];
   var bl = data.balance || {};
   data.balance = { jokers:Math.max(0, Number(bl.jokers)||0), bombs:Math.max(0, Number(bl.bombs)||0), autoResets:Math.max(0, Number(bl.autoResets)||0) };
   return data;
@@ -2709,8 +2723,52 @@ document.addEventListener("visibilitychange", function(){
 window.addEventListener("online", forceResync);
 window.addEventListener("focus", forceResync);
 
+// Online effects: the acting device records captures and bombs (state.fx, last 6), and the
+// other devices replay them from the board they still show before applying the new state.
+var lastFxSeen = null;
+function recordFx(ev){
+  if(!isMultiplayer()) return;
+  var list = state.fx || [];
+  ev.n = (list.length ? list[list.length-1].n : 0) + 1;
+  ev.by = myClientId;
+  state.fx = list.concat([ev]).slice(-6);
+}
+function playRemoteFx(fx){
+  var newest = fx.length ? fx[fx.length-1].n : 0;
+  if(lastFxSeen===null || newest < lastFxSeen){ lastFxSeen = newest; return; }
+  fx.forEach(function(e){
+    if(e.n <= lastFxSeen) return;
+    lastFxSeen = e.n;
+    if(e.by===myClientId) return;
+    if(e.k==="bomb"){ playBombBlast(); return; }
+    var slot = document.querySelectorAll("#floor-board .floor-slot")[e.f];
+    var from = slot && slot.querySelector(".card");
+    var dest = document.querySelector('.opponent-card[data-player-idx="'+e.p+'"]');
+    if(!from || !dest || !e.c) return;
+    var rect = from.getBoundingClientRect();
+    slot.classList.add("impact");
+    sfxCapture();
+    setTimeout(function(){ slot.classList.remove("impact"); }, 220);
+    animateFly(rect, dest.getBoundingClientRect(), e.c, 420);
+  });
+}
+// The bomb going off over the floor: a flash, a shaking board and the boom.
+function playBombBlast(){
+  sfxReset();
+  var board = $("floor-board");
+  if(!board) return;
+  var r = board.getBoundingClientRect();
+  var blast = el("div","bomb-blast","💥");
+  blast.style.left = (r.left + r.width/2)+"px";
+  blast.style.top = (r.top + r.height/2)+"px";
+  document.body.appendChild(blast);
+  board.classList.remove("bomb-shake"); void board.offsetWidth; board.classList.add("bomb-shake");
+  setTimeout(function(){ blast.remove(); board.classList.remove("bomb-shake"); }, 900);
+}
 function applyRemoteRoomState(data){
   if(state.ceremonyPlaying) return;
+  playRemoteFx(data.fx || []);
+  state.fx = data.fx || [];
   var wasOver = state.gameOver;
   // Hand order (정렬) and the current selection are local-only. Remember them by card id
   // so a snapshot arriving mid-turn (an emoji, a write echo) can't reorder the hand under
@@ -2805,7 +2863,12 @@ function maybeDriveAi(idx, delay){
   if(aiDriveGuard[key]) return;
   aiDriveGuard = {};
   aiDriveGuard[key] = true;
-  setTimeout(function(){ aiTakeTurn(idx); }, delay===undefined?900:delay);
+  if(delay===undefined){
+    var p = state.players[idx];
+    // Online, AI seats move at a human-ish pace (a stand-in for someone away a bit slower).
+    delay = !isMultiplayer() ? 900 : (p && p.aiTakeover ? 2400 : 1600);
+  }
+  setTimeout(function(){ aiTakeTurn(idx); }, delay);
 }
 
 /* ---------------- online: stalled turns, AI stand-ins, forfeits ---------------- */
@@ -2922,6 +2985,9 @@ function reclaimMySeat(){
   me.isAI = false;
   me.aiTakeover = false;
   me.timeoutStreak = 0;
+  me.timeouts = 0;
+  // Back on my own turn: the full 60 seconds, not what was left for the AI.
+  if(currentPlayerIdx()===state.myIndex) state.turnDeadline = Date.now() + turnLimitMs(me);
   pushLog("✋ "+bareName(me.name)+"님이 돌아왔습니다!");
   render();
   pushRoomState();
@@ -3128,6 +3194,7 @@ function startOnlineGame(){
   state.aiDifficulty = chosenAiDifficulty;
   state.hostIndex = 0;
   state.claimSeq = -1;
+  state.fx = [];
   state.turnDeadline = Date.now() + turnLimitMs(lobbyPlayers[turnOrder[0]]);
   aiDriveGuard = {};
   // Newest first: Grand Master announcements sit on top of the start lines.
@@ -4424,6 +4491,7 @@ function finishEat(playerIdx, handIdx, floorIdx, capturedCoin){
     if(capturedCoin.isReset) player.hand.push(capturedCoin);
     else player.score.push(capturedCoin);
     if(capturedCoin.isPrism && playerIdx===state.myIndex) bumpStatAndCheck("prismBanked", 1);
+    recordFx({ k:"cap", p:playerIdx, f:floorIdx, c:capturedCoin });
     state.floor[floorIdx] = { id:handCoin.id, isJoker:handCoin.isJoker, isReset:!!handCoin.isReset, color:handCoin.color, value:handCoin.value, isPrism:handCoin.isPrism };
     pushLog(player.name+"가 "+coinLabel(handCoin)+"(으)로 바닥의 "+coinLabel(capturedCoin)+"을(를) 가져왔습니다!");
     announceReady(playerIdx, readyBefore);
@@ -4488,7 +4556,8 @@ function useResetCard(playerIdx, handIdx, cb){
   state.animating = true;
   clearSelectionState();
   render();
-  sfxReset();
+  playBombBlast();
+  recordFx({ k:"bomb", p:playerIdx, f:0, c:null });
 
   var deckEl = $("deck-visual");
   var deckRect = deckEl ? deckEl.getBoundingClientRect() : null;
@@ -4656,8 +4725,12 @@ function aiDecide(playerIdx){
 function aiTakeTurn(playerIdx){
   if(state.gameOver) return;
   var player = state.players[playerIdx];
+  if(!player || !player.isAI || currentPlayerIdx()!==playerIdx) return;
 
-  if(player.aiTakeover) player.aiTurns = (player.aiTurns||0) + 1;
+  if(player.aiTakeover && player.aiTurnSeq!==state.turnSeq){
+    player.aiTurnSeq = state.turnSeq;
+    player.aiTurns = (player.aiTurns||0) + 1;
+  }
   var jokerIndices = [];
   if(Math.random() < aiProfile(playerIdx).bankJoker){
     player.hand.forEach(function(c,i){ if(c.isJoker) jokerIndices.push(i); });
