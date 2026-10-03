@@ -191,6 +191,15 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
 /* order cutscene */
 .order-list{display:flex;flex-direction:column;gap:6px;min-width:240px;}
+.daily-rules{max-width:340px;text-align:center;line-height:1.5;margin:4px 0;}
+.daily-status{font-size:13px;font-weight:700;color:var(--text);min-height:1.4em;text-align:center;}
+.daily-board{min-width:280px;max-width:360px;width:100%;max-height:38vh;overflow-y:auto;}
+.daily-row{display:flex;align-items:center;gap:8px;}
+.daily-row .daily-rank{width:28px;text-align:center;font-weight:800;}
+.daily-row .daily-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+.daily-row .daily-val{font-weight:800;color:var(--accent);}
+.daily-row.me{outline:2px solid var(--accent);}
+.season-medal{margin-right:2px;}
 .lobby-kick{margin-left:6px;font-size:10.5px;padding:2px 7px;border-radius:7px;}
 .lobby-ready{font-size:11px;font-weight:800;color:#4ce0a0;margin-left:4px;}
 .order-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border-radius:10px;padding:6px 12px;font-size:14px;opacity:0;animation:riseIn .4s forwards;}
@@ -545,6 +554,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div class="start-actions">
       <button class="btn primary big start-cta" id="start-btn">게임 시작</button>
       <div class="start-menu">
+        <button class="start-tile" id="daily-btn"><span class="start-tile-ico">📅</span><span>데일리</span></button>
         <button class="start-tile" id="tutorial-btn"><span class="start-tile-ico">📖</span><span>튜토리얼</span></button>
         <button class="start-tile" id="collection-btn"><span class="start-tile-ico">🏆</span><span>수집품</span></button>
         <button class="start-tile" id="start-settings-btn"><span class="start-tile-ico">⚙️</span><span>설정</span></button>
@@ -677,8 +687,24 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div class="win-emoji">🏆</div>
     <h1 id="win-title" style="font-size:24px;"></h1>
     <p class="sub" id="win-reason"></p>
+    <button class="btn primary big hidden" id="daily-rank-btn">📅 순위 보기</button>
     <button class="btn primary big hidden" id="rematch-btn">🔁 같은 멤버로 한 판 더</button>
     <button class="btn primary big" id="restart-btn">다시하기</button>
+  </div>
+
+  <div class="screen hidden" id="screen-daily">
+    <h1 style="font-size:20px;margin-bottom:0;">📅 데일리 챌린지</h1>
+    <p class="sub" id="daily-date" style="margin:0;"></p>
+    <p class="sub daily-rules">모두 같은 카드로 혼자 풀어요. <b>가장 적은 턴</b>에 스트레이트를 완성하세요!<br>하루 1번 · 완성하면 시즌 점수(21 − 턴 수) · 시즌 1~3위는 다음 시즌 내내 🥇🥈🥉 배지</p>
+    <div class="daily-status" id="daily-status"></div>
+    <button class="btn primary big" id="daily-start-btn">도전하기</button>
+    <div class="coll-tabs" id="daily-tabs">
+      <button class="btn coll-tab primary" data-board="today">오늘 순위</button>
+      <button class="btn coll-tab" data-board="season">이번 시즌</button>
+      <button class="btn coll-tab" data-board="last">지난 시즌 수상</button>
+    </div>
+    <div class="order-list daily-board" id="daily-board"></div>
+    <button class="btn" id="daily-back-btn">← 뒤로</button>
   </div>
 
   <div class="screen hidden" id="screen-collection">
@@ -751,6 +777,25 @@ function ensureFirebase(){
 
 /* ---------------- account (Google sign-in gate) ---------------- */
 var account = null;
+// Daily challenge days and seasons run on Korean time; a season is a calendar month.
+function kstDate(){ return new Date(Date.now() + 9*3600*1000); }
+function dailyKey(){ return kstDate().toISOString().slice(0,10); }
+function seasonKey(){ return kstDate().toISOString().slice(0,7); }
+function prevSeasonKey(){
+  var d = kstDate(); var y = d.getUTCFullYear(), m = d.getUTCMonth();
+  if(m===0){ y--; m = 12; }
+  return y+"-"+(m<10?"0":"")+m;
+}
+// Last season's top 3 wear 🥇🥈🥉 for the whole of this season.
+function loadSeasonMedal(uid){
+  var F = fbFs;
+  var q = F.query(F.collection(fbDb,"seasons",prevSeasonKey(),"players"), F.orderBy("points","desc"), F.limit(3));
+  return F.getDocs(q).then(function(snap){
+    var medal = 0;
+    snap.docs.forEach(function(d, i){ if(d.id===uid) medal = i+1; });
+    return medal;
+  }, function(){ return 0; });
+}
 // localStorage keys that belong to the signed-in account (mirrored to users/{uid}.progress).
 var SYNCED_KEYS = ["straightStats","straightUnlocks","straightUnlocksVer","straightNewUnlocks",
   "straightActiveTitle","straightActiveBorder","straightDefaultAvatar","straightArtPreset",
@@ -845,7 +890,10 @@ function loadAccount(user){
       membershipUntil: toMillis(ent.membershipUntil)
     };
     hydrateProgress(user.uid, userSnap.exists() ? userSnap.data() : null);
-    return userSnap.exists();
+    return loadSeasonMedal(user.uid).then(function(medal){
+      account.medal = medal;
+      return userSnap.exists();
+    });
   });
 }
 var gameStarted = false;
@@ -1104,6 +1152,7 @@ function recordGameResult(outcome, meta){
   return result.newly;
 }
 function bumpStatAndCheck(field, delta){
+  if(state.daily) return;
   var stats = loadStats();
   stats[field] = (stats[field]||0)+delta;
   saveStats(stats);
@@ -1204,6 +1253,8 @@ function logBalanceGame(){
 function maybeRecordLocalGameResult(outcome, meta){
   if(state.statsRecorded) return;
   state.statsRecorded = true;
+  // The daily puzzle has its own leaderboard and doesn't count toward stats or achievements.
+  if(state.daily){ finishDaily(outcome); return; }
   // 탈주 패배: the AI played 3+ turns for this seat — a loss whatever the result, and no
   // achievement progress.
   var me = state.players[state.myIndex];
@@ -1324,7 +1375,7 @@ function isGrandMaster(unlocks){
   return p.done>=p.total;
 }
 // Fields every player object carries so other clients can render this player's badges.
-function myMemberFields(){ return { vip:hasMembership(), master:isGrandMaster() }; }
+function myMemberFields(){ return { vip:hasMembership(), master:isGrandMaster(), medal:(account && account.medal) || 0 }; }
 function bareName(name){ return String(name||"").replace(/ \(나\)$/, ""); }
 function grandMasterLogLines(players){
   return players.filter(function(p){ return p && p.master; }).map(function(p){
@@ -1481,8 +1532,9 @@ function activeBorderCls(){
 function playerTagHTML(p, extraCls){
   var titleHTML = p.title ? ("<span class=\"name-tag-title\">"+p.title+"</span>") : "";
   var crownHTML = p.vip ? "<span class=\"vip-crown\" title=\"멤버십\">👑</span>" : "";
+  var medalHTML = p.medal ? "<span class=\"season-medal\" title=\"지난 시즌 데일리 "+p.medal+"위\">"+(["","🥇","🥈","🥉"][p.medal]||"")+"</span>" : "";
   return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+crownHTML+"</span>"+
-    "<span class=\"name-tag-label\">"+titleHTML+"<span class=\"name-tag-text\">"+p.name+"</span></span></span>";
+    "<span class=\"name-tag-label\">"+titleHTML+"<span class=\"name-tag-text\">"+medalHTML+p.name+"</span></span></span>";
 }
 
 function findMilestoneByLabel(kind, label){
@@ -1591,10 +1643,11 @@ function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.classN
 
 function switchScreen(name){
   if(name==="win"){
+    $("daily-rank-btn").classList.toggle("hidden", !state.daily);
     var rb = $("rematch-btn");
     if(rb) rb.classList.toggle("hidden", !(state.mpRoomCode && state.players[state.myIndex] && !state.players[state.myIndex].aiTakeover));
   }
-  ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win","collection"].forEach(function(s){
+  ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win","collection","daily"].forEach(function(s){
     $("screen-"+s).classList.toggle("hidden", s!==name);
   });
   if(name==="start") renderStartFan();
@@ -1940,9 +1993,24 @@ function setBgmTrack(idx){
   }
 }
 
+// The daily challenge deals everyone the same game: while it runs, shuffles draw from a
+// generator seeded by the date instead of Math.random.
+var gameRng = null;
+function gameRand(){ return gameRng ? gameRng() : Math.random(); }
+function seededRng(str){
+  var h = 1779033703 ^ str.length;
+  for(var i=0;i<str.length;i++){ h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h<<13 | h>>>19; }
+  var a = h>>>0;
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a>>>15, 1 | a);
+    t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t;
+    return ((t ^ t>>>14)>>>0) / 4294967296;
+  };
+}
 function shuffle(arr){
   for(var i=arr.length-1;i>0;i--){
-    var j=Math.floor(Math.random()*(i+1));
+    var j=Math.floor(gameRand()*(i+1));
     var t=arr[i]; arr[i]=arr[j]; arr[j]=t;
   }
   return arr;
@@ -2193,6 +2261,7 @@ function cleanPlayer(p){
   out.aiTurns = Math.min(999, Math.max(0, Math.floor(Number(p.aiTurns)||0)));
   out.aiTakeover = !!p.aiTakeover;
   out.ready = !!p.ready;
+  out.medal = [1,2,3].indexOf(Number(p.medal))!==-1 ? Number(p.medal) : 0;
   out.isAI = !!p.isAI;
   out.hand = cleanCards(p.hand);
   out.score = cleanCards(p.score);
@@ -2616,7 +2685,7 @@ function pickAvatar(ch, cb){
       var updated = {}; for(var k in players[mine]) updated[k]=players[mine][k];
       updated.name = chosenNickname || ch.name; updated.characterName = ch.name; updated.avatar = avatarIconHTML(ch); updated.avatarPicked = true;
       updated.title = activeTitleLabel(); updated.border = activeBorderCls();
-      var mf = myMemberFields(); updated.vip = mf.vip; updated.master = mf.master;
+      var mf = myMemberFields(); updated.vip = mf.vip; updated.master = mf.master; updated.medal = mf.medal;
       players[mine] = updated;
       tx.update(ref, { players: players, updatedAt: Date.now() });
     });
@@ -3175,7 +3244,7 @@ function rematch(){
       var meFirst = humans.filter(function(p){ return p.clientId===myClientId; }).concat(humans.filter(function(p){ return p.clientId!==myClientId; }));
       var players = meFirst.map(function(p){
         return { clientId:p.clientId, uid:p.uid||null, name:p.name, characterName:p.characterName, avatar:p.avatar,
-          avatarPicked:true, title:p.title||null, border:p.border||null, vip:!!p.vip, master:!!p.master,
+          avatarPicked:true, title:p.title||null, border:p.border||null, vip:!!p.vip, master:!!p.master, medal:p.medal||0,
           ready:false, isAI:false, hand:[], score:[] };
       });
       tx.update(ref, { phase:"lobby", hostClientId:myClientId, players:players, floor:[], centerDeck:[], turnOrder:[],
@@ -3194,7 +3263,7 @@ function runOrderCutscene(){
   $("order-start-btn").classList.add("hidden");
 
   var players = [];
-  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), title:activeTitleLabel(), border:activeBorderCls(), vip:myMemberFields().vip, master:myMemberFields().master, isAI:false, hand:[], score:[] });
+  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), title:activeTitleLabel(), border:activeBorderCls(), vip:myMemberFields().vip, master:myMemberFields().master, medal:myMemberFields().medal, isAI:false, hand:[], score:[] });
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
@@ -3238,7 +3307,7 @@ function finalizeOrder(players, draws){
 }
 
 function startGame(players, order){
-  var colors = colorsForCount(players.length);
+  var colors = colorsForCount(state.daily ? 2 : players.length);
   var prismRanks = pickPrismRanks();
   var deck = shuffle(buildDeck(colors, prismRanks));
   state.players = players;
@@ -3313,7 +3382,7 @@ function endTurn(){
   state.turnTimedOut = false;
   clearSelectionState();
   clearTurnTimer();
-  if(!state.gameOver && state.stagnantTurns >= state.turnOrder.length){
+  if(!state.gameOver && state.stagnantTurns >= (state.daily ? 3 : state.turnOrder.length)){
     if(state.floor.length + state.centerDeck.length === 0 || state.floorResetStreak >= 3){
       declareDraw();
       return;
@@ -3364,6 +3433,7 @@ function clearTurnTimer(){
 
 function startTurnTimer(){
   clearTurnTimer();
+  if(state.daily) return;
   if(state.gameOver || !isHumanTurn()) return;
   var remaining = (isMultiplayer() && state.turnDeadline) ? Math.max(1, Math.ceil((state.turnDeadline-Date.now())/1000)) : 60;
   renderTurnTimer(remaining);
@@ -3425,8 +3495,8 @@ function showDrawScreen(){
   var emojiEl = document.querySelector(".win-emoji");
   if(emojiEl){ emojiEl.textContent = "🤝"; emojiEl.classList.remove("bounce-in","droop"); }
   $("screen-win").classList.remove("lose");
-  $("win-title").innerHTML = "<span class=\"win-word\">무승부</span>";
-  $("win-reason").textContent = "중앙 덱이 모두 소진되어 승부를 가리지 못했습니다.";
+  $("win-title").innerHTML = "<span class=\"win-word\">"+(state.daily ? "아쉬워요" : "무승부")+"</span>";
+  $("win-reason").textContent = state.daily ? "덱을 다 쓰기 전에 완성하지 못했어요. 내일 다시 도전!" : "중앙 덱이 모두 소진되어 승부를 가리지 못했습니다.";
   switchScreen("win");
 }
 
@@ -3534,8 +3604,8 @@ function showWinScreen(player, straight){
   var tag = "<span class=\"win-tag\">"+playerTagHTML(player)+"</span>";
   var myTag = "<span class=\"win-tag\">"+playerTagHTML(state.players[state.myIndex])+"</span>";
   if(isMe){
-    $("win-title").innerHTML = tag+"<span class=\"win-word\">승리!</span>";
-    $("win-reason").innerHTML = "";
+    $("win-title").innerHTML = tag+"<span class=\"win-word\">"+(state.daily ? "완성!" : "승리!")+"</span>";
+    $("win-reason").innerHTML = state.daily ? ("📅 "+(state.turnSeq+1)+"턴 만에 완성! 시즌 +"+dailyPoints(state.turnSeq+1)+"점") : "";
   } else {
     $("win-title").innerHTML = myTag+"<span class=\"win-word\">패배!</span>";
     $("win-reason").innerHTML = tag+"<span>님이 먼저 스트레이트를 완성했어요</span>";
@@ -3552,6 +3622,138 @@ function showWinScreen(player, straight){
 }
 
 $("restart-btn").addEventListener("click", function(){ location.reload(); });
+
+/* ---------------- daily challenge ---------------- */
+// One seeded deal per day (KST), solo, 2 colors. The first attempt is the only one:
+// starting writes a "failed" placeholder to daily/{day}/scores/{uid}, and a finish
+// fills in the turn count (rules allow that single update). Finishing also adds
+// 21 − turns (min 1) to this month's season score; the top 3 of a season wear
+// 🥇🥈🥉 through the next one (see loadSeasonMedal).
+var dailyBoardTab = "today";
+var dailySavePromise = null;
+function dailyPoints(turns){ return Math.max(1, 21 - turns); }
+function dailyIdentity(){
+  var ch = chosenCharacter || presetByName("avatar", getDefaultAvatarName()) || CHARACTERS[0];
+  return { ch:ch, name:cleanNick(chosenNickname || ch.name), avatar:ch.name };
+}
+function openDaily(){
+  switchScreen("daily");
+  $("daily-date").textContent = dailyKey().replace(/-/g,".")+" 문제 · 시즌 "+seasonKey().replace("-",".");
+  var st = $("daily-status"), btn = $("daily-start-btn");
+  btn.disabled = true;
+  btn.textContent = "도전하기";
+  if(localTestFlag("dailytest")){ btn.disabled = false; st.textContent = "(로컬 테스트: 기록 저장 안 함)"; return; }
+  if(!account || !fbDb){ st.textContent = "로그인하면 도전할 수 있어요."; renderDailyBoard(); return; }
+  st.textContent = "불러오는 중...";
+  (dailySavePromise || Promise.resolve()).then(function(){
+    var F = fbFs, key = dailyKey();
+    return F.getDoc(F.doc(fbDb,"daily",key,"scores",account.uid)).then(function(snap){
+      if(!snap.exists()){ st.textContent = "오늘 문제를 아직 풀지 않았어요."; btn.disabled = false; return; }
+      var d = snap.data();
+      btn.textContent = "내일 다시 도전";
+      if(d.failed || !d.turns){ st.textContent = "오늘은 도전 완료 · 완성하지 못했어요"; return; }
+      st.textContent = "오늘 기록: "+d.turns+"턴";
+      var q = F.query(F.collection(fbDb,"daily",key,"scores"), F.where("turns","<",d.turns));
+      F.getCountFromServer(q).then(function(c){
+        st.textContent = "오늘 기록: "+d.turns+"턴 · "+(c.data().count+1)+"위";
+      }).catch(function(){});
+    });
+  }).catch(function(e){ st.textContent = "불러오지 못했어요."; console.error("데일리 불러오기 실패", e); })
+    .then(renderDailyBoard);
+}
+function renderDailyBoard(){
+  var board = $("daily-board");
+  board.innerHTML = "";
+  Array.prototype.forEach.call($("daily-tabs").children, function(b){
+    b.classList.toggle("primary", b.getAttribute("data-board")===dailyBoardTab);
+  });
+  if(!account || !fbDb) return;
+  var F = fbFs, tab = dailyBoardTab, q, valueOf;
+  if(tab==="today"){
+    q = F.query(F.collection(fbDb,"daily",dailyKey(),"scores"), F.orderBy("turns"), F.limit(50));
+    valueOf = function(d){ return d.turns+"턴"; };
+  } else {
+    var season = tab==="season" ? seasonKey() : prevSeasonKey();
+    q = F.query(F.collection(fbDb,"seasons",season,"players"), F.orderBy("points","desc"), F.limit(tab==="last" ? 3 : 50));
+    valueOf = function(d){ return d.points+"점"; };
+  }
+  board.appendChild(el("div","order-row","불러오는 중..."));
+  F.getDocs(q).then(function(snap){
+    if(tab!==dailyBoardTab) return;
+    board.innerHTML = "";
+    var rows = snap.docs.map(function(d){ return { id:d.id, data:d.data() }; });
+    // Same turn count: whoever finished first ranks higher.
+    if(tab==="today") rows.sort(function(a, b){ return (a.data.turns-b.data.turns) || (toMillis(a.data.at)-toMillis(b.data.at)); });
+    if(!rows.length){
+      board.appendChild(el("div","order-row", tab==="last" ? "지난 시즌 기록이 없어요." : "아직 기록이 없어요. 첫 번째가 되어 보세요!"));
+      return;
+    }
+    rows.slice(0, 20).forEach(function(r, i){
+      var ch = presetByName("avatar", r.data.avatar);
+      var rank = tab==="last" ? ["🥇","🥈","🥉"][i] : String(i+1);
+      var row = el("div","order-row daily-row"+(r.id===account.uid ? " me" : ""));
+      row.innerHTML = "<span class=\"daily-rank\">"+rank+"</span><span>"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
+        "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span><span class=\"daily-val\">"+valueOf(r.data)+"</span>";
+      board.appendChild(row);
+    });
+  }).catch(function(e){
+    if(tab!==dailyBoardTab) return;
+    board.innerHTML = "";
+    board.appendChild(el("div","order-row","순위를 불러오지 못했어요."));
+    console.error("데일리 순위 실패", e);
+  });
+}
+function startDailyChallenge(){
+  if(!account || !fbDb){ if(!localTestFlag("dailytest")) return; }
+  var btn = $("daily-start-btn");
+  btn.disabled = true;
+  var F = fbFs, key = dailyKey(), me = dailyIdentity();
+  // ?dailytest on a local server plays today's deal without using up the attempt.
+  if(localTestFlag("dailytest")){ startDailyGame(key, me.ch); return; }
+  F.setDoc(F.doc(fbDb,"daily",key,"scores",account.uid), { name:me.name, avatar:me.avatar, failed:true, at:F.serverTimestamp() })
+    .then(function(){ startDailyGame(key, me.ch); })
+    .catch(function(e){ $("daily-status").textContent = "오늘은 이미 도전했어요."; console.error("데일리 시작 실패", e); });
+}
+function startDailyGame(key, ch){
+  gameRng = seededRng("straight-daily-"+key);
+  state.daily = { key:key };
+  var mf = myMemberFields();
+  var me = { idx:0, name:(chosenNickname||ch.name)+" (나)", characterName:ch.name, avatar:avatarIconHTML(ch), title:activeTitleLabel(), border:activeBorderCls(), vip:mf.vip, master:mf.master, medal:mf.medal, isAI:false, hand:[], score:[] };
+  startGame([me], [0]);
+  pushLog("📅 데일리 챌린지 "+key.replace(/-/g,".")+" — 가장 적은 턴으로 완성하세요!");
+}
+function finishDaily(outcome){
+  if(!account || !fbDb || !state.daily || outcome!=="win" || localTestFlag("dailytest")) return;
+  var F = fbFs, turns = state.turnSeq + 1, me = dailyIdentity();
+  var ref = F.doc(fbDb,"daily",state.daily.key,"scores",account.uid);
+  var sref = F.doc(fbDb,"seasons",seasonKey(),"players",account.uid);
+  dailySavePromise = F.updateDoc(ref, { turns:turns, failed:false }).then(function(){
+    return F.runTransaction(fbDb, function(tx){
+      return tx.get(sref).then(function(snap){
+        var pts = dailyPoints(turns);
+        if(snap.exists()){
+          var d = snap.data();
+          tx.update(sref, { name:me.name, avatar:me.avatar, points:(d.points||0)+pts, days:(d.days||0)+1, updatedAt:Date.now() });
+        } else {
+          tx.set(sref, { name:me.name, avatar:me.avatar, points:pts, days:1, updatedAt:Date.now() });
+        }
+      });
+    });
+  }).catch(function(e){ console.error("데일리 기록 실패", e); });
+}
+$("daily-btn").addEventListener("click", function(){ unlockAudio(); sfxSelect(); dailyBoardTab = "today"; openDaily(); });
+$("daily-back-btn").addEventListener("click", function(){ sfxSelect(); switchScreen("start"); });
+$("daily-start-btn").addEventListener("click", function(){ sfxSelect(); startDailyChallenge(); });
+$("daily-rank-btn").addEventListener("click", function(){
+  sfxSelect();
+  gameRng = null;
+  state.daily = null;
+  dailyBoardTab = "today";
+  openDaily();
+});
+Array.prototype.forEach.call($("daily-tabs").children, function(b){
+  b.addEventListener("click", function(){ sfxSelect(); dailyBoardTab = b.getAttribute("data-board"); renderDailyBoard(); });
+});
 
 /* ---------------- animation ---------------- */
 
@@ -3760,7 +3962,7 @@ function useResetCard(playerIdx, handIdx, cb){
     state.centerDeck = shuffle(state.centerDeck.concat(recycled));
     var n = Math.min(8, state.centerDeck.length);
     var fresh = state.centerDeck.splice(0, n);
-    state.centerDeck.splice(Math.floor(Math.random()*(state.centerDeck.length+1)), 0, card);
+    state.centerDeck.splice(Math.floor(gameRand()*(state.centerDeck.length+1)), 0, card);
     state.stagnantTurns = 0;
     render();
     animateDrawFromDeck(n, $("floor-board"), function(){
