@@ -9,6 +9,8 @@
 
 ## 작업 규칙
 
+- **배포는 Claude가 직접**(2026-10-03 사용자 승인): 검증 후 main 머지 → `git push origin main`, 보안 규칙은 `npx firebase deploy --only firestore:rules --project straight-game` (허용 규칙: holdme/.claude/settings.local.json). 콘솔 "게시" 클릭은 여전히 막혀 있으니 CLI 사용.
+
 - 사용자는 한국어로 대화. 작업이 끝나고 검증되면 **바로 커밋하고 `origin/main`에 푸시**한다.
 - 문법 검사: `index.html`의 `<script type="module">` 내용을 추출해 `node --check`.
 - 화면 확인: `.claude/launch.json`의 `straight-game`(포트 5175) 미리보기(다른 대화 서버가 떠 있으면 `http://localhost:5175`로 바로 이동). 로그인 브랜치부터는 구글 로그인이 필요하다. 로그인 없이 게임만 보려면 `http://localhost:5175/?guest`(로컬 전용, 클라우드 저장 안 함). `?nodev=1`은 개발자 계정으로 로그인한 상태에서 일반 플레이어 화면 미리보기.
@@ -43,7 +45,7 @@
 
 ## 다음 후보
 
-- **`feat/daily` 머지 대기**: 데일리 챌린지 + 시즌 배지. **먼저 규칙 게시 필요**(daily/seasons 추가) — 게시 전 머지하면 도전이 "이미 도전했어요"로 막힘.
+- 데일리 챌린지 라이브(2026-10-03 13:19 규칙 게시).
 
 - **`feat/rewards-v3` 머지 대기**: 수집품 보상 v3(스펙 collectibles-redesign 끝 "보상 v3" 표), 탭 순서, 코스믹 개편, 클래식 테두리, 클라우드 톤다운, 잠긴 칭호 가독성.
 
