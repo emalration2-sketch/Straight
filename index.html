@@ -948,7 +948,8 @@ const firebaseConfig = {
   messagingSenderId: "435687905535",
   appId: "1:435687905535:web:2dfc13e707ebdbbb7394ca"
 };
-var APP_CHECK_SITE_KEY = "";
+// Fraud Defense (reCAPTCHA Enterprise) site key — public; registered in Firebase App Check.
+var APP_CHECK_SITE_KEY = "6Lcq19wtAAAAALXhtiGYmavBSpqBaE5jI_XWDyEe";
 var fbDb = null, fbDoc = null, fbSetDoc = null, fbUpdateDoc = null, fbGetDoc = null, fbOnSnapshot = null, fbRunTransaction = null;
 var fbFs = null, fbAuth = null, fbAuthApi = null;
 var fbReadyPromise = null;
@@ -965,7 +966,7 @@ function ensureFirebase(){
     if(acMod){
       // Local dev prints a debug token to register under App Check > Apps > Manage debug tokens.
       if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
-      acMod.initializeAppCheck(fbApp, { provider: new acMod.ReCaptchaV3Provider(APP_CHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
+      acMod.initializeAppCheck(fbApp, { provider: new acMod.ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
     }
     fbDb = fsMod.getFirestore(fbApp);
     fbFs = fsMod;
