@@ -200,6 +200,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .opp-progress.ready{padding:1px 6px;border-radius:6px;background:var(--prog-color);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);animation:readyPulse 1.2s ease-in-out infinite;}
 @keyframes readyPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
 @media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
+.reclaim-btn{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);z-index:9000;box-shadow:0 6px 18px rgba(0,0,0,.35);}
+.reclaim-btn.hidden{display:none;}
 /* 3 opponents: columns are narrow, so the title badge yields its space to the nickname. */
 .opponents-row.many .name-tag-title{display:none;}
 .opponents-row.many .name-tag.compact{font-size:11px;gap:4px;padding-right:7px;}
@@ -1099,12 +1101,14 @@ function announceNewUnlocks(ids){
   }, 3600);
 }
 // Hidden account record (never shown in game) — for future ranked play and levels.
-function recordAccountResult(outcome, online){
+function recordAccountResult(outcome, online, left){
   if(!account || !fbDb) return;
   var F = fbFs, inc = F.increment(1);
   var field = outcome==="win" ? "wins" : outcome==="draw" ? "draws" : "losses";
   var bucket = { games:inc }; bucket[field] = inc;
-  var record = { games:inc }; record[field] = inc; record[online ? "online" : "solo"] = bucket;
+  var record = { games:inc }; record[field] = inc;
+  if(left){ bucket.leaves = inc; record.leaves = inc; }
+  record[online ? "online" : "solo"] = bucket;
   F.setDoc(F.doc(fbDb,"users",account.uid), { record:record }, { merge:true })
     .catch(function(e){ console.error("전적 저장 실패", e); });
 }
@@ -1133,8 +1137,14 @@ function logBalanceGame(){
 function maybeRecordLocalGameResult(outcome, meta){
   if(state.statsRecorded) return;
   state.statsRecorded = true;
-  recordGameResult(outcome, meta);
-  recordAccountResult(outcome, isMultiplayer());
+  // 탈주 패배: the AI played 3+ turns for this seat — a loss whatever the result, and no
+  // achievement progress.
+  var me = state.players[state.myIndex];
+  if(isMultiplayer() && me && (me.aiTurns||0)>=3) recordAccountResult("loss", true, true);
+  else {
+    recordGameResult(outcome, meta);
+    recordAccountResult(outcome, isMultiplayer());
+  }
   if(iAmHost()) logBalanceGame();
   saveProgressNow();
 }
@@ -1998,6 +2008,10 @@ var state = {
   stagnantTurns: 0,
   floorResetStreak: 0,
   balance: { jokers:0, bombs:0, autoResets:0 },
+  turnDeadline: 0,
+  hostIndex: 0,
+  claimSeq: -1,
+  turnTimedOut: false,
   prismRanks: []
 };
 
@@ -2020,6 +2034,10 @@ try{ chosenNickname = cleanText(localStorage.getItem("straightNickname") || "", 
 /* ---------------- multiplayer (Firebase) ---------------- */
 
 function getClientId(){
+  // ?seat=N on a local server joins as a separate device (for testing multiplayer in tabs).
+  var seat = (location.search.match(/[?&]seat=(\d)/) || [])[1];
+  var h = location.hostname;
+  if(seat && (h==="localhost" || h==="127.0.0.1")) return "seat"+seat+"-"+(localStorage.getItem("straightClientId")||"local");
   var id = null;
   try{ id = localStorage.getItem("straightClientId"); }catch(e){}
   if(!id){
@@ -2038,13 +2056,15 @@ function genRoomCode(){
 }
 
 function isMultiplayer(){ return !!state.mpRoomCode; }
-function iAmHost(){ return !isMultiplayer() || state.myIndex===0; }
+// The host drives AI turns and writes the balance log. It starts as seat 0 and passes to
+// whoever takes over a stalled AI turn (see claimStalledTurn).
+function iAmHost(){ return !isMultiplayer() || state.myIndex===(state.hostIndex||0); }
 
 var roomUnsub = null;
 
 function pushRoomState(){
-  if(!state.mpRoomCode || !fbDb) return;
-  fbUpdateDoc(fbDoc(fbDb,"rooms",state.mpRoomCode), {
+  if(!state.mpRoomCode || !fbDb) return Promise.resolve();
+  return fbUpdateDoc(fbDoc(fbDb,"rooms",state.mpRoomCode), {
     players: state.players,
     floor: state.floor,
     centerDeck: state.centerDeck,
@@ -2056,6 +2076,9 @@ function pushRoomState(){
     stagnantTurns: state.stagnantTurns,
     floorResetStreak: state.floorResetStreak,
     balance: state.balance,
+    turnDeadline: state.turnDeadline,
+    hostIndex: state.hostIndex,
+    claimSeq: state.claimSeq,
     gameOver: state.gameOver,
     winnerIndex: state.winnerIndex,
     winnerStraight: state.winnerStraight,
@@ -2092,6 +2115,12 @@ function cleanPlayer(p){
   out.border = BORDER_PRESETS.some(function(b){ return b.cls===p.border; }) ? p.border : null;
   out.vip = !!p.vip;
   out.master = !!p.master;
+  out.uid = p.uid ? cleanText(p.uid, 64) : null;
+  out.timeouts = Math.min(99, Math.max(0, Math.floor(Number(p.timeouts)||0)));
+  out.timeoutStreak = Math.min(99, Math.max(0, Math.floor(Number(p.timeoutStreak)||0)));
+  out.aiTurns = Math.min(999, Math.max(0, Math.floor(Number(p.aiTurns)||0)));
+  out.aiTakeover = !!p.aiTakeover;
+  out.isAI = !!p.isAI;
   out.hand = cleanCards(p.hand);
   out.score = cleanCards(p.score);
   return out;
@@ -2109,6 +2138,9 @@ function sanitizeRoomData(data){
   var ws = data.winnerStraight;
   data.winnerStraight = (ws && typeof ws==="object" && ALL_COLORS.indexOf(ws.color)!==-1 && Number(ws.start)>=1 && Number(ws.start)<=6)
     ? { color:ws.color, start:Number(ws.start) } : null;
+  data.turnDeadline = Math.max(0, Number(data.turnDeadline)||0);
+  data.hostIndex = Math.min(Math.max(0, Math.floor(Number(data.hostIndex)||0)), Math.max(0, n-1));
+  data.claimSeq = Number.isFinite(Number(data.claimSeq)) ? Number(data.claimSeq) : -1;
   var bl = data.balance || {};
   data.balance = { jokers:Math.max(0, Number(bl.jokers)||0), bombs:Math.max(0, Number(bl.bombs)||0), autoResets:Math.max(0, Number(bl.autoResets)||0) };
   return data;
@@ -2176,6 +2208,9 @@ function applyRemoteRoomState(data){
   state.stagnantTurns = data.stagnantTurns || 0;
   state.floorResetStreak = data.floorResetStreak || 0;
   state.balance = data.balance;
+  state.turnDeadline = data.turnDeadline;
+  state.hostIndex = data.hostIndex;
+  state.claimSeq = data.claimSeq;
   state.gameOver = !!data.gameOver;
   state.winnerIndex = data.winnerIndex;
   state.winnerStraight = data.winnerStraight;
@@ -2252,10 +2287,150 @@ function maybeDriveAi(idx, delay){
   setTimeout(function(){ aiTakeTurn(idx); }, delay===undefined?900:delay);
 }
 
+/* ---------------- online: stalled turns, AI stand-ins, forfeits ---------------- */
+// A player who closes the tab never ends their turn, and AI turns stop when the host
+// leaves. Every turn carries a shared deadline in the room doc; once it passes, the
+// other players' devices step in (host first, then by seat, a few seconds apart) and a
+// transaction on claimSeq makes sure only one of them does. See
+// docs/superpowers/specs/2026-10-03-online-leave-handling.md.
+function localTestFlag(name){
+  var h = location.hostname;
+  return (h==="localhost" || h==="127.0.0.1") && new RegExp("[?&]"+name+"\\b").test(location.search);
+}
+var TURN_TIME_SCALE = localTestFlag("fast") ? 1/6 : 1;
+var STALL_GRACE_MS = 5000 * TURN_TIME_SCALE;
+function turnLimitMs(p){
+  if(p && p.isAI) return 20000 * TURN_TIME_SCALE;
+  var t = p ? (p.timeouts||0) : 0;
+  return (t>=2 ? 15000 : t===1 ? 30000 : 60000) * TURN_TIME_SCALE;
+}
+// Two timeouts in a row online hand the seat to an easy AI.
+function noteTimeout(idx){
+  var p = state.players[idx];
+  if(!p) return;
+  p.timeouts = (p.timeouts||0) + 1;
+  p.timeoutStreak = (p.timeoutStreak||0) + 1;
+  state.turnTimedOut = true;
+  if(isMultiplayer() && p.timeoutStreak>=2 && !p.aiTakeover){
+    p.isAI = true;
+    p.aiTakeover = true;
+    pushLog("🤖 "+bareName(p.name)+"님이 자리를 비워 AI(쉬움)가 대신 둡니다.");
+  }
+}
+function drawForStalled(idx){
+  var p = state.players[idx];
+  noteTimeout(idx);
+  var n = Math.min(2, state.centerDeck.length);
+  if(n>0){
+    p.hand = p.hand.concat(state.centerDeck.splice(0, n));
+    pushLog(p.name+"의 시간이 초과되어 "+n+"장을 뽑고 턴을 넘깁니다.");
+  } else {
+    pushLog(p.name+"의 시간이 초과되어 턴을 넘깁니다.");
+  }
+  state.stagnantTurns++;
+  render();
+  endTurn();
+}
+// Devices that may step in for seat cur: people still playing, host first, then by seat.
+function handlerOrder(cur){
+  var host = state.hostIndex||0;
+  return state.players.map(function(p, i){ return i; }).filter(function(i){
+    var p = state.players[i];
+    return i!==cur && p && !p.isAI && p.clientId;
+  }).sort(function(a, b){ return (a===host ? -1 : b===host ? 1 : a-b); });
+}
+var claimingStall = false;
+function claimStalledTurn(cur){
+  if(claimingStall || !state.mpRoomCode || !fbDb) return;
+  claimingStall = true;
+  var seq = state.turnSeq;
+  var standInForAI = !!state.players[cur].isAI;
+  var ref = fbDoc(fbDb,"rooms",state.mpRoomCode);
+  fbRunTransaction(fbDb, function(tx){
+    return tx.get(ref).then(function(snap){
+      var d = snap.data();
+      if(!d || d.gameOver || d.turnSeq!==seq || d.claimSeq===seq) return false;
+      var upd = { claimSeq:seq, updatedAt:Date.now() };
+      if(standInForAI) upd.hostIndex = state.myIndex;
+      tx.update(ref, upd);
+      return true;
+    });
+  }).then(function(ok){
+    claimingStall = false;
+    if(!ok || state.turnSeq!==seq || state.gameOver) return;
+    state.claimSeq = seq;
+    if(standInForAI){
+      // The host is gone: this device takes over driving the AI seats.
+      state.hostIndex = state.myIndex;
+      maybeDriveAi(cur, 0);
+    } else {
+      drawForStalled(cur);
+    }
+  }).catch(function(e){ claimingStall = false; console.error("턴 대신 처리 실패", e); });
+}
+setInterval(function(){
+  if(!isMultiplayer() || state.gameOver || state.animating || state.ceremonyPlaying) return;
+  if($("screen-game").classList.contains("hidden")) return;
+  var cur = currentPlayerIdx();
+  var p = state.players[cur];
+  if(!p || !state.turnDeadline || state.claimSeq===state.turnSeq) return;
+  if(cur===state.myIndex && !p.isAI) return;
+  var k = handlerOrder(cur).indexOf(state.myIndex);
+  if(k<0) return;
+  if(Date.now() < state.turnDeadline + STALL_GRACE_MS*(k+1)) return;
+  claimStalledTurn(cur);
+}, 1000);
+
+// Back at the keyboard while the AI is standing in: take the seat back.
+function renderReclaimButton(){
+  var me = state.players[state.myIndex];
+  var show = isMultiplayer() && !!me && !!me.aiTakeover && !state.gameOver;
+  var b = $("reclaim-btn");
+  if(!b){
+    if(!show) return;
+    b = el("button","btn primary reclaim-btn","✋ 다시 직접 하기");
+    b.id = "reclaim-btn";
+    b.addEventListener("click", reclaimMySeat);
+    document.body.appendChild(b);
+  }
+  b.classList.toggle("hidden", !show);
+}
+function reclaimMySeat(){
+  var me = state.players[state.myIndex];
+  if(!me || !me.aiTakeover) return;
+  me.isAI = false;
+  me.aiTakeover = false;
+  me.timeoutStreak = 0;
+  pushLog("✋ "+bareName(me.name)+"님이 돌아왔습니다!");
+  render();
+  pushRoomState();
+  if(isHumanTurn()){ sfxTurn(); startTurnTimer(); }
+}
+// Surrendering online: an easy AI keeps the seat warm for the others, and it counts as a
+// 탈주 패배 for this account right away.
+function forfeitOnline(){
+  var me = state.players[state.myIndex];
+  if(!me) return Promise.resolve();
+  me.isAI = true;
+  me.aiTakeover = true;
+  me.aiTurns = Math.max(me.aiTurns||0, 3);
+  pushLog("🏳️ "+bareName(me.name)+"님이 항복했습니다. AI(쉬움)가 이어서 둡니다.");
+  if(iAmHost()){
+    var next = handlerOrder(state.myIndex)[0];
+    if(next!==undefined) state.hostIndex = next;
+  }
+  if(currentPlayerIdx()===state.myIndex) state.turnDeadline = Date.now();
+  if(!state.statsRecorded){
+    state.statsRecorded = true;
+    recordAccountResult("loss", true, true);
+  }
+  return pushRoomState();
+}
+
 function createRoom(maxPlayers, cb){
   ensureFirebase().then(function(){
     var code = genRoomCode();
-    var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
+    var me = { clientId: myClientId, uid: account ? account.uid : null, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
     var roomData = {
       code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby",
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
@@ -2278,7 +2453,19 @@ function joinRoom(code, cb){
     fbGetDoc(ref).then(function(snap){
       if(!snap.exists()){ cb("방을 찾을 수 없습니다. 코드를 확인해주세요."); return; }
       var data = snap.data();
-      if(data.phase!=="lobby"){ cb("이미 시작된 방입니다."); return; }
+      if(data.phase!=="lobby"){
+        var seat = -1;
+        // Prefer the seat an AI is standing in for (one account could hold two seats in testing).
+        (data.players||[]).forEach(function(p, i){ if(account && p && p.uid===account.uid && !data.gameOver && (seat<0 || p.aiTakeover)) seat = i; });
+        if(seat<0){ cb("이미 시작된 방입니다."); return; }
+        reclaimSeat(ref, seat).then(function(){
+          state.mpRoomCode = code;
+          state.mpMaxPlayers = data.maxPlayers;
+          subscribeRoom(code);
+          cb(null, code, true);
+        }).catch(function(e){ cb(e && e.message ? e.message : String(e)); });
+        return;
+      }
       var already = data.players.some(function(p){ return p.clientId===myClientId; });
       if(already){
         state.mpRoomCode = code;
@@ -2288,7 +2475,7 @@ function joinRoom(code, cb){
         return;
       }
       if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
-      var me = { clientId: myClientId, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
+      var me = { clientId: myClientId, uid: account ? account.uid : null, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
       var newPlayers = data.players.concat([me]);
       fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
         state.mpRoomCode = code;
@@ -2298,6 +2485,22 @@ function joinRoom(code, cb){
       }).catch(function(e){ cb(e.message); });
     }).catch(function(e){ cb(e.message); });
   }).catch(function(e){ cb("네트워크 연결에 실패했습니다: "+(e&&e.message?e.message:e)); });
+}
+
+// Same Google account back in a running game: take the seat over from this device and
+// switch off the AI stand-in. (AI turns already played still count toward 탈주 패배.)
+function reclaimSeat(ref, seat){
+  return fbRunTransaction(fbDb, function(tx){
+    return tx.get(ref).then(function(snap){
+      var data = snap.data();
+      var players = (data.players || []).slice();
+      var p = Object.assign({}, players[seat]);
+      p.clientId = myClientId; p.isAI = false; p.aiTakeover = false; p.timeoutStreak = 0;
+      players[seat] = p;
+      var log = [("✋ "+bareName(p.name)+"님이 돌아왔습니다!")].concat(data.log || []).slice(0,30);
+      tx.update(ref, { players: players, log: log, updatedAt: Date.now() });
+    });
+  });
 }
 
 function pickAvatar(ch, cb){
@@ -2412,6 +2615,9 @@ function startOnlineGame(){
   state.statsRecorded = false;
   state.balance = { jokers:0, bombs:0, autoResets:0 };
   state.aiDifficulty = chosenAiDifficulty;
+  state.hostIndex = 0;
+  state.claimSeq = -1;
+  state.turnDeadline = Date.now() + turnLimitMs(lobbyPlayers[turnOrder[0]]);
   aiDriveGuard = {};
   // Newest first: Grand Master announcements sit on top of the start lines.
   state.log = grandMasterLogLines(lobbyPlayers).reverse().concat([
@@ -2478,9 +2684,9 @@ $("start-btn").addEventListener("click", function(){
     $("join-error").textContent = "참가하는 중...";
     switchScreen("join");
     $("join-code-input").value = urlRoomCode;
-    joinRoom(urlRoomCode, function(err){
+    joinRoom(urlRoomCode, function(err, joinedCode, rejoined){
       if(err){ $("join-error").textContent = err; urlRoomCode=null; return; }
-      switchScreen("lobby");
+      if(!rejoined) switchScreen("lobby");
     });
     return;
   }
@@ -2609,10 +2815,10 @@ $("join-room-btn").addEventListener("click", function(){
   var code = $("join-code-input").value.trim();
   if(code.length<5){ $("join-error").textContent = "5자리 코드를 입력하세요."; return; }
   $("join-room-btn").disabled = true;
-  joinRoom(code, function(err, joinedCode){
+  joinRoom(code, function(err, joinedCode, rejoined){
     $("join-room-btn").disabled = false;
     if(err){ $("join-error").textContent = err; return; }
-    switchScreen("lobby");
+    if(!rejoined) switchScreen("lobby");
   });
 });
 
@@ -2824,6 +3030,10 @@ function clearSelectionState(){
 }
 
 function endTurn(){
+  // A turn finished by the player themself breaks their timeout streak.
+  var actor = state.players[currentPlayerIdx()];
+  if(actor && !actor.isAI && !state.turnTimedOut) actor.timeoutStreak = 0;
+  state.turnTimedOut = false;
   clearSelectionState();
   clearTurnTimer();
   if(!state.gameOver && state.stagnantTurns >= state.turnOrder.length){
@@ -2835,6 +3045,7 @@ function endTurn(){
   }
   state.currentTurnPos = (state.currentTurnPos+1) % state.turnOrder.length;
   state.turnSeq++;
+  state.turnDeadline = Date.now() + turnLimitMs(state.players[currentPlayerIdx()]);
   render();
   pushRoomState();
   if(state.gameOver) return;
@@ -2877,7 +3088,7 @@ function clearTurnTimer(){
 function startTurnTimer(){
   clearTurnTimer();
   if(state.gameOver || !isHumanTurn()) return;
-  var remaining = 60;
+  var remaining = (isMultiplayer() && state.turnDeadline) ? Math.max(1, Math.ceil((state.turnDeadline-Date.now())/1000)) : 60;
   renderTurnTimer(remaining);
   turnTimerId = setInterval(function(){
     if(state.animating) return;
@@ -2888,6 +3099,7 @@ function startTurnTimer(){
       clearTurnTimer();
       var player = state.players[state.myIndex];
       pushLog(player.name+"의 시간이 초과되어 자동으로 2장을 뽑고 턴을 마칩니다.");
+      noteTimeout(state.myIndex);
       sfxTimeout();
       drawTwoAndEndTurn();
     }
@@ -3355,7 +3567,12 @@ var AI_PROFILES = {
   normal: { skipCapture:0,    randomPick:0.1,  bankJoker:1,    useReset:1,   progressW:20, deny:false, placeCost:false, countCards:false },
   hard:   { skipCapture:0,    randomPick:0,    bankJoker:1,    useReset:1,   progressW:30, deny:true,  placeCost:true,  countCards:true }
 };
-function aiProfile(){ return AI_PROFILES[state.aiDifficulty] || AI_PROFILES.normal; }
+// A seat the AI took over from a player who left plays at 쉬움.
+function aiProfile(playerIdx){
+  var p = playerIdx===undefined ? null : state.players[playerIdx];
+  if(p && p.aiTakeover) return AI_PROFILES.easy;
+  return AI_PROFILES[state.aiDifficulty] || AI_PROFILES.normal;
+}
 
 function scoreCaptureOption(o, ai, opponents, prof){
   var colors = state.colors;
@@ -3404,7 +3621,7 @@ function aiPickCapture(options, ai, opponents, prof){
 // DOM — aiTakeTurn executes it, and the balance simulation reuses it as-is.
 function aiDecide(playerIdx){
   var player = state.players[playerIdx];
-  var prof = aiProfile();
+  var prof = aiProfile(playerIdx);
   var opponents = state.players.filter(function(p, i){ return i!==playerIdx; });
   var resetIdx = -1;
   player.hand.forEach(function(c,i){ if(c.isReset && resetIdx<0) resetIdx = i; });
@@ -3424,8 +3641,9 @@ function aiTakeTurn(playerIdx){
   if(state.gameOver) return;
   var player = state.players[playerIdx];
 
+  if(player.aiTakeover) player.aiTurns = (player.aiTurns||0) + 1;
   var jokerIndices = [];
-  if(Math.random() < aiProfile().bankJoker){
+  if(Math.random() < aiProfile(playerIdx).bankJoker){
     player.hand.forEach(function(c,i){ if(c.isJoker) jokerIndices.push(i); });
   }
   if(jokerIndices.length>0){
@@ -3525,6 +3743,7 @@ function render(){
   renderInstruction();
   if(!turnTimerId) renderTurnTimer(null);
   $("sync-btn").classList.toggle("hidden", !isMultiplayer());
+  renderReclaimButton();
   fitBoard();
   fitNameTags($("screen-game"));
 }
@@ -4269,6 +4488,10 @@ function openSettingsModal(){
     quitBtn.style.width = "100%";
     quitBtn.addEventListener("click", function(){
       if(!confirm("게임을 포기하고 메인 화면으로 나가시겠습니까?")) return;
+      if(isMultiplayer() && !state.gameOver){
+        forfeitOnline().then(function(){ leaveRoom(); location.reload(); }, function(){ leaveRoom(); location.reload(); });
+        return;
+      }
       if(isMultiplayer()) leaveRoom();
       location.reload();
     });

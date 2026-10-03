@@ -43,6 +43,8 @@
 
 ## 다음 후보
 
+- **`feat/online-leave` 머지 대기**: 온라인 퇴장 대응(공용 턴 마감, 대신 처리, 2연속 시간 초과→쉬움 AI, 방장 승계, 같은 계정 재접속, AI 3턴 이상 = 탈주 패배, 온라인 항복). 두 탭(`?seat=2`, `?fast`)으로 대신 처리·AI 대리·방장 승계·재접속 확인. 미확인: 온라인 항복 흐름(confirm 창), "✋ 다시 직접 하기" 버튼, 계정이 다른 두 사람의 실제 재접속. 머지(PowerShell): `cd C:Usersjinholdmestraight-game; git checkout main; if ($?) { git merge --ff-only feat/online-leave }; if ($?) { git push origin main }`
+
 - 로드맵 2번 데일리 챌린지, 3·4번 온라인 편의·퇴장 대응 — 설계부터 사용자와 정하기.
 - 결제(토스페이먼츠/포트원 + Cloud Functions)와 구매 버튼.
 - 참고: 라이브 반영(main 푸시)·콘솔 "게시"는 자동 권한 정책상 사용자가 직접. 사용자 터미널은 PowerShell이라 `&&` 대신 `; if ($?) { … }` 형태로 안내.
