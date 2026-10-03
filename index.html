@@ -535,8 +535,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coll-tab{font-size:13px;padding:7px 13px;}
 .coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
 .price-pill{margin-top:3px;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;background:var(--accent);color:#2a1d00;line-height:1.4;}
-.coll-grid.tab-border .coll-item{background:transparent;border-color:transparent;padding:6px 4px;}
-.coll-grid.tab-border .coll-item.equipped .coll-item-name{color:var(--accent);}
+.coll-grid .coll-item{background:transparent;border-color:transparent;padding:6px 4px;}
+.coll-grid .coll-item.equipped{border-color:transparent;}
+.coll-grid .coll-item.equipped .coll-item-name{color:var(--accent);}
+
 .coll-tip{position:fixed;z-index:99990;max-width:220px;padding:7px 11px;border-radius:9px;background:var(--text);color:var(--bg);font-size:12px;font-weight:700;line-height:1.35;text-align:center;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;box-shadow:0 4px 14px rgba(0,0,0,.3);}
 .coll-tip.show{opacity:1;transform:translateY(0);}
 .coll-section{grid-column:1/-1;font-size:13px;font-weight:800;color:var(--text);margin:8px 2px 0;display:flex;align-items:center;gap:6px;}
@@ -597,7 +599,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div class="mode-list">
       <button class="btn primary big mode-btn" id="mode-solo-btn"><span class="mode-ico">🤖</span><span class="mode-text"><b>혼자하기</b><small>AI와 대결</small></span></button>
       <button class="btn primary big mode-btn" id="mode-online-btn"><span class="mode-ico">🌐</span><span class="mode-text"><b>멀티플레이</b><small>친구·빠른 매칭</small></span></button>
-      <button class="btn primary big mode-btn" id="mode-challenge-btn"><span class="mode-ico">🏆</span><span class="mode-text"><b>챌린지</b><small>오늘의 한 판 · 랭킹</small></span></button>
+      <button class="btn primary big mode-btn" id="mode-challenge-btn"><span class="mode-ico">🏆</span><span class="mode-text"><b>챌린지</b><small>시즌 랭킹에 도전!</small></span></button>
     </div>
     <button class="btn" id="mode-back-btn">← 뒤로</button>
   </div>
@@ -606,8 +608,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <h1 style="font-size:20px;">온라인 멀티플레이</h1>
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
       <button class="btn primary big" id="online-create-btn">➕ 방 만들기</button>
-      <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
       <button class="btn primary big" id="online-quick-btn">⚡ 빠른 매칭</button>
+      <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
     </div>
     <button class="btn" id="online-back-btn">← 뒤로</button>
   </div>
@@ -1085,7 +1087,7 @@ var UNLOCK_MILESTONES = [
   { id:"misc:online1",    kind:"title",  label:"인싸 등극", check:function(s){ return s.onlineWins>=1; },      boolCond:true, detail:function(s){ return "온라인 승리"; } },
   { id:"misc:prism100",   kind:"title",  label:"프리즘 헌터", check:function(s){ return s.prismBanked>=100; },   detail:function(s){ return "프리즘 카드 획득 "+Math.min(s.prismBanked,100)+"/100개"; } },
   { id:"misc:hard30",     kind:"title",  label:"고수",      check:function(s){ return s.hardWins>=30; },       detail:function(s){ return "어려움 AI 승리 "+Math.min(s.hardWins,30)+"/30회"; } },
-  { id:"misc:challenge10", kind:"title", label:"챌린저",    check:function(s){ return s.challengeClears>=10; }, detail:function(s){ return "챌린지 완성 "+Math.min(s.challengeClears,10)+"/10회"; } },
+  { id:"misc:podium",     kind:"title",  label:"챌린저",    check:function(s){ return s.seasonPodium; },       boolCond:true, detail:function(s){ return "챌린지 시즌 1~3위 달성"; } },
   { id:"misc:colors20",   kind:"title",  label:"정복자",    check:function(s){ return colorsAt20(s)>=4; },     detail:function(s){ return "색깔마다 20승 "+colorsAt20(s)+"/4색"; } }
 ];
 // Runs during startup unlock migration, before ALL_COLORS is assigned — so list colors here.
@@ -1104,6 +1106,7 @@ function loadStats(){
     winsByColor: Object.assign({ PINK:0, BLUE:0, YELLOW:0, GREEN:0 }, p.winsByColor||{}),
     bombsUsed: p.bombsUsed||0,
     challengeClears: p.challengeClears||0,
+    seasonPodium: !!p.seasonPodium,
     hasKStraightWin: !!p.hasKStraightWin, tutorialDone: !!p.tutorialDone
   };
 }
@@ -1154,8 +1157,8 @@ function initUnlocksIfNeeded(){
 // their real condition was met), re-derive the unlock set strictly from the player's
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
-// "7": three new titles (프리즘 헌터, 고수, 챌린저) = 32 achievements — re-derive once.
-var UNLOCK_SCHEMA_VERSION = "7";
+// "8": 챌린저 now means a challenge season podium — re-derive once.
+var UNLOCK_SCHEMA_VERSION = "8";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
@@ -1324,6 +1327,18 @@ function maybeRecordLocalGameResult(outcome, meta){
 // so that a player carrying an old-scheme save gets rewritten to the new scheme first.
 migrateOldUnlocksIfNeeded();
 var straightUnlocks = initUnlocksIfNeeded();
+// Last season's challenge 1~3위 (account.medal) earns the 챌린저 title for good.
+if(account && account.medal){
+  var podiumStats = loadStats();
+  if(!podiumStats.seasonPodium){
+    podiumStats.seasonPodium = true;
+    saveStats(podiumStats);
+    var podiumResult = checkUnlocks(podiumStats, straightUnlocks);
+    straightUnlocks = podiumResult.updated;
+    saveUnlocks(straightUnlocks);
+    showUnlockPopup(podiumResult.newly);
+  }
+}
 
 var backPresetIndex = 0;
 try{
@@ -1430,11 +1445,6 @@ function isGrandMaster(unlocks){
 // Fields every player object carries so other clients can render this player's badges.
 function myMemberFields(){ return { vip:hasMembership(), master:isGrandMaster(), medal:(account && account.medal) || 0 }; }
 function bareName(name){ return String(name||"").replace(/ \(나\)$/, ""); }
-function grandMasterLogLines(players){
-  return players.filter(function(p){ return p && p.master; }).map(function(p){
-    return "🏆 그랜드마스터 "+bareName(p.name)+"님이 함께합니다!";
-  });
-}
 
 var cardThemeIndex = 0;
 try{
@@ -2831,7 +2841,7 @@ function startOnlineGame(){
   state.turnDeadline = Date.now() + turnLimitMs(lobbyPlayers[turnOrder[0]]);
   aiDriveGuard = {};
   // Newest first: Grand Master announcements sit on top of the start lines.
-  state.log = grandMasterLogLines(lobbyPlayers).reverse().concat([
+  state.log = [].concat([
     "✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "),
     "게임을 시작합니다! 선공은 "+lobbyPlayers[turnOrder[0]].name+" 입니다."]);
   var myIdx = -1;
@@ -3390,7 +3400,6 @@ function startGame(players, order){
   switchScreen("game");
   pushLog("게임을 시작합니다! 선공은 "+players[order[0]].name+" 입니다.");
   pushLog("✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "));
-  grandMasterLogLines(players).forEach(pushLog);
   render();
 
   var firstIdx = order[0];
