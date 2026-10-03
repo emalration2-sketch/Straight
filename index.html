@@ -300,6 +300,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .opp-progress.ready{padding:1px 6px;border-radius:6px;background:var(--prog-color);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);animation:readyPulse 1.2s ease-in-out infinite;}
 @keyframes readyPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
 @media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
+.btn.quick-match-btn{padding:20px 24px;font-size:20px;font-weight:900;margin-top:6px;background:linear-gradient(135deg,#ff5c8a,#ffb03a);color:#fff;box-shadow:0 8px 20px rgba(255,92,138,.35);}
+.lobby-invite-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
+.lobby-invite-row.hidden{display:none;}
 .reclaim-btn{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);z-index:9000;box-shadow:0 6px 18px rgba(0,0,0,.35);}
 .reclaim-btn.hidden{display:none;}
 .opponents-row.many .name-tag.compact{font-size:11px;gap:4px;padding-right:7px;}
@@ -749,8 +752,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <h1 style="font-size:20px;">온라인 멀티플레이</h1>
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
       <button class="btn primary big" id="online-create-btn">➕ 방 만들기</button>
-      <button class="btn primary big" id="online-quick-btn">⚡ 빠른 매칭</button>
       <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
+      <button class="btn primary big quick-match-btn" id="online-quick-btn">⚡ 빠른 매칭</button>
     </div>
     <button class="btn" id="online-back-btn">← 뒤로</button>
   </div>
@@ -774,9 +777,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
   <div class="screen hidden" id="screen-lobby">
     <h1 style="font-size:18px;margin-bottom:0;" id="lobby-title">대기실</h1>
-    <p class="sub" style="margin:0;" id="lobby-share-hint">방 코드를 카톡이나 문자로 공유하세요</p>
+    <p class="sub" style="margin:0;" id="lobby-share-hint">친구에게 초대를 보내거나 방 코드를 알려 주세요</p>
     <div style="font-family:var(--font-display);font-weight:400;font-size:32px;letter-spacing:8px;color:var(--accent);" id="lobby-code"></div>
-    <button class="btn" id="lobby-copy-btn">🔗 링크 복사</button>
+    <div class="lobby-invite-row" id="lobby-copy-btn">
+      <button class="btn primary" id="lobby-invite-btn">💌 친구 초대하기</button>
+      <button class="btn" id="lobby-code-btn">📋 코드 복사</button>
+    </div>
     <div class="order-list" id="lobby-players" style="min-width:280px;"></div>
     <button class="btn primary big hidden" id="lobby-start-btn">게임 시작 (부족 인원 AI 채움)</button>
     <button class="btn big hidden" id="lobby-ready-btn">✋ 준비</button>
@@ -865,7 +871,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <p class="sub" id="win-reason"></p>
     <button class="btn primary big hidden" id="daily-rank-btn">🏆 순위 보기</button>
     <button class="btn primary big hidden" id="rematch-btn">🔁 같은 멤버로 한 판 더</button>
-    <button class="btn primary big" id="restart-btn">다시하기</button>
+    <button class="btn primary big" id="restart-btn">🏠 메인 화면</button>
   </div>
 
   <div class="screen hidden" id="screen-daily">
@@ -1246,7 +1252,11 @@ function isLocalGuest(){
 }
 function bootAuth(){
   if(isLocalGuest()){ enterGame(); return; }
-  if(isInAppBrowser()){ showGate("inapp", ""); return; }
+  if(isInAppBrowser()){
+    showGate("inapp", "");
+    if(/KAKAOTALK/i.test(navigator.userAgent)) openInExternalBrowser();
+    return;
+  }
   showGate("loading", "불러오는 중...");
   ensureFirebase().then(function(){
     fbAuthApi.onAuthStateChanged(fbAuth, function(user){
@@ -3408,21 +3418,31 @@ $("join-room-btn").addEventListener("click", function(){
   });
 });
 
-$("lobby-copy-btn").addEventListener("click", function(){
+function copyText(text, btn, label){
+  var showManual = function(){ window.prompt("아래 내용을 복사해 주세요", text); };
+  if(!navigator.clipboard || !navigator.clipboard.writeText){ showManual(); return; }
+  navigator.clipboard.writeText(text).then(function(){
+    var old = btn.textContent;
+    btn.textContent = label;
+    setTimeout(function(){ btn.textContent = old; }, 1500);
+  }).catch(showManual);
+}
+// 💌 친구 초대하기: the phone's share sheet (카카오톡, 문자 …) with the code and a link that
+// joins the room. A KakaoTalk in-app browser opens the link in Chrome/Safari by itself.
+$("lobby-invite-btn").addEventListener("click", function(){
   sfxSelect();
-  var url = location.href.split("?")[0] + "?room=" + state.mpRoomCode;
-  var text = "스트레이트! 같이 하자 🎴 방 코드: " + state.mpRoomCode + "\n" + url;
-  var showManual = function(){ window.prompt("아래 내용을 복사해서 친구에게 보내세요", text); };
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(text).then(function(){
-      var btn = $("lobby-copy-btn");
-      var old = btn.textContent;
-      btn.textContent = "✅ 복사됨!";
-      setTimeout(function(){ btn.textContent = old; }, 1500);
-    }).catch(showManual);
-  } else {
-    showManual();
+  var code = state.mpRoomCode;
+  var url = location.href.split("?")[0] + "?room=" + code;
+  var text = "스트레이트! 같이 하자 🎴\n방 코드: " + code + "\n링크를 누르면 바로 들어와요. 안 되면 게임에서 '코드로 참가하기'에 코드를 입력해 줘!";
+  if(navigator.share){
+    navigator.share({ title:"스트레이트! 초대", text:text, url:url }).catch(function(){});
+    return;
   }
+  copyText(text+"\n"+url, $("lobby-invite-btn"), "✅ 초대 메시지 복사됨!");
+});
+$("lobby-code-btn").addEventListener("click", function(){
+  sfxSelect();
+  copyText(state.mpRoomCode, $("lobby-code-btn"), "✅ 코드 복사됨!");
 });
 
 $("lobby-start-btn").addEventListener("click", function(){
@@ -3465,7 +3485,7 @@ function renderLobby(data){
     var p = data.players[seat];
     var row = el("div","order-row lobby-slot"+(p ? "" : " empty"));
     if(!p){
-      row.innerHTML = "<span class=\"lobby-slot-no\">"+(seat+1)+"</span><span class=\"lobby-slot-wait\">기다리는 중… <small>(시작하면 AI)</small></span>";
+      row.innerHTML = "<span class=\"lobby-slot-no\">"+(seat+1)+"</span><span class=\"lobby-slot-wait\">기다리는 중…</span>";
       list.appendChild(row);
       continue;
     }
