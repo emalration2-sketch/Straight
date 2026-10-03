@@ -213,6 +213,13 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coin-ico{width:15px;height:15px;flex-shrink:0;}
 .daily-row.me{outline:2px solid var(--accent);}
 .season-medal{margin-right:2px;}
+.lobby-slot{display:flex;align-items:center;gap:10px;min-height:46px;}
+.lobby-slot.empty{opacity:.55;border:1.5px dashed rgba(var(--line-rgb),.25);background:transparent;}
+.lobby-slot-no{width:20px;text-align:center;font-weight:800;color:var(--muted);flex-shrink:0;}
+.lobby-slot-tag{flex:1;display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:wrap;}
+.lobby-slot-wait{flex:1;font-size:13px;color:var(--muted);}
+.lobby-slot-wait small{font-size:11px;}
+.lobby-host{font-size:11px;font-weight:800;color:var(--accent);}
 .lobby-kick{margin-left:6px;font-size:10.5px;padding:2px 7px;border-radius:7px;}
 .lobby-ready{font-size:11px;font-weight:800;color:#4ce0a0;margin-left:4px;}
 .order-row{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border-radius:10px;padding:6px 12px;font-size:14px;opacity:0;animation:riseIn .4s forwards;}
@@ -640,8 +647,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <div style="font-family:var(--font-display);font-weight:400;font-size:32px;letter-spacing:8px;color:var(--accent);" id="lobby-code"></div>
     <button class="btn" id="lobby-copy-btn">🔗 링크 복사</button>
     <div class="order-list" id="lobby-players" style="min-width:280px;"></div>
-    <p class="sub" id="lobby-avatar-hint" style="margin:4px 0 0;">내 캐릭터를 선택하세요</p>
-    <div class="avatar-grid" id="lobby-avatar-grid"></div>
     <button class="btn primary big hidden" id="lobby-start-btn">게임 시작 (부족 인원 AI 채움)</button>
     <button class="btn big hidden" id="lobby-ready-btn">✋ 준비</button>
     <p class="sub hidden" id="lobby-auto-msg"></p>
@@ -2650,11 +2655,21 @@ function forfeitOnline(){
   return pushRoomState();
 }
 
+// Online seats take the character equipped in the collection — no picking step.
+function lobbySeatPlayer(){
+  var ch = chosenCharacter;
+  if(!ch || !isAvatarUnlocked(ch.name, straightUnlocks)) ch = presetByName("avatar", getDefaultAvatarName());
+  if(!ch || !isAvatarUnlocked(ch.name, straightUnlocks)) ch = presetByName("avatar", UNLOCK_STARTER_AVATARS[0]);
+  var mf = myMemberFields();
+  return { clientId: myClientId, uid: account ? account.uid : null, name: chosenNickname || ch.name, characterName: ch.name,
+    avatar: avatarIconHTML(ch), avatarPicked: true, title: activeTitleLabel(), border: activeBorderCls(),
+    vip: mf.vip, master: mf.master, medal: mf.medal, ready: false, isAI: false, hand: [], score: [] };
+}
 function createRoom(maxPlayers, cb, opts){
   opts = opts || {};
   ensureFirebase().then(function(){
     var code = genRoomCode();
-    var me = { clientId: myClientId, uid: account ? account.uid : null, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
+    var me = lobbySeatPlayer();
     var roomData = {
       code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby", public: !!opts.public,
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
@@ -2699,7 +2714,7 @@ function joinRoom(code, cb){
         return;
       }
       if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
-      var me = { clientId: myClientId, uid: account ? account.uid : null, name:null, characterName:null, avatar:null, avatarPicked:false, isAI:false, hand:[], score:[] };
+      var me = lobbySeatPlayer();
       var newPlayers = data.players.concat([me]);
       fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
         state.mpRoomCode = code;
@@ -2727,29 +2742,6 @@ function reclaimSeat(ref, seat){
   });
 }
 
-function pickAvatar(ch, cb){
-  if(!state.mpRoomCode || !fbDb){ cb("연결되지 않았습니다."); return; }
-  var ref = fbDoc(fbDb,"rooms",state.mpRoomCode);
-  fbRunTransaction(fbDb, function(tx){
-    return tx.get(ref).then(function(snap){
-      if(!snap.exists()) throw new Error("방을 찾을 수 없습니다.");
-      var data = snap.data();
-      var players = (data.players || []).slice();
-      var mine = -1;
-      for(var i=0;i<players.length;i++){ if(players[i].clientId===myClientId){ mine=i; break; } }
-      if(mine===-1) throw new Error("참가 정보를 찾을 수 없습니다.");
-      if(players[mine].avatarPicked && players[mine].characterName===ch.name) return;
-      var taken = players.some(function(p,i){ return i!==mine && p.avatarPicked && p.characterName===ch.name; });
-      if(taken) throw new Error("이미 다른 플레이어가 선택한 캐릭터입니다.");
-      var updated = {}; for(var k in players[mine]) updated[k]=players[mine][k];
-      updated.name = chosenNickname || ch.name; updated.characterName = ch.name; updated.avatar = avatarIconHTML(ch); updated.avatarPicked = true;
-      updated.title = activeTitleLabel(); updated.border = activeBorderCls();
-      var mf = myMemberFields(); updated.vip = mf.vip; updated.master = mf.master; updated.medal = mf.medal;
-      players[mine] = updated;
-      tx.update(ref, { players: players, updatedAt: Date.now() });
-    });
-  }).then(function(){ cb(null); }).catch(function(e){ cb(e && e.message ? e.message : String(e)); });
-}
 
 function applyNickname(raw){
   var nick = cleanNick(raw);
@@ -3099,68 +3091,34 @@ function renderLobby(data){
   $("lobby-code").textContent = state.mpRoomCode || data.code;
   var list = $("lobby-players");
   list.innerHTML = "";
-  data.players.forEach(function(p){
-    var row = el("div","order-row");
-    row.style.opacity = "1";
+  // One slot per seat; empty seats wait for players and are filled by AI at the start.
+  for(var seat=0; seat<data.maxPlayers; seat++){
+    var p = data.players[seat];
+    var row = el("div","order-row lobby-slot"+(p ? "" : " empty"));
+    if(!p){
+      row.innerHTML = "<span class=\"lobby-slot-no\">"+(seat+1)+"</span><span class=\"lobby-slot-wait\">기다리는 중… <small>(시작하면 AI)</small></span>";
+      list.appendChild(row);
+      continue;
+    }
     var isMe = p.clientId===myClientId;
-    var label = p.avatarPicked ? playerTagHTML(p) : "⏳ 캐릭터 선택 중...";
     var isHostRow = p.clientId===data.hostClientId;
     var readyMark = (!isHostRow && p.ready && !data.public) ? "<span class=\"lobby-ready\">✔ 준비</span>" : "";
-    row.innerHTML = "<span>"+label+(isHostRow?" · 방장":"")+readyMark+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
+    row.innerHTML = "<span class=\"lobby-slot-no\">"+(seat+1)+"</span><span class=\"lobby-slot-tag\">"+playerTagHTML(p)+(isHostRow?" <span class=\"lobby-host\">방장</span>":"")+readyMark+"</span><span>"+(isMe?"(나)":"")+"</span>";
     if(data.hostClientId===myClientId && !isMe){
-      var kick = el("button","btn lobby-kick","내보내기");
-      kick.addEventListener("click", function(){
-        if(!confirm("이 플레이어를 내보낼까요?")) return;
-        kickPlayer(p.clientId);
-      });
-      row.lastChild.appendChild(kick);
+      (function(clientId){
+        var kick = el("button","btn lobby-kick","내보내기");
+        kick.addEventListener("click", function(){
+          if(!confirm("이 플레이어를 내보낼까요?")) return;
+          kickPlayer(clientId);
+        });
+        row.lastChild.appendChild(kick);
+      })(p.clientId);
     }
     list.appendChild(row);
-  });
-  var slotsLeft = data.maxPlayers - data.players.length;
-  if(slotsLeft>0){
-    var fillRow = el("div","order-row",  "AI가 채울 자리 "+slotsLeft+"칸");
-    fillRow.style.opacity = ".6";
-    list.appendChild(fillRow);
   }
-
   var me = null;
   for(var i=0;i<data.players.length;i++){ if(data.players[i].clientId===myClientId){ me=data.players[i]; break; } }
   var myPicked = !!(me && me.avatarPicked);
-  var takenNames = {};
-  data.players.forEach(function(p){ if(p.avatarPicked && p.clientId!==myClientId) takenNames[p.characterName]=true; });
-
-  var grid = $("lobby-avatar-grid");
-  grid.innerHTML = "";
-  CHARACTERS.forEach(function(ch){
-    var taken = !!takenNames[ch.name];
-    var mine = myPicked && me.characterName===ch.name;
-    // Same lock as the solo picker: characters you haven't unlocked can't be picked online.
-    var locked = !isAvatarUnlocked(ch.name, straightUnlocks);
-    var b = el("button","avatar-btn"+(mine?" selected":"")+(locked && !mine?" locked":""));
-    b.innerHTML = "<span>"+avatarIconHTML(ch)+"</span><span class=\"nm\">"+ch.name+(taken?" (선택됨)":"")+"</span>";
-    if(locked && !mine){
-      b.disabled = true;
-    } else if(taken){
-      b.disabled = true;
-      b.style.opacity = ".3";
-      b.style.cursor = "default";
-    } else if(mine){
-      b.style.cursor = "default";
-    } else {
-      b.addEventListener("click", function(){
-        sfxSelect();
-        b.disabled = true;
-        pickAvatar(ch, function(err){
-          if(err){ alert(err); }
-        });
-      });
-    }
-    grid.appendChild(b);
-  });
-  // The picker stays open so you can see (and, before the start, change) your character.
-  var myCh = myPicked ? presetByName("avatar", me.characterName) : null;
-  $("lobby-avatar-hint").innerHTML = myCh ? ("내 캐릭터: <b>"+avatarIconHTML(myCh)+" "+myCh.name+"</b> · 다른 캐릭터를 눌러 바꿀 수 있어요") : "내 캐릭터를 선택하세요";
   // Quick-match rooms are found automatically, so there is no code to share.
   $("lobby-title").textContent = data.public ? "⚡ 빠른 매칭" : "대기실";
   ["lobby-share-hint","lobby-code","lobby-copy-btn"].forEach(function(id){ $(id).classList.toggle("hidden", !!data.public); });
@@ -3252,14 +3210,7 @@ function updateLobbyAutoStart(data, isHost, allPicked){
     clearInterval(lobbyAutoTimer); lobbyAutoTimer = null;
     msg.textContent = "⚡ 곧 시작해요!";
     lobbyAutoDone = true;
-    // Still no character? Take a free one so the game can start.
-    var me = state.players[state.myIndex];
-    if(me && !me.avatarPicked){
-      var taken = {};
-      state.players.forEach(function(p){ if(p.avatarPicked) taken[p.characterName] = true; });
-      var free = CHARACTERS.filter(function(ch){ return !taken[ch.name] && isAvatarUnlocked(ch.name, straightUnlocks); });
-      if(free.length) pickAvatar(free[Math.floor(Math.random()*free.length)], function(){});
-    } else if(isHost && state.players.every(function(p){ return p.avatarPicked; })){
+    if(isHost && state.players.every(function(p){ return p.avatarPicked; })){
       lobbyAutoDone = false;
       startOnlineGame();
     }
