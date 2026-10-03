@@ -57,6 +57,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 @keyframes fanIn{from{opacity:0;transform:translateX(0) translateY(30px) rotate(0);}}
 .start-fan .card.fan-prism{background:#D4537E;}
 .start-fan .card.fan-prism .card-num svg{width:38px;height:42px;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
+.start-me{position:absolute;top:calc(env(safe-area-inset-top) + 12px);left:calc(env(safe-area-inset-left) + 14px);z-index:5;max-width:55vw;text-align:left;}
+.start-me .name-tag{font-size:13px;}
 .start-actions{display:flex;flex-direction:column;align-items:center;gap:18px;}
 .btn.start-cta{min-width:230px;padding:17px 40px;font-size:19px;font-weight:800;border-radius:999px;box-shadow:0 8px 18px rgba(0,0,0,.18);}
 .start-menu{display:flex;gap:12px;}
@@ -670,6 +672,16 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .attend-gain{display:inline-flex;align-items:center;gap:2px;font-size:11.5px;font-weight:800;}
 .attend-gain .coin-ico{width:13px;height:13px;}
 @keyframes attendPop{0%{transform:scale(0) rotate(-30deg);}100%{transform:scale(1) rotate(0);}}
+.coin-perks b{color:var(--accent);}
+.coin-price{display:flex;align-items:center;justify-content:center;gap:6px;font-size:24px;font-weight:900;margin:8px 0 2px;}
+.coin-price .coin-ico{width:26px;height:26px;}
+.charge-list{display:flex;flex-direction:column;gap:7px;margin-top:8px;}
+.charge-pack{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(var(--line-rgb),.18);background:var(--panel2);color:var(--text);font:inherit;cursor:pointer;text-align:left;}
+.charge-pack:active{transform:scale(.98);}
+.charge-coins{display:inline-flex;align-items:center;gap:5px;font-size:16px;}
+.charge-coins .coin-ico{width:20px;height:20px;}
+.charge-bonus{font-size:11px;font-weight:900;padding:2px 7px;border-radius:999px;background:linear-gradient(135deg,#ff5c8a,#ffb03a);color:#fff;}
+.charge-won{font-weight:800;color:var(--accent);}
 .coin-perks{text-align:left;font-size:13px;line-height:1.75;margin:4px 0 8px;padding-left:20px;}
 .coin-modal-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
 .coin-buy-preview{display:flex;justify-content:center;padding:14px 0;transform:scale(1.35);}
@@ -723,6 +735,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 <div id="app">
 
   <div class="screen" id="screen-start">
+    <div class="start-me" id="start-me"></div>
     <button class="coin-pill hidden" aria-label="내 코인"></button>
     <div class="start-hero">
       <div class="start-fan" id="start-fan" aria-hidden="true"></div>
@@ -1996,13 +2009,20 @@ function switchScreen(name){
   ["start","avatar","mode","online-choice","room-create","join","lobby","count","order","game","win","collection","daily"].forEach(function(s){
     $("screen-"+s).classList.toggle("hidden", s!==name);
   });
-  if(name==="start") renderStartFan();
+  if(name==="start"){ renderStartFan(); renderStartMe(); }
   setBgmTrack(["count","order","game","win"].indexOf(name)!==-1 ? gameBgmIndex : MENU_BGM);
 }
 
 // Title art: a fanned 3-4-5-6-7 straight drawn with the live card renderer, so it
 // always matches the current theme colors and equipped card pattern.
 var APP_PRISM_SVG = "<svg viewBox=\"4 2 36 40\" aria-hidden=\"true\"><path d=\"M8 16 L22 4 L36 16 Z\" fill=\"#7F77DD\"/><path d=\"M15 16 L22 4 L29 16 Z\" fill=\"#CECBF6\"/><path d=\"M19 16 L22 9 L25 16 Z\" fill=\"#5DCAA5\"/><path d=\"M8 16 L36 16 L22 40 Z\" fill=\"#378ADD\"/><path d=\"M15 16 L29 16 L22 40 Z\" fill=\"#534AB7\"/></svg>";
+// Main screen, top left: my name tag as others see it (equipped avatar, title, border).
+function renderStartMe(){
+  var host = $("start-me");
+  if(!host || typeof lobbySeatPlayer!=="function") return;
+  host.innerHTML = playerTagHTML(lobbySeatPlayer());
+  fitNameTags(host);
+}
 function renderStartFan(){
   var host = $("start-fan");
   if(!host) return;
@@ -3273,6 +3293,7 @@ function renderMyEquipSummary(){
   host.classList.remove("hidden");
 }
 renderMyEquipSummary();
+renderStartMe();
 renderAvatarGrid();
 
 // BGM starts as soon as the app opens. Browsers hold sound until the first interaction, so
@@ -4260,14 +4281,33 @@ function walletAction(btn, run, done){
     coinToast(e && e.message==="coins" ? "코인이 부족해요" : "잠시 후 다시 시도해 주세요");
   });
 }
+var COIN_PACKS = [
+  { won:1100, coins:110, bonus:0 }, { won:3300, coins:345, bonus:5 }, { won:5500, coins:605, bonus:10 },
+  { won:11000, coins:1265, bonus:15 }, { won:33000, coins:3960, bonus:20 }, { won:55000, coins:6875, bonus:25 }
+];
+function openChargeModal(){
+  var rows = COIN_PACKS.map(function(p, i){
+    return "<button class=\"charge-pack\" data-pack=\""+i+"\"><span class=\"charge-coins\">"+COIN_SVG+"<b>"+p.coins.toLocaleString()+"</b></span>"+
+      (p.bonus ? "<span class=\"charge-bonus\">+"+p.bonus+"%</span>" : "<span></span>")+
+      "<span class=\"charge-won\">"+p.won.toLocaleString()+"원</span></button>";
+  }).join("");
+  coinModal("💳 코인 충전", "<p class=\"coin-note\">많이 충전할수록 <b>보너스</b>가 커져요</p><div class=\"charge-list\">"+rows+"</div>", [{ label:"닫기" }]);
+  Array.prototype.forEach.call(document.querySelectorAll(".charge-pack"), function(b){
+    b.addEventListener("click", function(){
+      sfxSelect();
+      // Payment (토스페이먼츠) connects here once the server side is ready.
+      coinToast("💳 결제는 곧 열려요. 조금만 기다려 주세요!");
+    });
+  });
+}
 function openWalletModal(){
   var w = account && account.wallet;
   if(!w) return;
   var member = w.membershipUntil > Date.now();
   coinModal("내 코인",
     "<div class=\"coin-balance\">"+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></div>"+
-    "<p class=\"coin-note\">👑 멤버십 "+(member ? "<b>"+fmtDate(w.membershipUntil)+"</b>까지" : "없음")+"</p>",
-    [{ label:"👑 멤버십 구독", primary:true, onClick:function(){ openMembershipModal(); } }, { label:"닫기" }]);
+    "<p class=\"coin-note\">👑 "+(member ? "남은 멤버십 기간 <b>"+fmtDate(w.membershipUntil)+"</b>까지" : "멤버십 없음")+"</p>",
+    [{ label:"멤버십 보기", primary:true, onClick:function(){ openMembershipModal(); } }, { label:"닫기" }]);
 }
 // Attendance card: a 7-day row (day 7 carries the +5 bonus); days done so far this week are
 // stamped and today's stamp lands with a pop.
@@ -4291,12 +4331,11 @@ function openMembershipModal(onDone){
   var member = w.membershipUntil > Date.now();
   var enough = w.coins >= MEMBERSHIP_COINS;
   coinModal("👑 멤버십 30일",
-    "<ul class=\"coin-perks\"><li>상점의 유료 아이템 전부 사용</li><li>멤버십 전용 테마·캐릭터·테두리</li><li>이름표에 👑 VIP 배지</li></ul>"+
+    "<ul class=\"coin-perks\"><li><b>상점 유료 아이템</b>을 전부 사용</li><li><b>멤버십 전용</b> 테마·캐릭터·테두리</li><li>네임태그에 <b>VIP 배지</b></li></ul>"+
     (member ? "<p class=\"coin-note\">"+fmtDate(w.membershipUntil)+"까지 이용 중 · 구매하면 30일 연장</p>" : "")+
-    "<p class=\"coin-note\">가격 "+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b> · 보유 "+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></p>"+
-    (enough ? "" : "<p class=\"coin-note muted\">출석과 챌린지로 코인을 모을 수 있어요. 충전은 곧 열려요.</p>"),
-    [{ label: enough ? (member ? "30일 연장" : "멤버십 시작") : "코인 부족", primary:true, disabled:!enough,
-       onClick:function(btn){ walletAction(btn, buyMembership, function(){
+    "<p class=\"coin-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></p>",
+    [{ label: enough ? (member ? "30일 연장" : "멤버십 시작") : "💳 코인 충전", primary:true,
+       onClick:function(btn){ if(!enough){ openChargeModal(); return; } walletAction(btn, buyMembership, function(){
          coinToast("👑 멤버십 "+fmtDate(account.wallet.membershipUntil)+"까지");
          if(onDone) onDone();
        }); } },
@@ -4312,9 +4351,9 @@ function openBuyItemModal(kind, it, onDone){
     "<div class=\"coin-buy-preview\">"+it.preview+"</div>"+
     "<p class=\"coin-note\">가격 "+COIN_SVG+"<b>"+price+"</b> · 보유 "+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></p>"+
     "<p class=\"coin-note muted\">멤버십이면 구매하지 않아도 쓸 수 있어요.</p>"+
-    (enough ? "" : "<p class=\"coin-note muted\">출석과 챌린지로 코인을 모을 수 있어요. 충전은 곧 열려요.</p>"),
-    [{ label: enough ? "구매" : "코인 부족", primary:true, disabled:!enough,
-       onClick:function(btn){ walletAction(btn, function(){ return buyItemWithCoins(kind, it.id.replace(/^[a-z]+:/,"")); }, function(){
+    "",
+    [{ label: enough ? "구매" : "💳 코인 충전", primary:true,
+       onClick:function(btn){ if(!enough){ openChargeModal(); return; } walletAction(btn, function(){ return buyItemWithCoins(kind, it.id.replace(/^[a-z]+:/,"")); }, function(){
          coinToast("🛍️ <b>"+it.name+"</b> 구매 완료!");
          if(onDone) onDone();
        }); } },
