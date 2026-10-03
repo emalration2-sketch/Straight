@@ -89,7 +89,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .border-ring.border-flame::before{content:"🔥";position:absolute;top:-12px;left:50%;transform:translateX(-50%);font-size:14px;line-height:1;}
 .border-ring.border-heart{border:3px solid #d4537e;}
 .border-ring.border-heart::before{content:"♥";position:absolute;top:-11px;left:50%;transform:translateX(-50%);font-size:14px;line-height:1;color:#ff5c8a;text-shadow:0 1px 2px rgba(0,0,0,.35);}
-.border-ring.border-coral{border:4px solid #ff7f6b;}
 .border-ring.border-mint{border:4px double #33e6c0;}
 .border-ring.border-stars{border:3px solid #4b5185;}
 .border-ring.border-stars::before,.border-ring.border-stars::after{content:"★";position:absolute;font-size:8px;color:#ffe66d;line-height:1;}
@@ -120,7 +119,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-flame{border-color:#f0763c;background:linear-gradient(90deg,rgba(216,90,48,.32),rgba(216,90,48,.05)),var(--panel2);}
 .name-tag.border-heart{border-color:#ff8fb3;background:linear-gradient(90deg,rgba(255,143,179,.28),rgba(255,143,179,.05)),var(--panel2);}
 
-.name-tag.border-coral{border-color:#ff7f6b;background:linear-gradient(90deg,rgba(255,127,107,.28),rgba(255,127,107,.05)),var(--panel2);}
 .name-tag.border-mint{border-color:#33e6c0;background:linear-gradient(90deg,rgba(51,230,192,.26),rgba(51,230,192,.05)),var(--panel2);}
 .name-tag.border-stars{border-color:#ffe66d;background:linear-gradient(90deg,rgba(255,230,109,.26),rgba(255,230,109,.05)),var(--panel2);}
 .name-tag.border-sprout{border-color:#7ed957;background:linear-gradient(90deg,rgba(126,217,87,.28),rgba(126,217,87,.05)),var(--panel2);}
@@ -131,7 +129,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-blackgold .name-tag-text{color:#f6e7b8;}
 /* Border motifs: one small emoji/glyph perched on the tag's top-right rim. */
 .name-tag[class*="border-"]::before{position:absolute;top:-8px;right:7px;font-size:11px;line-height:1;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));z-index:1;}
-.name-tag.border-coral::before{content:"🐚";}
 .name-tag.border-stars::before{content:"✨";animation:decoTwinkle 1.8s ease-in-out infinite;}
 .name-tag.border-heart::before{content:"♥";color:#ff5c8a;font-size:12px;animation:decoBeat 1.4s ease-in-out infinite;}
 .name-tag.border-flame::before{content:"🔥";animation:decoFlicker 1.1s ease-in-out infinite;}
@@ -164,8 +161,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 @keyframes decoGlow{0%,100%{filter:drop-shadow(0 0 1px var(--deco-glow,#fff));}50%{filter:drop-shadow(0 0 5px var(--deco-glow,#fff));}}
 @keyframes tagSweep{0%{background-position:130% 0;}50%,100%{background-position:-30% 0;}}
 @keyframes candyRoll{from{background-position:0 0,0 0,0 0;}to{background-position:0 0,0 0,28.28px 0;}}
-.name-tag.border-coral{--tag-glow:rgba(255,127,107,.85);animation:tagGlow 2.4s ease-in-out infinite;}
-.name-tag.border-coral::before{animation:decoBob 2.4s ease-in-out infinite;}
 .name-tag.border-sprout{--tag-glow:rgba(126,217,87,.8);animation:tagGlow 2.8s ease-in-out infinite;}
 .name-tag.border-sprout::before{transform-origin:50% 100%;animation:decoSway 2.2s ease-in-out infinite;}
 .name-tag.border-flame{border-color:transparent;background:linear-gradient(90deg,rgba(216,90,48,.34),rgba(216,90,48,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ff3d1f,#ffb03a,#ff6a2a,#ffd23a,#ff3d1f) border-box;background-size:auto,auto,300% 100%;animation:tagSheen 1.1s linear infinite alternate,flameGlow 1.6s ease-in-out infinite;}
@@ -216,7 +211,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .border-ring.border-shell{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#9bd26a 0 30deg,#5c8a2e 30deg 60deg) border-box;}
 @media (prefers-reduced-motion: reduce){.name-tag[class*="border-"]::before,.name-tag[class*="border-"]::after{animation:none !important;}}
 /* These borders read better as a clean rim: no motif on top. */
-.name-tag.border-mane::before,.name-tag.border-blackgold::before,.name-tag.border-dragon::before,.name-tag.border-coral::before,.name-tag.border-wave::before,.name-tag.border-shell::before,.name-tag.border-mint::before{content:none !important;}
+.name-tag.border-mane::before,.name-tag.border-blackgold::before,.name-tag.border-dragon::before,.name-tag.border-wave::before,.name-tag.border-shell::before,.name-tag.border-mint::before{content:none !important;}
 @keyframes legendSweep{0%{background-position:130% 0;}45%,100%{background-position:-30% 0;}}
 @media (prefers-reduced-motion: reduce){.name-tag.border-legend::after{animation:none;opacity:0;}}
 .border-ring.border-legend{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}@media (prefers-reduced-motion: reduce){.name-tag{animation:none !important;}}
@@ -387,6 +382,20 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 @keyframes skinLamp{from{opacity:.75;transform:translateX(-2%);}to{opacity:1;transform:translateX(2%);}}
 @keyframes skinGoldGlow{0%,100%{box-shadow:inset 0 0 0 1px rgba(255,244,205,.55),0 0 12px rgba(255,205,90,.35);}50%{box-shadow:inset 0 0 0 1px rgba(255,244,205,.8),0 0 24px rgba(255,214,110,.7);}}
 @keyframes skinNeonFlicker{0%,18%,22%,62%,64%,100%{box-shadow:0 0 12px rgba(57,243,255,.55),inset 0 0 12px rgba(255,61,230,.25);border-color:#39f3ff;}20%,63%{box-shadow:0 0 3px rgba(57,243,255,.2),inset 0 0 4px rgba(255,61,230,.1);border-color:#1f8a92;}}
+/* Performance (phones ran hot): on the game screen nothing may repaint every frame.
+   Name tags hold their look but stop pulsing; theme layers move by transform/opacity only;
+   the floor glow is static. The collection still shows the full effects. */
+#screen-game .name-tag,#screen-game .name-tag::after{animation:none !important;}
+#screen-game .name-tag::after{opacity:0;}
+#screen-game .name-tag.border-crystal::before{animation:none;}
+#screen-game[class*="board-skin-"] .floor-board{animation:none;}
+#screen-game.board-skin-gold::after{display:none;}
+#screen-game[class*="board-skin-"]::before,#screen-game[class*="board-skin-"]::after{will-change:opacity,transform;}
+#screen-game.board-skin-neon::before{inset:-26px 0 0 0;animation:skinGridShift 1.6s linear infinite;}
+#screen-game.board-skin-ocean::before{inset:-12%;animation:skinCausticsMove 14s ease-in-out infinite alternate;}
+@keyframes skinGridShift{from{transform:translateY(0);}to{transform:translateY(26px);}}
+@keyframes skinCausticsMove{from{transform:translate(-6%,-4%);}to{transform:translate(6%,4%);}}
+.theme-thumb::before,.theme-thumb::after{animation:none !important;}
 @media (prefers-reduced-motion: reduce){[class*="board-skin-"]::before,[class*="board-skin-"]::after,[class*="board-skin-"] .floor-board,.coll-stage-floor{animation:none !important;}}
 /* Let the table show through: theme-colored panels would clash with wood/marble. */
 #screen-game[class*="board-skin-"] .opponent-card,#screen-game[class*="board-skin-"] .status-panel,#screen-game[class*="board-skin-"] .log-emoji-btn{background:rgba(0,0,0,.32);}
@@ -946,6 +955,8 @@ function prevSeasonKey(){
 }
 // Last season's top 3 wear 🥇🥈🥉 for the whole of this season.
 function loadSeasonMedal(uid){
+  var cacheKey = "straightMedal:"+uid+":"+prevSeasonKey();
+  try{ var cached = localStorage.getItem(cacheKey); if(cached!==null) return Promise.resolve(Number(cached)||0); }catch(e){}
   var F = fbFs;
   var q = F.query(F.collection(fbDb,"seasons",prevSeasonKey(),"players"), F.orderBy("bestTurns"), F.limit(20));
   return F.getDocs(q).then(function(snap){
@@ -953,6 +964,7 @@ function loadSeasonMedal(uid){
       .sort(function(a, b){ return (a.t-b.t) || (a.ms-b.ms); });
     var medal = 0;
     rows.slice(0,3).forEach(function(r, i){ if(r.id===uid) medal = i+1; });
+    try{ localStorage.setItem(cacheKey, String(medal)); }catch(e){}
     return medal;
   }, function(){ return 0; });
 }
@@ -1268,7 +1280,6 @@ var UNLOCK_MILESTONES = [
   { id:"games:500",  kind:"pattern", label:"루나",   check:function(s){ return s.games>=500; },  detail:function(s){ return "플레이 "+Math.min(s.games,500)+"/500판"; } },
   { id:"games:1000", kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
 
-  { id:"win:1:border",    kind:"border", label:"코랄",      check:function(s){ return s.wins>=1; },            boolCond:true, detail:function(s){ return "첫 승리"; } },
   { id:"misc:tutorial",   kind:"border", label:"새싹",      check:function(s){ return s.tutorialDone; },       boolCond:true, detail:function(s){ return "튜토리얼 완주"; } },
   { id:"misc:online10",   kind:"border", label:"달밤",      check:function(s){ return s.onlineWins>=10; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,10)+"/10회"; } },
   { id:"misc:streak10",   kind:"border", label:"불꽃",      check:function(s){ return s.winStreak>=10; },      detail:function(s){ return "연승 "+Math.min(s.winStreak,10)+"/10회"; } },
@@ -1283,6 +1294,7 @@ var UNLOCK_MILESTONES = [
   { id:"misc:prism100",   kind:"title",  label:"프리즘 헌터", check:function(s){ return s.prismBanked>=100; },   detail:function(s){ return "프리즘 카드 획득 "+Math.min(s.prismBanked,100)+"/100개"; } },
   { id:"misc:hard30",     kind:"title",  label:"고수",      check:function(s){ return s.hardWins>=30; },       detail:function(s){ return "어려움 AI 승리 "+Math.min(s.hardWins,30)+"/30회"; } },
   { id:"misc:podium",     kind:"title",  label:"챌린저",    check:function(s){ return s.seasonPodium; },       boolCond:true, detail:function(s){ return "챌린지 시즌 1~3위 달성"; } },
+  { id:"misc:champion",   kind:"border", label:"트로피",    check:function(s){ return s.seasonChampion; },     boolCond:true, detail:function(s){ return "챌린지 시즌 1위 달성"; } },
   { id:"misc:colors20",   kind:"title",  label:"정복자",    check:function(s){ return colorsAt20(s)>=4; },     detail:function(s){ return "색깔마다 20승 "+colorsAt20(s)+"/4색"; } }
 ];
 // Runs during startup unlock migration, before ALL_COLORS is assigned — so list colors here.
@@ -1302,6 +1314,7 @@ function loadStats(){
     bombsUsed: p.bombsUsed||0,
     challengeClears: p.challengeClears||0,
     seasonPodium: !!p.seasonPodium,
+    seasonChampion: !!p.seasonChampion,
     hasKStraightWin: !!p.hasKStraightWin, tutorialDone: !!p.tutorialDone
   };
 }
@@ -1352,8 +1365,8 @@ function initUnlocksIfNeeded(){
 // their real condition was met), re-derive the unlock set strictly from the player's
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
-// "8": 챌린저 now means a challenge season podium — re-derive once.
-var UNLOCK_SCHEMA_VERSION = "8";
+// "9": 코랄 removed, 트로피 earned by a season 1위 — re-derive once.
+var UNLOCK_SCHEMA_VERSION = "9";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
@@ -1522,11 +1535,13 @@ function maybeRecordLocalGameResult(outcome, meta){
 // so that a player carrying an old-scheme save gets rewritten to the new scheme first.
 migrateOldUnlocksIfNeeded();
 var straightUnlocks = initUnlocksIfNeeded();
-// Last season's challenge 1~3위 (account.medal) earns the 챌린저 title for good.
+// Last season's challenge 1~3위 (account.medal) earns the 챌린저 title for good; 1위 also
+// earns the 트로피 border.
 if(account && account.medal){
   var podiumStats = loadStats();
-  if(!podiumStats.seasonPodium){
+  if(!podiumStats.seasonPodium || (account.medal===1 && !podiumStats.seasonChampion)){
     podiumStats.seasonPodium = true;
+    if(account.medal===1) podiumStats.seasonChampion = true;
     saveStats(podiumStats);
     var podiumResult = checkUnlocks(podiumStats, straightUnlocks);
     straightUnlocks = podiumResult.updated;
@@ -1729,7 +1744,6 @@ var TITLE_PRESETS = [
 var BORDER_PRESETS = [
   // 클래식: the plain tag everyone starts with.
   { id:"basic", name:"클래식", cls:"border-basic" },
-  { id:"coral", name:"코랄", cls:"border-coral" },
   { id:"sprout", name:"새싹", cls:"border-sprout" },
   { id:"flame", name:"불꽃", cls:"border-flame" },
   // Avatar sets: each matches a character (🦉 나이트올빼미, 🦁 바코드 라이언, 🐈‍⬛ 고양이 예언자).
@@ -1737,6 +1751,7 @@ var BORDER_PRESETS = [
   { id:"mane", name:"사자 갈기", cls:"border-mane" },
   { id:"crystal", name:"수정구", cls:"border-crystal" },
   // Grand Master border.
+  { id:"trophy", name:"트로피", cls:"border-trophy" },
   { id:"legend", name:"솔라리스", cls:"border-legend", gm:true },
   { id:"chrome", name:"크롬", cls:"border-chrome", paid:true },
   { id:"dragon", name:"용비늘", cls:"border-dragon", paid:true },
@@ -1746,7 +1761,6 @@ var BORDER_PRESETS = [
   { id:"heart", name:"하트", cls:"border-heart", member:true },
   { id:"neon", name:"네온", cls:"border-neon", member:true },
   { id:"candy", name:"캔디", cls:"border-candy", event:true },
-  { id:"trophy", name:"트로피", cls:"border-trophy", event:true },
   { id:"mint", name:"민트", cls:"border-mint", event:true },
   { id:"wave", name:"파도", cls:"border-wave", event:true },
   { id:"shell", name:"등껍질", cls:"border-shell", event:true }
@@ -1764,7 +1778,7 @@ function getActiveBorder(){
   try{ id = localStorage.getItem("straightActiveBorder"); }catch(e){}
   // 골드 was replaced by 코랄 (too close to the Grand Master border); keep it equipped.
   // Retired borders map to their replacement (골드 → 코랄; the 2026-10-03 avatar sets).
-  var RENAMED = { gold:"coral", blueberry:"owlmoon", silver:"mane", aurora:"crystal", rainbow:"dragon", opal:"foxfire", emerald:"wave", ruby:"shell" };
+  var RENAMED = { gold:"basic", coral:"basic", blueberry:"owlmoon", silver:"mane", aurora:"crystal", rainbow:"dragon", opal:"foxfire", emerald:"wave", ruby:"shell" };
   return RENAMED[id] || id;
 }
 function setActiveBorder(id){
@@ -1953,6 +1967,12 @@ var audioCtx = null;
 var sfxOn = true;
 var bgmOn = true;
 
+// Backgrounded: suspend the audio clock (BGM scheduling pauses with it) to save battery.
+document.addEventListener("visibilitychange", function(){
+  if(!audioCtx) return;
+  if(document.visibilityState==="hidden") audioCtx.suspend().catch(function(){});
+  else audioCtx.resume().catch(function(){});
+});
 function unlockAudio(){
   if(!audioCtx){
     try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx = null; }
@@ -2216,7 +2236,7 @@ function scheduleBgmStep(){
       bgmStep++;
     }
   }
-  bgmTimer = setTimeout(scheduleBgmStep, 50);
+  bgmTimer = setTimeout(scheduleBgmStep, bgmOn ? 50 : 500);
 }
 
 function startBgm(){
@@ -2870,7 +2890,8 @@ function createRoom(maxPlayers, cb, opts){
     var roomData = {
       code: code, maxPlayers: maxPlayers, hostClientId: myClientId, phase: "lobby", public: !!opts.public,
       colors: [], players: [me], floor: [], centerDeck: [], turnOrder: [], currentTurnPos: 0,
-      gameOver: false, log: [], createdAt: Date.now(), updatedAt: Date.now()
+      gameOver: false, log: [], createdAt: Date.now(), updatedAt: Date.now(),
+      uids: account ? [account.uid] : []
     };
     fbSetDoc(fbDoc(fbDb,"rooms",code), roomData).then(function(){
       state.mpRoomCode = code;
@@ -2912,8 +2933,17 @@ function joinRoom(code, cb){
       }
       if(data.players.length>=data.maxPlayers){ cb("방이 가득 찼습니다."); return; }
       var me = lobbySeatPlayer();
-      var newPlayers = data.players.concat([me]);
-      fbUpdateDoc(ref, { players: newPlayers, updatedAt: Date.now() }).then(function(){
+      fbRunTransaction(fbDb, function(tx){
+        return tx.get(ref).then(function(fresh){
+          var d = fresh.data();
+          if(d.phase!=="lobby") throw new Error("이미 시작된 방입니다.");
+          if(d.players.some(function(p){ return p.clientId===myClientId; })) return;
+          if(d.players.length>=d.maxPlayers) throw new Error("방이 가득 찼습니다.");
+          var upd = { players: d.players.concat([me]), updatedAt: Date.now() };
+          if(Array.isArray(d.uids) && me.uid && d.uids.indexOf(me.uid)===-1) upd.uids = d.uids.concat([me.uid]);
+          tx.update(ref, upd);
+        });
+      }).then(function(){
         state.mpRoomCode = code;
         state.mpMaxPlayers = data.maxPlayers;
         subscribeRoom(code);
@@ -3896,12 +3926,18 @@ function backfillSeasonBest(d){
   }).catch(function(e){ console.error("시즌 기록 옮기기 실패", e); });
 }
 // Best game of the season per player, sorted by turns then play time.
+var seasonBoardCache = {};
 function seasonBoardRows(season){
+  var hit = seasonBoardCache[season];
+  var ttl = season===seasonKey() ? 60000 : 600000;
+  if(hit && Date.now()-hit.at < ttl) return Promise.resolve(hit.rows);
   var F = fbFs;
   var q = F.query(F.collection(fbDb,"seasons",season,"players"), F.orderBy("bestTurns"), F.limit(50));
   return F.getDocs(q).then(function(snap){
-    return snap.docs.map(function(d){ return { id:d.id, data:d.data() }; })
+    var rows = snap.docs.map(function(d){ return { id:d.id, data:d.data() }; })
       .sort(function(a, b){ return (a.data.bestTurns-b.data.bestTurns) || ((a.data.bestMs||0)-(b.data.bestMs||0)); });
+    seasonBoardCache[season] = { at:Date.now(), rows:rows };
+    return rows;
   });
 }
 function renderDailyBoard(){
@@ -3980,7 +4016,8 @@ function finishDaily(outcome){
         });
       });
     });
-  }).catch(function(e){ console.error("챌린지 기록 실패", e); });
+  }).then(function(){ delete seasonBoardCache[seasonKey()]; })
+    .catch(function(e){ console.error("챌린지 기록 실패", e); });
 }
 /* ---------------- coins ---------------- */
 // Coin wallet UI: balance pill, attendance on entry, buying paid items and membership with
@@ -5239,7 +5276,7 @@ function renderCollectionScreen(){
     // How to get / price shows in a bubble on hover or tap, so the grid stays clean.
     var tipText = collectionItemDetailText(tab, it.name);
     // Owned without the achievement (special accounts): describe the condition, not the progress.
-    if(it.unlocked && / (미완료|남음)$/.test(tipText)) tipText = "획득 조건 · "+tipText.replace(/ (미완료|남음)$/,"");
+    if(it.unlocked && / (미완료|남음)$/.test(tipText)) tipText = tipText.replace(/ (미완료|남음)$/,"");
     if(tipText){
       card.addEventListener("mouseenter", function(){ showCollTip(card, tipText); });
       card.addEventListener("mouseleave", hideCollTip);

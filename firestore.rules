@@ -149,14 +149,20 @@ service cloud.firestore {
       allow get: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{5}$');
       // Quick match lists open public lobbies only; private rooms stay unlistable.
       allow list: if signedIn() && resource.data.public == true && resource.data.phase == 'lobby';
+      // uids: accounts that joined. Only they may change the room; anyone else may only
+      // add themselves (joining). Rooms from before uids existed stay open as before.
       allow create: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{5}$')
         && request.resource.data.phase == 'lobby'
         && request.resource.data.players is list
-        && request.resource.data.players.size() <= 4;
+        && request.resource.data.players.size() <= 4
+        && (!('uids' in request.resource.data) || request.resource.data.uids == [request.auth.uid]);
       allow update: if signedIn()
         && request.resource.data.players is list
         && request.resource.data.players.size() <= 4
-        && request.resource.data.phase in ['lobby', 'playing'];
+        && request.resource.data.phase in ['lobby', 'playing']
+        && (!('uids' in resource.data)
+          || (request.auth.uid in resource.data.uids && request.resource.data.get('uids', null) == resource.data.uids)
+          || request.resource.data.get('uids', null) == resource.data.uids.concat([request.auth.uid]));
       allow delete: if false;
     }
     match /{document=**} {
