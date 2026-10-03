@@ -55,6 +55,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .start-fan{position:relative;width:230px;height:112px;margin-bottom:12px;}
 .start-fan .card{position:absolute;left:50%;bottom:6px;width:56px;height:80px;margin-left:-28px;font-size:24px;border-radius:12px;cursor:default;transform-origin:50% 100%;animation:fanIn .6s cubic-bezier(.22,1,.36,1) both;}
 @keyframes fanIn{from{opacity:0;transform:translateX(0) translateY(30px) rotate(0);}}
+.start-fan .card.fan-prism{background:#D4537E;}
+.start-fan .card.fan-prism .card-num svg{width:38px;height:42px;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
 .start-actions{display:flex;flex-direction:column;align-items:center;gap:18px;}
 .btn.start-cta{min-width:230px;padding:17px 40px;font-size:19px;font-weight:800;border-radius:999px;box-shadow:0 8px 18px rgba(0,0,0,.18);}
 .start-menu{display:flex;gap:12px;}
@@ -513,8 +515,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-solar::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-carbon::after,.pattern-stained::after,.pattern-dots::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
-.pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:14px 14px;background-position:0 0,7px 7px;}
-.pattern-diamond::after{inset:4px;border:1.5px solid rgba(0,0,0,.3);border-radius:6px;background-image:linear-gradient(135deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(225deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(315deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(45deg,rgba(0,0,0,.4) 0 50%,transparent 50%);background-size:14px 14px;background-repeat:no-repeat;background-position:top left,top right,bottom right,bottom left;}
+.pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:25% 17.857%;background-position:0 0,16.667% 10.87%;}
+.pattern-diamond::after{inset:4px;border:1.5px solid rgba(0,0,0,.3);border-radius:6px;background-image:linear-gradient(135deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(225deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(315deg,rgba(0,0,0,.4) 0 50%,transparent 50%),linear-gradient(45deg,rgba(0,0,0,.4) 0 50%,transparent 50%);background-size:50% 50%;background-repeat:no-repeat;background-position:top left,top right,bottom right,bottom left;}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
 .pattern-diagonal::after{background-image:linear-gradient(135deg,transparent 0 50%,rgba(0,0,0,.18) 50% 100%);}
 .pattern-ripple::after{background-image:repeating-radial-gradient(circle at 25% 30%,transparent 0 5px,rgba(0,0,0,.14) 5px 6px);}
@@ -527,12 +529,14 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-sakura::after{background:radial-gradient(ellipse 3px 2px at 50% 50%,rgba(255,190,214,.8) 98%,transparent) 0 0/20px 20px,radial-gradient(ellipse 2px 3px at 50% 50%,rgba(255,255,255,.55) 98%,transparent) 10px 11px/20px 20px;}
 .pattern-snowflake::after{background:radial-gradient(rgba(255,255,255,.6) 1px,transparent 1.4px) 0 0/14px 14px,radial-gradient(rgba(255,255,255,.35) .8px,transparent 1.1px) 7px 7px/14px 14px;}
 /* Paid patterns: premium materials — stone, carbon, glass. */
-.pattern-onyx::after{background:repeating-linear-gradient(118deg,transparent 0 8px,rgba(255,255,255,.14) 8px 9px,transparent 9px 15px,rgba(120,220,180,.12) 15px 17px,transparent 17px 26px),linear-gradient(160deg,rgba(20,70,60,.5),rgba(10,25,35,.35));}
-.pattern-carbon::after{background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.14) 0 2px,transparent 2px 6px),repeating-linear-gradient(-45deg,rgba(0,0,0,.1) 0 2px,transparent 2px 6px);}
-.pattern-stained::after{background:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/16px 16px,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/16px 16px,conic-gradient(from 45deg,rgba(255,90,120,.18) 0 25%,rgba(80,160,255,.18) 0 50%,rgba(255,210,80,.18) 0 75%,rgba(90,220,150,.18) 0) 0 0/32px 32px;}
+.pattern-onyx::after{background:repeating-linear-gradient(118deg,transparent 0 8px,rgba(255,255,255,.16) 8px 9px,transparent 9px 15px,rgba(120,220,180,.14) 15px 17px,transparent 17px 26px),linear-gradient(160deg,rgba(20,70,60,.28),rgba(10,25,35,.18));}
+.pattern-carbon::after{background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.11) 0 2px,transparent 2px 6px),repeating-linear-gradient(-45deg,rgba(0,0,0,.08) 0 2px,transparent 2px 6px);}
+.pattern-stained::after{background:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/25% 17.857%,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/25% 17.857%,conic-gradient(from 45deg,rgba(255,90,120,.18) 0 25%,rgba(80,160,255,.18) 0 50%,rgba(255,210,80,.18) 0 75%,rgba(90,220,150,.18) 0) 0 0/50% 35.714%;}
+/* 프리즘: the app icon's prism in two corners, a soft glow behind the number. */
+.pattern-prism::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cpath d='M8 16 L22 4 L36 16 Z' fill='%237F77DD'/%3E%3Cpath d='M15 16 L22 4 L29 16 Z' fill='%23CECBF6'/%3E%3Cpath d='M19 16 L22 9 L25 16 Z' fill='%235DCAA5'/%3E%3Cpath d='M8 16 L36 16 L22 40 Z' fill='%23378ADD'/%3E%3Cpath d='M15 16 L29 16 L22 40 Z' fill='%23534AB7'/%3E%3C/svg%3E") 8% 6%/34% auto no-repeat,url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Cpath d='M8 16 L22 4 L36 16 Z' fill='%237F77DD'/%3E%3Cpath d='M15 16 L22 4 L29 16 Z' fill='%23CECBF6'/%3E%3Cpath d='M19 16 L22 9 L25 16 Z' fill='%235DCAA5'/%3E%3Cpath d='M8 16 L36 16 L22 40 Z' fill='%23378ADD'/%3E%3Cpath d='M15 16 L29 16 L22 40 Z' fill='%23534AB7'/%3E%3C/svg%3E") 92% 94%/34% auto no-repeat,radial-gradient(ellipse at center,rgba(255,255,255,.18),transparent 65%);}
 .pattern-dots::after{background:radial-gradient(circle,rgba(255,255,255,.38) 0 2.4px,transparent 2.9px) 0 0/13px 13px,radial-gradient(circle,rgba(255,255,255,.22) 0 1.4px,transparent 1.8px) 6.5px 6.5px/13px 13px;}
 /* Patterns with marks all over fade out toward the middle so the number stays readable. */
-.pattern-solar::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-stained::after,.pattern-carbon::after,.pattern-onyx::after,.pattern-dots::after{-webkit-mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);}
+.pattern-sakura::after,.pattern-snowflake::after,.pattern-stained::after,.pattern-dots::after{-webkit-mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);}
 .pattern-preview{width:34px;height:34px;border-radius:7px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
 .card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
 .card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 1px 2px rgba(0,0,0,.55);opacity:.95;}
@@ -1303,6 +1307,7 @@ var CARD_BACK_PRESETS = [
   { id:"onyx", name:"오닉스", cls:"pattern-onyx", paid:true },
   { id:"stained", name:"스테인드글라스", cls:"pattern-stained", paid:true },
   { id:"carbon", name:"카본", cls:"pattern-carbon", paid:true },
+  { id:"prism", name:"프리즘", cls:"pattern-prism", paid:true },
   { id:"solar", name:"솔라", cls:"pattern-solar", event:true },
   { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal", event:true },
   { id:"sakura", name:"벚꽃", cls:"pattern-sakura", event:true },
@@ -1997,6 +2002,7 @@ function switchScreen(name){
 
 // Title art: a fanned 3-4-5-6-7 straight drawn with the live card renderer, so it
 // always matches the current theme colors and equipped card pattern.
+var APP_PRISM_SVG = "<svg viewBox=\"4 2 36 40\" aria-hidden=\"true\"><path d=\"M8 16 L22 4 L36 16 Z\" fill=\"#7F77DD\"/><path d=\"M15 16 L22 4 L29 16 Z\" fill=\"#CECBF6\"/><path d=\"M19 16 L22 9 L25 16 Z\" fill=\"#5DCAA5\"/><path d=\"M8 16 L36 16 L22 40 Z\" fill=\"#378ADD\"/><path d=\"M15 16 L29 16 L22 40 Z\" fill=\"#534AB7\"/></svg>";
 function renderStartFan(){
   var host = $("start-fan");
   if(!host) return;
@@ -2004,6 +2010,12 @@ function renderStartFan(){
   [3,4,5,6,7].forEach(function(v, i){
     var coin = v===5 ? { id:"fan-"+v, color:null, value:v, isPrism:true } : { id:"fan-"+v, color:"PINK", value:v };
     var c = cardEl(coin);
+    // The middle card carries the app icon's prism instead of a number.
+    if(v===5){
+      c.classList.add("fan-prism");
+      var num = c.querySelector(".card-num");
+      if(num) num.innerHTML = APP_PRISM_SVG;
+    }
     var off = i-2;
     c.style.transform = "translateX("+(off*36)+"px) translateY("+(Math.abs(off)*Math.abs(off)*3)+"px) rotate("+(off*9)+"deg)";
     c.style.animationDelay = (i*0.07)+"s";
