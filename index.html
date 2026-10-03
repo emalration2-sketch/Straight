@@ -544,10 +544,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
 .pattern-diagonal::after{background-image:linear-gradient(135deg,transparent 0 50%,rgba(0,0,0,.18) 50% 100%);}
 .pattern-ripple::after{background-image:repeating-radial-gradient(circle at 25% 30%,transparent 0 5px,rgba(0,0,0,.14) 5px 6px);}
-.pattern-goldfoil::after{background-image:linear-gradient(115deg,transparent 0 26%,rgba(255,236,170,.34) 37%,transparent 48%,transparent 58%,rgba(255,215,107,.24) 68%,transparent 78%),repeating-linear-gradient(45deg,rgba(255,215,107,.16) 0 1px,transparent 1px 5px);box-shadow:inset 0 0 0 2px rgba(233,185,73,.55);}
+.pattern-goldfoil::after{background:linear-gradient(115deg,transparent 0 22%,rgba(255,236,170,.45) 32%,transparent 42%,transparent 56%,rgba(255,215,107,.35) 66%,transparent 76%),repeating-linear-gradient(45deg,rgba(255,215,107,.18) 0 1px,transparent 1px 4px),repeating-linear-gradient(-45deg,rgba(255,215,107,.12) 0 1px,transparent 1px 4px),radial-gradient(ellipse at 50% 0,rgba(255,230,150,.35),transparent 55%);box-shadow:inset 0 0 0 2px rgba(233,185,73,.9),inset 0 0 0 4px rgba(120,80,10,.35),inset 0 0 0 5px rgba(255,226,140,.6),inset 0 0 12px rgba(255,200,80,.35);}
+.card.pattern-goldfoil .fx-sheen{background-image:linear-gradient(105deg,transparent 38%,rgba(255,236,170,.55) 50%,transparent 62%);}
 .pattern-scale::after{background-image:radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px),radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px);background-size:12px 8px;background-position:0 0,6px 4px;}
-.pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.5) 15% 19%, transparent 19% 45%, rgba(255,255,255,.35) 45% 48%, transparent 48% 75%, rgba(255,255,255,.45) 75% 78%, transparent 78% 100%);}
-.pattern-cosmic::after{background:radial-gradient(circle 4px at 80% 14%,rgba(255,246,220,.95) 90%,transparent 100%),radial-gradient(circle 9px at 80% 14%,rgba(255,240,200,.3),transparent 100%),radial-gradient(circle 1.2px at 16% 20%,#fff 96%,transparent),radial-gradient(circle 1px at 28% 9%,rgba(255,255,255,.8) 96%,transparent),radial-gradient(circle 1.3px at 22% 86%,#fff 96%,transparent),radial-gradient(circle 1px at 70% 90%,rgba(255,255,255,.8) 96%,transparent),radial-gradient(circle 1px at 88% 72%,rgba(255,255,255,.7) 96%,transparent),linear-gradient(150deg,rgba(26,16,70,.55),transparent 42%),linear-gradient(330deg,rgba(26,16,70,.5),transparent 40%);}
+.pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.6) 15% 19%, transparent 19% 45%, rgba(255,255,255,.45) 45% 48%, transparent 48% 75%, rgba(255,255,255,.55) 75% 78%, transparent 78% 100%),linear-gradient(135deg,rgba(255,120,200,.32),rgba(120,220,255,.3) 33%,rgba(255,240,120,.28) 66%,rgba(170,120,255,.32));}
+.pattern-cosmic::after{background:radial-gradient(circle 5px at 80% 14%,#fff8e0 90%,transparent 100%),radial-gradient(circle 14px at 80% 14%,rgba(255,240,200,.45),transparent 100%),radial-gradient(circle 1.4px at 16% 20%,#fff 96%,transparent),radial-gradient(circle 1px at 28% 9%,#fff 96%,transparent),radial-gradient(circle 1.5px at 22% 86%,#fff 96%,transparent),radial-gradient(circle 1.1px at 70% 90%,#fff 96%,transparent),radial-gradient(circle 1.2px at 88% 72%,#fff 96%,transparent),radial-gradient(circle 1px at 50% 30%,rgba(255,255,255,.85) 96%,transparent),radial-gradient(circle 1px at 40% 60%,rgba(255,255,255,.8) 96%,transparent),radial-gradient(circle 1.2px at 10% 55%,#fff 96%,transparent),linear-gradient(150deg,rgba(26,16,70,.7),transparent 48%),linear-gradient(330deg,rgba(26,16,70,.6),transparent 45%);}
 /* Event patterns. */
 .pattern-sakura::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20transform%3D%27translate(20%2020)%27%3E%3Cg%20fill%3D%27%23ffd1e1%27%20stroke%3D%27%23ff8fb6%27%20stroke-width%3D%27.8%27%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(72)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(144)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(216)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(288)%27%2F%3E%3C%2Fg%3E%3Ccircle%20r%3D%273.2%27%20fill%3D%27%23ffe066%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 6% 6%/40% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20transform%3D%27translate(20%2020)%27%3E%3Cg%20fill%3D%27%23ffd1e1%27%20stroke%3D%27%23ff8fb6%27%20stroke-width%3D%27.8%27%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(72)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(144)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(216)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(288)%27%2F%3E%3C%2Fg%3E%3Ccircle%20r%3D%273.2%27%20fill%3D%27%23ffe066%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 96% 40%/30% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20transform%3D%27translate(20%2020)%27%3E%3Cg%20fill%3D%27%23ffd1e1%27%20stroke%3D%27%23ff8fb6%27%20stroke-width%3D%27.8%27%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(72)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(144)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(216)%27%2F%3E%3Cellipse%20cx%3D%270%27%20cy%3D%27-9%27%20rx%3D%275%27%20ry%3D%278%27%20transform%3D%27rotate(288)%27%2F%3E%3C%2Fg%3E%3Ccircle%20r%3D%273.2%27%20fill%3D%27%23ffe066%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 14% 96%/34% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cellipse%20cx%3D%2720%27%20cy%3D%2720%27%20rx%3D%275%27%20ry%3D%279%27%20fill%3D%27%23ffd1e1%27%20transform%3D%27rotate(35%2020%2020)%27%2F%3E%3C%2Fsvg%3E") 78% 8%/16% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cellipse%20cx%3D%2720%27%20cy%3D%2720%27%20rx%3D%275%27%20ry%3D%279%27%20fill%3D%27%23ffd1e1%27%20transform%3D%27rotate(35%2020%2020)%27%2F%3E%3C%2Fsvg%3E") 60% 88%/14% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cellipse%20cx%3D%2720%27%20cy%3D%2720%27%20rx%3D%275%27%20ry%3D%279%27%20fill%3D%27%23ffd1e1%27%20transform%3D%27rotate(35%2020%2020)%27%2F%3E%3C%2Fsvg%3E") 30% 52%/12% auto no-repeat;}
 .pattern-snowflake::after{background:radial-gradient(rgba(255,255,255,.6) 1px,transparent 1.4px) 0 0/14px 14px,radial-gradient(rgba(255,255,255,.35) .8px,transparent 1.1px) 7px 7px/14px 14px;}
@@ -559,8 +560,24 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-neon::after{background:linear-gradient(45deg,transparent 47.5%,#7ff6ff 48.5% 51.5%,transparent 52.5%) 0 0/50% 35.714%,linear-gradient(-45deg,transparent 47.5%,#ff7af0 48.5% 51.5%,transparent 52.5%) 0 0/50% 35.714%,linear-gradient(rgba(10,6,30,.5),rgba(10,6,30,.5));}
 /* 오로라: a rainbow foil wash with two glints. */
 .pattern-aurora::after{background:radial-gradient(circle 1.4px at 20% 22%,#fff 70%,transparent),radial-gradient(circle 1.2px at 76% 70%,#fff 70%,transparent),linear-gradient(115deg,rgba(255,110,170,.45),rgba(255,220,110,.4) 25%,rgba(110,255,200,.4) 50%,rgba(110,170,255,.45) 75%,rgba(220,120,255,.45));}
-/* 네뷸라 (1000판): violet and teal clouds with two stars. */
-.pattern-nebula::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cpath%20d%3D%27M20%204%20L23%2017%20L36%2020%20L23%2023%20L20%2036%20L17%2023%20L4%2020%20L17%2017%20Z%27%20fill%3D%27white%27%2F%3E%3C%2Fsvg%3E") 72% 18%/22% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cpath%20d%3D%27M20%204%20L23%2017%20L36%2020%20L23%2023%20L20%2036%20L17%2023%20L4%2020%20L17%2017%20Z%27%20fill%3D%27white%27%2F%3E%3C%2Fsvg%3E") 22% 80%/14% auto no-repeat,radial-gradient(ellipse at 30% 30%,rgba(190,90,255,.55),transparent 55%),radial-gradient(ellipse at 75% 75%,rgba(60,220,230,.5),transparent 55%),linear-gradient(rgba(10,6,40,.4),rgba(10,6,40,.4));}
+/* 네뷸라 (1000판): violet and teal clouds; its two stars (.fx-stars) twinkle now and then. */
+/* Card finishes. Quiet: thin inner line + faint gloss. Shine: a light sweep on the
+   collection, main and result screens (never during play) and a glint when picked up. */
+.card .fin-line,.card .fx-sheen,.card .fx-stars{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.card .fin-line{box-shadow:inset 0 0 0 1px rgba(255,255,255,.5);background:linear-gradient(160deg,rgba(255,255,255,.16),transparent 35%);}
+.card .fx-sheen{background:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.25) 50%,transparent 60%);background-size:250% 100%;background-position:130% 0;}
+#screen-collection .fx-sheen,#screen-start .fx-sheen,#screen-win .fx-sheen{animation:fxSweep 2.6s ease-in-out infinite;}
+@keyframes fxSweep{0%{background-position:130% 0;}60%,100%{background-position:-30% 0;}}
+.card.sel-flash .fx-sheen{background:rgba(255,255,255,.24);animation:fxFlash .28s ease-out 1 forwards !important;}
+@keyframes fxFlash{from{opacity:1;}to{opacity:0;}}
+.card .fx-stars i{position:absolute;display:block;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cpath%20d%3D%27M20%204%20L23%2017%20L36%2020%20L23%2023%20L20%2036%20L17%2023%20L4%2020%20L17%2017%20Z%27%20fill%3D%27white%27%2F%3E%3C%2Fsvg%3E") center/contain no-repeat;}
+.card .fx-stars i:nth-child(1){left:61%;top:10%;width:22%;height:16%;}
+.card .fx-stars i:nth-child(2){left:15%;top:75%;width:14%;height:10%;}
+#screen-collection .fx-stars i,#screen-start .fx-stars i,#screen-win .fx-stars i{animation:fxTwinkle 4.2s ease-in-out infinite;}
+#screen-collection .fx-stars i:nth-child(2),#screen-start .fx-stars i:nth-child(2),#screen-win .fx-stars i:nth-child(2){animation-delay:2.1s;}
+@keyframes fxTwinkle{0%,80%,100%{transform:scale(1);opacity:.85;filter:none;}88%{transform:scale(1.4);opacity:1;filter:drop-shadow(0 0 3px #fff);}}
+.low-power .fx-sheen,.low-power .fx-stars i{animation:none !important;}
+.pattern-nebula::after{background:radial-gradient(ellipse at 30% 30%,rgba(190,90,255,.55),transparent 55%),radial-gradient(ellipse at 75% 75%,rgba(60,220,230,.5),transparent 55%),linear-gradient(rgba(10,6,40,.4),rgba(10,6,40,.4));}
 /* 할리퀸: big alternating diamonds edged in gold, two per row. */
 .pattern-harlequin::after{background:linear-gradient(45deg,transparent 48.5%,rgba(255,215,120,.9) 49% 51%,transparent 51.5%) 0 0/50% 35.714%,linear-gradient(-45deg,transparent 48.5%,rgba(255,215,120,.9) 49% 51%,transparent 51.5%) 0 0/50% 35.714%,conic-gradient(from 45deg at 50% 50%,rgba(255,255,255,.18) 0 25%,rgba(0,0,0,.2) 0 50%,rgba(255,255,255,.18) 0 75%,rgba(0,0,0,.2) 0) 0 0/50% 35.714%;}
 /* 프레임컷: bevelled corners like a cut stone — light from the top, shade below. */
@@ -1399,8 +1416,8 @@ var CARD_BACK_PRESETS = [
   { id:"harlequin", name:"할리퀸", cls:"pattern-harlequin", paid:true },
   { id:"neon", name:"네온", cls:"pattern-neon", paid:true },
   { id:"aurora", name:"오로라", cls:"pattern-aurora", paid:true },
-  { id:"framecut", name:"프레임컷", cls:"pattern-framecut", paid:true },
-  { id:"crystal", name:"샤드", cls:"pattern-crystal", paid:true },
+  { id:"framecut", name:"프레임컷", cls:"pattern-framecut", event:true },
+  { id:"crystal", name:"샤드", cls:"pattern-crystal", event:true },
   { id:"fireworks", name:"폭죽", cls:"pattern-fireworks" },
   { id:"sakura", name:"벚꽃", cls:"pattern-sakura", event:true },
   { id:"snowflake", name:"눈송이", cls:"pattern-snowflake", event:true }
@@ -1409,6 +1426,14 @@ var CARD_BACK_PRESETS = [
 /* ---------------- progress / unlocks ---------------- */
 
 var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","매드독","크러셔 루"];
+var SHINE_PATTERNS = ["hologram","cosmic","nebula","goldfoil"];
+function patternShines(p){ return !!p && (p.paid || p.member || SHINE_PATTERNS.indexOf(p.id)!==-1); }
+// Extra layers a pattern card carries: the finish, and 네뷸라's twinkling stars.
+function patternFinishHTML(p){
+  if(!p) return "";
+  if(!patternShines(p)) return "<span class=\"fin-line\"></span>";
+  return "<span class=\"fx-sheen\"></span>"+(p.id==="nebula" ? "<span class=\"fx-stars\"><i></i><i></i></span>" : "");
+}
 var UNLOCK_STARTER_PATTERNS = ["stripe","argyle"];
 var UNLOCK_STARTER_BORDERS = ["basic"];
 
@@ -5148,7 +5173,12 @@ function cardEl(coin, opts){
     }
     var clsStr = opts.cls || "";
     var isSmall = clsStr.indexOf("tiny")!==-1 || clsStr.indexOf("opp")!==-1;
-    if(!isSmall) d.classList.add(CARD_BACK_PRESETS[backPresetIndex].cls);
+    if(!isSmall){
+      var bp = CARD_BACK_PRESETS[backPresetIndex];
+      d.classList.add(bp.cls);
+      if(patternShines(bp)) d.classList.add("fx-card");
+      d.insertAdjacentHTML("beforeend", patternFinishHTML(bp));
+    }
     d.appendChild(el("span","card-num", rankLabel(coin.value)));
   }
   return d;
@@ -5331,6 +5361,7 @@ function renderFloor(){
   if(hint) area.appendChild(hint);
 }
 
+var lastFlashedHand = null;
 function renderHand(){
   var wrap = $("hand-coins");
   wrap.innerHTML = "";
@@ -5342,8 +5373,11 @@ function renderHand(){
     if(!isHumanTurn()) cls += " disabled";
     var d = cardEl(hc, { cls:cls.trim() });
     d.addEventListener("click", function(){ onHandClick(hi); });
+    if(state.selectedHandIdx===hi && lastFlashedHand!==hc.id && d.classList.contains("fx-card")) d.classList.add("sel-flash");
     wrap.appendChild(d);
   });
+  var selCard = state.selectedHandIdx!==null && state.selectedHandIdx!==undefined ? player.hand[state.selectedHandIdx] : null;
+  lastFlashedHand = selCard ? selCard.id : null;
 
   $("exchange-btn").innerHTML = "<span class=\"act-ico\">＋2</span><span class=\"act-label\">뽑고 턴 종료</span>";
   $("exchange-btn").classList.toggle("hidden", !(isHumanTurn() && state.mode==="idle"));
@@ -5553,7 +5587,7 @@ function collectionItemsFor(kind){
     var faceBg = "linear-gradient(155deg,"+shadeColor(faceBase,35)+","+faceBase+" 55%,"+shadeColor(faceBase,-35)+")";
     var patternItems = CARD_BACK_PRESETS.map(function(p, i){
       var preview = "<span class=\"coll-cards\">"+
-        "<span class=\"card coll-card "+p.cls+"\" style=\"background:"+faceBg+"\"><span class=\"card-num\">7</span></span></span>";
+        "<span class=\"card coll-card "+p.cls+"\" style=\"background:"+faceBg+"\">"+patternFinishHTML(p)+"<span class=\"card-num\">7</span></span></span>";
       return { id:"pattern:"+p.id, idx:i, name:p.name, unlocked:isPatternUnlocked(p.id, straightUnlocks), preview:preview };
     });
     return sortCollectionItems(patternItems, "pattern");
@@ -5621,7 +5655,7 @@ function renderCollectionStage(){
   var cards = "";
   [["PINK",3],["BLUE",4],["YELLOW",5],["GREEN",6]].forEach(function(cv){
     var base = theme.colors[cv[0]];
-    cards += "<span class=\"card coll-card "+pattern.cls+"\" style=\"background:linear-gradient(155deg,"+shadeColor(base,35)+","+base+" 55%,"+shadeColor(base,-35)+")\"><span class=\"card-num\">"+cv[1]+"</span></span>";
+    cards += "<span class=\"card coll-card "+pattern.cls+"\" style=\"background:linear-gradient(155deg,"+shadeColor(base,35)+","+base+" 55%,"+shadeColor(base,-35)+")\">"+patternFinishHTML(pattern)+"<span class=\"card-num\">"+cv[1]+"</span></span>";
   });
   var trying = Object.keys(collTry).length>0;
   stage.innerHTML = "<div class=\"coll-stage-table "+(theme.skin||"")+(theme.isDark?"":" light")+"\" style=\""+themeVarsStyle(theme)+"\">"+
