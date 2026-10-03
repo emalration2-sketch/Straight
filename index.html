@@ -112,19 +112,21 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 /* name tag: every player is the same pill — avatar circle + name + optional title badge.
    A border preset only recolors/decorates the pill, never changes its size. */
 .name-tag{position:relative;display:inline-flex;align-items:center;gap:7px;max-width:100%;vertical-align:middle;border-radius:999px;border:2px solid rgba(var(--line-rgb),.2);background:var(--panel2);padding:2px 11px 2px 2px;}
-.name-tag-avatar{width:26px;height:26px;border-radius:50%;background:rgba(var(--line-rgb),.1);display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;flex-shrink:0;}
+.name-tag-avatar{position:relative;width:26px;height:26px;border-radius:50%;background:rgba(var(--line-rgb),.1);display:inline-flex;align-items:center;justify-content:center;font-size:15px;line-height:1;flex-shrink:0;}
+.vip-crown{position:absolute;top:-7px;right:-6px;font-size:11px;line-height:1;filter:drop-shadow(0 1px 1px rgba(0,0,0,.45));transform:rotate(14deg);}
+.name-tag-label{display:flex;flex-direction:column;justify-content:center;min-width:0;line-height:1.12;}
 .name-tag-avatar svg{width:1.1em;height:1.1em;}
-/* When a tag runs out of room the title gives way first (flex-shrink:20) and the name
-   keeps at least ~3 characters; badges never shrink. */
+/* The title sits as a small line above the name, so a long title never widens the tag. */
 .name-tag-text{font-weight:700;min-width:3em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.name-tag-title{flex-shrink:20;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:9.5px;font-weight:700;background:var(--accent);color:#4a3a05;padding:1px 7px;border-radius:6px;}
+.name-tag-title{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8.5px;font-weight:800;color:var(--accent);letter-spacing:.2px;}
 .name-tag.compact{gap:5px;padding:1px 8px 1px 1px;font-size:11.5px;min-width:0;flex:0 1 auto;}
 .name-tag.compact .name-tag-avatar{width:21px;height:21px;font-size:13px;}
-.name-tag.compact .name-tag-title{font-size:8.5px;padding:0 5px;}
+.name-tag.compact .name-tag-title{font-size:7.5px;}
+.name-tag.compact .vip-crown{font-size:9px;top:-6px;right:-5px;}
 .name-tag.border-trophy{border-color:#f6a83c;background:linear-gradient(90deg,rgba(246,168,60,.28),rgba(246,168,60,.05)),var(--panel2);}
 .name-tag.border-flame{border-color:#f0763c;background:linear-gradient(90deg,rgba(216,90,48,.32),rgba(216,90,48,.05)),var(--panel2);}
 .name-tag.border-heart{border-color:#ff8fb3;background:linear-gradient(90deg,rgba(255,143,179,.28),rgba(255,143,179,.05)),var(--panel2);}
-.name-tag.border-heart::after{content:"♥";position:absolute;top:-7px;right:8px;font-size:11px;line-height:1;color:#ff5c8a;pointer-events:none;text-shadow:0 1px 2px rgba(0,0,0,.35);}
+
 .name-tag.border-coral{border-color:#ff7f6b;background:linear-gradient(90deg,rgba(255,127,107,.28),rgba(255,127,107,.05)),var(--panel2);}
 .name-tag.border-mint{border-color:#33e6c0;background:linear-gradient(90deg,rgba(51,230,192,.26),rgba(51,230,192,.05)),var(--panel2);}
 .name-tag.border-stars{border-color:#ffe66d;background:linear-gradient(90deg,rgba(255,230,109,.26),rgba(255,230,109,.05)),var(--panel2);}
@@ -141,6 +143,38 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-opal{border-color:transparent;background:linear-gradient(90deg,rgba(247,168,200,.24),rgba(159,216,255,.2),rgba(184,245,168,.14)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#f7a8c8,#9fd8ff,#b8f5a8,#ffe08a,#c9a8ff,#f7a8c8) border-box;background-size:auto,auto,240% 100%;animation:tagSheen 3.2s linear infinite alternate;}
 .name-tag.border-blackgold{border-color:#e9b949;background:linear-gradient(90deg,rgba(0,0,0,.6),rgba(0,0,0,.28)),var(--panel2);box-shadow:inset 0 0 0 1px #111;}
 .name-tag.border-blackgold .name-tag-text{color:#f6e7b8;}
+/* Border motifs: one small emoji/glyph perched on the tag's top-right rim. */
+.name-tag[class*="border-"]::before{position:absolute;top:-8px;right:7px;font-size:11px;line-height:1;pointer-events:none;filter:drop-shadow(0 1px 1px rgba(0,0,0,.4));z-index:1;}
+.name-tag.border-coral::before{content:"🐚";}
+.name-tag.border-blueberry::before{content:"🫐";}
+.name-tag.border-stars::before{content:"✨";animation:decoTwinkle 1.8s ease-in-out infinite;}
+.name-tag.border-aurora::before{content:"🌌";}
+.name-tag.border-rainbow::before{content:"🌈";}
+.name-tag.border-heart::before{content:"♥";color:#ff5c8a;font-size:12px;animation:decoBeat 1.4s ease-in-out infinite;}
+.name-tag.border-silver::before{content:"✦";color:#e6e9ef;font-size:12px;}
+.name-tag.border-flame::before{content:"🔥";animation:decoFlicker 1.1s ease-in-out infinite;}
+.name-tag.border-emerald::before{content:"💎";filter:hue-rotate(-75deg) saturate(1.3) drop-shadow(0 1px 1px rgba(0,0,0,.4));}
+.name-tag.border-ruby::before{content:"💎";filter:hue-rotate(150deg) saturate(1.6) drop-shadow(0 1px 1px rgba(0,0,0,.4));}
+.name-tag.border-legend::before{content:"☀️";animation:decoSpin 8s linear infinite;}
+.name-tag.border-candy::before{content:"🍬";}
+.name-tag.border-trophy::before{content:"🏆";}
+.name-tag.border-sprout::before{content:"🌱";}
+.name-tag.border-mint::before{content:"🍃";}
+.name-tag.border-neon::before{content:"⚡";animation:decoTwinkle 1.2s steps(2) infinite;}
+.name-tag.border-chrome::before{content:"✦";color:#ffffff;font-size:12px;}
+.name-tag.border-opal::before{content:"🫧";}
+.name-tag.border-blackgold::before{content:"♛";color:#e9b949;font-size:12px;}
+/* Motion: flame glows, neon flickers, aurora drifts. */
+.name-tag.border-flame{animation:flameGlow 1.6s ease-in-out infinite;}
+.name-tag.border-neon{animation:neonFlicker 3s linear infinite;}
+.name-tag.border-aurora{background-size:auto,auto,300% 100%;animation:tagSheen 4s ease-in-out infinite alternate;}
+@keyframes flameGlow{0%,100%{box-shadow:0 0 3px rgba(255,120,40,.45);}50%{box-shadow:0 0 9px rgba(255,140,40,.9);}}
+@keyframes neonFlicker{0%,18%,22%,62%,64%,100%{box-shadow:0 0 6px rgba(57,243,255,.8),0 0 12px rgba(255,61,230,.45);}20%,63%{box-shadow:none;}}
+@keyframes decoTwinkle{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(.8);}}
+@keyframes decoBeat{0%,100%{transform:scale(1);}15%{transform:scale(1.3);}30%{transform:scale(1);}}
+@keyframes decoFlicker{0%,100%{transform:scale(1) rotate(-4deg);}50%{transform:scale(1.15) rotate(4deg);}}
+@keyframes decoSpin{to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion: reduce){.name-tag[class*="border-"]::before{animation:none;}}
 @keyframes tagSheen{from{background-position:0 0,0 0,0% 0;}to{background-position:0 0,0 0,100% 0;}}
 /* 그랜드마스터 border: metallic gold rim; one light streak crosses the pill, then rests. */
 .name-tag.border-legend{border-color:transparent;background:linear-gradient(90deg,rgba(233,185,73,.3),rgba(233,185,73,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}
@@ -192,7 +226,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .opponent-card{flex:1 1 0;display:flex;flex-direction:column;gap:4px;background:var(--panel);border:2px solid transparent;border-radius:10px;padding:4px;min-width:0;max-width:280px;overflow:hidden;}
 .opponent-card.active{border-color:var(--accent);}
 .opponent-card:only-child{max-width:210px;}
-.opp-head-row{display:flex;align-items:center;flex-shrink:0;line-height:1.2;min-width:0;}
+.opp-head-row{display:flex;align-items:center;flex-shrink:0;line-height:1.2;min-width:0;padding-top:5px;}
 .opp-head-row .name-tag{max-width:100%;}
 /* Opponent's best straight progress; at 4/5 ("레디!") it pulses. */
 .opp-head-row .name-tag{min-width:0;flex:0 1 auto;}
@@ -202,8 +236,6 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 @media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
 .reclaim-btn{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);z-index:9000;box-shadow:0 6px 18px rgba(0,0,0,.35);}
 .reclaim-btn.hidden{display:none;}
-/* 3 opponents: columns are narrow, so the title badge yields its space to the nickname. */
-.opponents-row.many .name-tag-title{display:none;}
 .opponents-row.many .name-tag.compact{font-size:11px;gap:4px;padding-right:7px;}
 /* Score cards: 4 per row; --opp-w is fitted in fitBoard() so 3 rows always show. */
 .opp-score-wrap{display:grid;grid-template-columns:repeat(4,var(--opp-w,25px));grid-auto-rows:calc(var(--opp-w,25px)*1.4);gap:3px;align-content:start;width:100%;flex:1;min-height:0;overflow:hidden;}
@@ -477,10 +509,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coll-item.locked{opacity:.5;}
 .coll-item.locked::before{content:"🔒";position:absolute;top:3px;right:4px;font-size:9px;line-height:1;}
 .coll-item.equipped{border-color:var(--accent);}
-.coll-item.equipped::before{content:"✓";position:absolute;top:2px;right:4px;font-size:10px;font-weight:900;color:var(--accent);line-height:1;}
+.coll-item.equipped::before{content:"✓";position:absolute;top:2px;left:5px;font-size:10px;font-weight:900;color:var(--accent);line-height:1;}
 .coll-item-preview{min-height:30px;display:flex;align-items:center;justify-content:center;}
 .coll-item-name{font-size:10.5px;font-weight:700;margin:0;min-height:13px;text-align:center;}
 .coll-cards{display:flex;gap:3px;}
+.coll-item-preview .name-tag.coll-tag{margin-top:6px;}
 .card.coll-card{width:34px;height:48px;font-size:18px;border-radius:5px;border-width:1.5px;cursor:default;box-shadow:0 1px 3px rgba(0,0,0,.35);}
 .card.coll-card.back::after{font-size:.7em;}
 .coll-item-state{font-size:10px;color:var(--muted);margin:0;}
@@ -1439,8 +1472,9 @@ function activeBorderCls(){
 // just the local player's — show correctly, including online.
 function playerTagHTML(p, extraCls){
   var titleHTML = p.title ? ("<span class=\"name-tag-title\">"+p.title+"</span>") : "";
-  var vipHTML = p.vip ? "<span class=\"vip-badge\" title=\"멤버십\">VIP</span>" : "";
-  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+"</span><span class=\"name-tag-text\">"+p.name+"</span>"+vipHTML+titleHTML+"</span>";
+  var crownHTML = p.vip ? "<span class=\"vip-crown\" title=\"멤버십\">👑</span>" : "";
+  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+crownHTML+"</span>"+
+    "<span class=\"name-tag-label\">"+titleHTML+"<span class=\"name-tag-text\">"+p.name+"</span></span></span>";
 }
 
 function findMilestoneByLabel(kind, label){
@@ -2883,7 +2917,7 @@ function renderLobby(data){
     row.style.opacity = "1";
     var isMe = p.clientId===myClientId;
     var label = p.avatarPicked ? playerTagHTML(p) : "⏳ 캐릭터 선택 중...";
-    row.innerHTML = "<span>"+label+(p.clientId===data.hostClientId?" 👑":"")+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
+    row.innerHTML = "<span>"+label+(p.clientId===data.hostClientId?" · 방장":"")+"</span><span>"+(p.clientId===myClientId?"(나)":"")+"</span>";
     list.appendChild(row);
   });
   var slotsLeft = data.maxPlayers - data.players.length;
@@ -4178,7 +4212,8 @@ function collectionItemsFor(kind){
     return sortCollectionItems(themeItems, "theme");
   }
   var borderItems = BORDER_PRESETS.map(function(b){
-    return { id:b.id, name:b.name, unlocked:isBorderUnlocked(b.id, straightUnlocks), preview:"<span class=\"achv-preview border-ring "+b.cls+"\"></span>" };
+    var tag = playerTagHTML({ avatar:avatarIconHTML(chosenCharacter || CHARACTERS[0]), name:"나", border:b.cls }, "compact coll-tag");
+    return { id:b.id, name:b.name, unlocked:isBorderUnlocked(b.id, straightUnlocks), preview:tag };
   });
   return sortCollectionItems(borderItems, "border");
 }
