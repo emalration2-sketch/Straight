@@ -1,17 +1,23 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-<defs>
-<linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="#233866"/>
-<stop offset="1" stop-color="#131f3f"/>
-</linearGradient>
-<linearGradient id="star" x1="0" y1="0" x2="1" y2="1">
-<stop offset="0" stop-color="#ffd76b"/>
-<stop offset="1" stop-color="#f6a83c"/>
-</linearGradient>
-</defs>
-<rect x="0" y="0" width="64" height="64" rx="14" fill="url(#g)"/>
-<circle cx="12" cy="45" r="3" fill="#e0568c"/>
-<circle cx="50" cy="16" r="2.6" fill="#20b3a2"/>
-<path d="M32 6 L40 24 L58 32 L40 40 L32 58 L24 40 L6 32 L24 24 Z" fill="url(#star)"/>
-<text x="32" y="40" font-family="Georgia, serif" font-size="22" font-weight="700" fill="#131f3f" text-anchor="middle">S</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+<rect width="96" height="96" rx="22" fill="#1B2340"/>
+<rect x="13" y="14" width="6" height="3" rx="1.5" fill="#DE9A34" transform="rotate(-25 16 15)"/>
+<rect x="76" y="12" width="6" height="3" rx="1.5" fill="#85B7EB" transform="rotate(30 79 13)"/>
+<circle cx="84" cy="32" r="2.2" fill="#E0475F"/>
+<circle cx="10" cy="36" r="2" fill="#2E7D6B"/>
+<rect x="30" y="8" width="5" height="2.6" rx="1.3" fill="#E0475F" transform="rotate(40 32 9)"/>
+<circle cx="64" cy="9" r="1.8" fill="#AFA9EC"/>
+<g transform="translate(48 86)">
+<rect x="-10" y="-58" width="20" height="30" rx="4" fill="#35528F" stroke="#fff" stroke-width="1.5" transform="rotate(-32)"/>
+<rect x="-10" y="-60" width="20" height="30" rx="4" fill="#2E7D6B" stroke="#fff" stroke-width="1.5" transform="rotate(-16)"/>
+<rect x="-10" y="-60" width="20" height="30" rx="4" fill="#DE9A34" stroke="#fff" stroke-width="1.5" transform="rotate(16)"/>
+<rect x="-10" y="-58" width="20" height="30" rx="4" fill="#E0475F" stroke="#fff" stroke-width="1.5" transform="rotate(32)"/>
+<rect x="-13" y="-66" width="26" height="38" rx="5" fill="#D4537E" stroke="#fff" stroke-width="1.5"/>
+<g transform="translate(-12 -59) scale(0.55)">
+<path d="M8 16 L22 4 L36 16 Z" fill="#7F77DD"/>
+<path d="M15 16 L22 4 L29 16 Z" fill="#CECBF6"/>
+<path d="M19 16 L22 9 L25 16 Z" fill="#5DCAA5"/>
+<path d="M8 16 L36 16 L22 40 Z" fill="#378ADD"/>
+<path d="M15 16 L29 16 L22 40 Z" fill="#534AB7"/>
+</g>
+</g>
 </svg>
