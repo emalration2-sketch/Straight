@@ -139,7 +139,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .name-tag.border-neon{border-color:#39f3ff;background:linear-gradient(90deg,rgba(255,61,230,.24),rgba(57,243,255,.08)),var(--panel2);box-shadow:0 0 6px rgba(57,243,255,.8),0 0 12px rgba(255,61,230,.45);}
 .name-tag.border-chrome{border-color:transparent;background:linear-gradient(90deg,rgba(230,234,240,.26),rgba(230,234,240,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#ffffff,#9aa3b2 25%,#3c4250 45%,#e8ecf2 65%,#7d8696 85%,#ffffff) border-box;background-size:auto,auto,240% 100%;animation:tagSheen 2.8s ease-in-out infinite alternate;}
 .name-tag.border-opal{border-color:transparent;background:linear-gradient(90deg,rgba(247,168,200,.24),rgba(159,216,255,.2),rgba(184,245,168,.14)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#f7a8c8,#9fd8ff,#b8f5a8,#ffe08a,#c9a8ff,#f7a8c8) border-box;background-size:auto,auto,240% 100%;animation:tagSheen 3.2s linear infinite alternate;}
-.name-tag.border-blackgold{border-color:#e9b949;background:linear-gradient(90deg,rgba(0,0,0,.6),rgba(0,0,0,.28)),var(--panel2);box-shadow:inset 0 0 0 1px #111;}
+.name-tag.border-blackgold{border-color:#e9b949;background:linear-gradient(90deg,rgba(0,0,0,.6),rgba(0,0,0,.28)),var(--panel2);box-shadow:inset 0 0 0 1px #111;}
 .name-tag.border-blackgold .name-tag-text{color:#f6e7b8;}
 @keyframes tagSheen{from{background-position:0 0,0 0,0% 0;}to{background-position:0 0,0 0,100% 0;}}
 /* 그랜드마스터 border: metallic gold rim; one light streak crosses the pill, then rests. */
@@ -368,20 +368,22 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-ripple::after{background-image:repeating-radial-gradient(circle at 25% 30%,transparent 0 5px,rgba(0,0,0,.14) 5px 6px);}
 .pattern-goldfoil::after{background-image:linear-gradient(115deg,transparent 0 26%,rgba(255,236,170,.34) 37%,transparent 48%,transparent 58%,rgba(255,215,107,.24) 68%,transparent 78%),repeating-linear-gradient(45deg,rgba(255,215,107,.16) 0 1px,transparent 1px 5px);box-shadow:inset 0 0 0 2px rgba(233,185,73,.55);}
 .pattern-scale::after{background-image:radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px),radial-gradient(circle at 50% 100%,transparent 0 5.2px,rgba(0,0,0,.16) 5.6px 6.6px,transparent 7px);background-size:12px 8px;background-position:0 0,6px 4px;}
-.pattern-solar::after{background-image:radial-gradient(circle,rgba(255,226,120,.6) 0 2.6px,transparent 2.9px),radial-gradient(circle,transparent 0 3.6px,rgba(255,226,120,.32) 3.8px 4.4px,transparent 4.6px),repeating-conic-gradient(from 0deg at 50% 50%,rgba(255,226,120,.2) 0 12deg,transparent 12deg 45deg);background-size:20px 20px;}
+.pattern-solar::after{background-image:radial-gradient(circle at 0 0,rgba(255,226,120,.4) 0 16%,transparent 17%),radial-gradient(circle at 100% 100%,rgba(255,226,120,.4) 0 16%,transparent 17%),repeating-conic-gradient(from 0deg at 0 0,rgba(255,226,120,.16) 0 5deg,transparent 5deg 15deg);}
 .pattern-hologram::after{background-image:linear-gradient(115deg, transparent 0 15%, rgba(255,255,255,.5) 15% 19%, transparent 19% 45%, rgba(255,255,255,.35) 45% 48%, transparent 48% 75%, rgba(255,255,255,.45) 75% 78%, transparent 78% 100%);}
-.pattern-cosmic::after{background-image:radial-gradient(rgba(255,255,255,.9) 1px, transparent 1.2px),radial-gradient(rgba(255,255,255,.55) 0.8px, transparent 1px),radial-gradient(rgba(255,215,107,.8) 1.3px, transparent 1.5px);background-size:9px 9px,6px 6px,16px 16px;background-position:0 0,3px 5px,8px 2px;}
+.pattern-cosmic::after{background:radial-gradient(rgba(255,255,255,.6) .8px,transparent 1.2px) 0 0/16px 16px,radial-gradient(rgba(255,215,107,.65) 1px,transparent 1.4px) 8px 9px/24px 24px;}
 /* Event patterns. */
-.pattern-sakura::after{background-image:radial-gradient(circle at 50% 50%,rgba(255,196,218,.9) 0 2.2px,transparent 2.6px),radial-gradient(circle at 50% 50%,rgba(255,255,255,.75) 0 1px,transparent 1.3px),linear-gradient(160deg,rgba(255,170,200,.22),transparent 70%);background-size:14px 14px,9px 9px,100% 100%;background-position:0 0,4px 6px,0 0;}
-.pattern-snowflake::after{content:"❄";display:flex;align-items:center;justify-content:center;font-size:1.4em;color:rgba(255,255,255,.85);background-image:radial-gradient(rgba(255,255,255,.8) .9px,transparent 1.2px),linear-gradient(180deg,rgba(190,225,255,.25),transparent 70%);background-size:8px 8px,100% 100%;}
+.pattern-sakura::after{background:radial-gradient(ellipse 3px 2px at 50% 50%,rgba(255,190,214,.8) 98%,transparent) 0 0/20px 20px,radial-gradient(ellipse 2px 3px at 50% 50%,rgba(255,255,255,.55) 98%,transparent) 10px 11px/20px 20px;}
+.pattern-snowflake::after{background:radial-gradient(rgba(255,255,255,.6) 1px,transparent 1.4px) 0 0/14px 14px,radial-gradient(rgba(255,255,255,.35) .8px,transparent 1.1px) 7px 7px/14px 14px;}
 /* Paid patterns: premium materials — stone, carbon, glass, crystal. */
 .pattern-onyx::after{background-image:linear-gradient(118deg,transparent 0 34%,rgba(255,255,255,.22) 34.5% 35.5%,transparent 36%),linear-gradient(64deg,transparent 0 62%,rgba(255,255,255,.14) 62.5% 63.2%,transparent 63.7%),linear-gradient(135deg,rgba(10,10,14,.78),rgba(40,40,52,.62));box-shadow:inset 0 0 0 2px rgba(233,185,73,.45);}
-.pattern-carbon::after{background:linear-gradient(27deg,#151515 5px,transparent 5px) 0 5px/20px 20px,linear-gradient(207deg,#151515 5px,transparent 5px) 10px 0/20px 20px,linear-gradient(27deg,#222 5px,transparent 5px) 0 10px/20px 20px,linear-gradient(207deg,#222 5px,transparent 5px) 10px 5px/20px 20px,linear-gradient(90deg,#1b1b1b 10px,transparent 10px) 0 0/20px 20px,linear-gradient(#1d1d1d 25%,#1a1a1a 25% 50%,transparent 50% 75%,#242424 75%) 0 0/20px 20px,#131313;opacity:.85;}
-.pattern-stained::after{background-image:linear-gradient(rgba(20,14,30,.7) 1.5px,transparent 1.5px),linear-gradient(90deg,rgba(20,14,30,.7) 1.5px,transparent 1.5px),conic-gradient(from 45deg,rgba(255,90,120,.5) 0 25%,rgba(80,160,255,.5) 0 50%,rgba(255,210,80,.5) 0 75%,rgba(90,220,150,.5) 0);background-size:12px 12px,12px 12px,24px 24px;}
-.pattern-crystal::after{background-image:linear-gradient(60deg,rgba(255,255,255,.38) 25%,transparent 25% 75%,rgba(255,255,255,.38) 75%),linear-gradient(120deg,rgba(255,255,255,.22) 25%,transparent 25% 75%,rgba(255,255,255,.22) 75%),linear-gradient(135deg,rgba(190,230,255,.45),rgba(255,255,255,0) 60%);background-size:16px 28px,16px 28px,100% 100%;box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.55);}
+.pattern-carbon::after{background-image:repeating-linear-gradient(45deg,rgba(0,0,0,.14) 0 2px,transparent 2px 6px),repeating-linear-gradient(-45deg,rgba(0,0,0,.1) 0 2px,transparent 2px 6px);}
+.pattern-stained::after{background:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/16px 16px,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/16px 16px,conic-gradient(from 45deg,rgba(255,90,120,.18) 0 25%,rgba(80,160,255,.18) 0 50%,rgba(255,210,80,.18) 0 75%,rgba(90,220,150,.18) 0) 0 0/32px 32px;}
+.pattern-crystal::after{background-image:linear-gradient(135deg,rgba(255,255,255,.3),transparent 38%),linear-gradient(315deg,rgba(255,255,255,.2),transparent 34%),linear-gradient(60deg,transparent 47%,rgba(255,255,255,.2) 49% 51%,transparent 53%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.45);}
+/* Patterns with marks all over fade out toward the middle so the number stays readable. */
+.pattern-solar::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-stained::after,.pattern-carbon::after{-webkit-mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);}
 .pattern-preview{width:34px;height:34px;border-radius:7px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
 .card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
-.card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 1px 2px rgba(0,0,0,.55);opacity:.95;}
+.card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 1px 2px rgba(0,0,0,.55);opacity:.95;}
 /* The snowflake back swaps the ✦ emblem for a centered ❄ (needs .card.back specificity). */
 .card.back.pattern-snowflake::after{content:"❄";font-size:1.3em;color:rgba(255,255,255,.85);}
 @keyframes wildPulse{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(1.06);opacity:.85;}}
@@ -469,14 +471,20 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .achv-title-chip{font-size:10px;background:rgba(255,215,107,.18);color:var(--accent);width:auto;padding:3px 8px;border-radius:8px;white-space:nowrap;}
 .coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
 .coll-tab{font-size:12px;padding:6px 12px;}
-.coll-grid{width:100%;max-width:480px;max-height:62vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fit, minmax(100px, 1fr));gap:8px;padding:4px;}
-.coll-item{background:var(--panel2);border-radius:10px;padding:10px 6px;display:flex;flex-direction:column;align-items:center;gap:4px;border:2px solid transparent;}
-.coll-item.locked{opacity:.45;}
+.coll-grid{width:100%;max-width:480px;max-height:68vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(84px, 1fr));gap:6px;padding:4px;}
+.coll-item{background:var(--panel2);border-radius:9px;padding:6px 4px 5px;display:flex;flex-direction:column;align-items:center;gap:2px;border:2px solid transparent;}
+.coll-item.owned{cursor:pointer;}
+.coll-item.locked{opacity:.5;}
+.coll-item.locked::before{content:"🔒";position:absolute;top:3px;right:4px;font-size:9px;line-height:1;}
 .coll-item.equipped{border-color:var(--accent);}
-.coll-item-preview{min-height:32px;display:flex;align-items:center;justify-content:center;}
-.coll-item-name{font-size:11.5px;font-weight:700;margin:0;min-height:14px;}
+.coll-item.equipped::before{content:"✓";position:absolute;top:2px;right:4px;font-size:10px;font-weight:900;color:var(--accent);line-height:1;}
+.coll-item-preview{min-height:30px;display:flex;align-items:center;justify-content:center;}
+.coll-item-name{font-size:10.5px;font-weight:700;margin:0;min-height:13px;text-align:center;}
+.coll-cards{display:flex;gap:3px;}
+.card.coll-card{width:34px;height:48px;font-size:18px;border-radius:5px;border-width:1.5px;cursor:default;box-shadow:0 1px 3px rgba(0,0,0,.35);}
+.card.coll-card.back::after{font-size:.7em;}
 .coll-item-state{font-size:10px;color:var(--muted);margin:0;}
-.coll-item-detail{font-size:9.5px;color:var(--muted);margin:0;text-align:center;line-height:1.3;min-height:2.6em;}
+.coll-item-detail{font-size:9px;color:var(--muted);margin:0;text-align:center;line-height:1.25;}
 .coll-equip-btn{font-size:10.5px;padding:5px 10px;border-radius:8px;}
 @keyframes trophyBounce{0%{transform:scale(0) rotate(-20deg);opacity:0;}60%{transform:scale(1.15) rotate(8deg);opacity:1;}100%{transform:scale(1) rotate(0);}}
 .confetti-piece{position:fixed;top:-20px;opacity:.95;pointer-events:none;z-index:99997;animation:confettiFall linear forwards;}
@@ -4145,8 +4153,12 @@ function collectionItemsFor(kind){
     return sortCollectionItems(avatarItems, "avatar");
   }
   if(kind==="pattern"){
+    var faceBase = COLORS.PINK;
+    var faceBg = "linear-gradient(155deg,"+shadeColor(faceBase,35)+","+faceBase+" 55%,"+shadeColor(faceBase,-35)+")";
     var patternItems = CARD_BACK_PRESETS.map(function(p, i){
-      return { id:"pattern:"+p.id, idx:i, name:p.name, unlocked:isPatternUnlocked(p.id, straightUnlocks), preview:"<span class=\"achv-preview pattern-preview "+p.cls+"\"></span>" };
+      var preview = "<span class=\"coll-cards\">"+
+        "<span class=\"card coll-card "+p.cls+"\" style=\"background:"+faceBg+"\"><span class=\"card-num\">7</span></span></span>";
+      return { id:"pattern:"+p.id, idx:i, name:p.name, unlocked:isPatternUnlocked(p.id, straightUnlocks), preview:preview };
     });
     return sortCollectionItems(patternItems, "pattern");
   }
@@ -4221,10 +4233,7 @@ function renderCollectionScreen(){
   // scroll position and restarted every animated preview, so the other items twitched.
   function refreshEquipped(){
     Array.prototype.forEach.call(grid.children, function(card, k){
-      var on = isEquippedItem(items[k]);
-      card.classList.toggle("equipped", on);
-      var b = card.querySelector(".coll-equip-btn");
-      if(b){ b.classList.toggle("primary", on); b.textContent = on ? "장착 중" : "장착"; }
+      card.classList.toggle("equipped", isEquippedItem(items[k]));
     });
   }
   items.forEach(function(it){
@@ -4239,15 +4248,11 @@ function renderCollectionScreen(){
     }
     card.appendChild(el("div","coll-item-preview", it.preview));
     card.appendChild(el("p","coll-item-name", tab==="title" ? "" : it.name));
-    // Member items already say "👑 멤버십 전용" in their detail line, so no second line.
-    if(!it.unlocked && !isMemberItem(tab, it.name)){
-      card.appendChild(el("p","coll-item-state","🔒 미보유"));
-    }
     card.appendChild(el("p","coll-item-detail", collectionItemDetailText(tab, it.name)));
+    // Owned items equip on tap; the lock corner and the ✓ badge carry the state.
     if(it.unlocked){
-      var btn = el("button","btn coll-equip-btn"+(isEquipped?" primary":""), isEquipped?"장착 중":"장착");
-      btn.addEventListener("click", function(e){
-        e.stopPropagation();
+      card.classList.add("owned");
+      card.addEventListener("click", function(){
         if(tab==="title") setActiveTitle(it.id);
         else if(tab==="border") setActiveBorder(it.id);
         else if(tab==="pattern") setBackPreset(it.idx);
@@ -4256,7 +4261,6 @@ function renderCollectionScreen(){
         sfxSelect();
         refreshEquipped();
       });
-      card.appendChild(btn);
     }
     grid.appendChild(card);
   });
