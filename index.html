@@ -337,7 +337,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .deck-visual .layer:nth-child(2){transform:translate(3px,3px) rotate(2deg);opacity:.85;}
 .deck-visual .layer:nth-child(3){display:flex;align-items:center;justify-content:center;}
 .deck-emblem{position:relative;z-index:2;font-size:calc(var(--card-w) * 0.5);color:var(--accent);line-height:1;display:flex;}
-.deck-emblem svg{width:calc(var(--card-w) * 0.55);height:calc(var(--card-w) * 0.62);filter:drop-shadow(0 1px 3px rgba(0,0,0,.45));}
+.deck-emblem svg{width:calc(var(--card-w) * 0.47);height:calc(var(--card-w) * 0.53);filter:drop-shadow(0 1px 3px rgba(0,0,0,.45));}
 .deck-label{display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--panel2);border:1.5px solid rgba(var(--line-rgb),.18);border-radius:10px;padding:3px 10px;white-space:nowrap;}
 .deck-label-k{font-size:9.5px;font-weight:700;color:var(--muted);}
 .deck-label b{font-family:var(--font-display);font-weight:400;font-size:20px;line-height:1;color:var(--text);}
@@ -2390,11 +2390,37 @@ var BGM_TRACKS = [
     kick:  "x.......x.......",
     snare: "....x.......x...",
     hat:   "..x...x...x...x."
+  },
+  // 산들바람: our own calm piece — F major, a ii-V-I-vi loop with a light swing.
+  {
+    name: "산들바람",
+    stepSec: 0.22, barSteps: 8, swing: 0.14, drumVol: 0.5, altOctave: -12,
+    lead: { type:"triangle", vol:0.032, len:1.1 },
+    bassType: "triangle", bassVol: 0.06, bassLen: 1.8,
+    melody: [70,0,69,67,65,0,67,0,69,0,0,0,67,0,64,0,65,0,69,72,76,0,74,0,72,0,0,0,69,0,0,0,70,0,72,74,77,0,76,74,72,0,70,0,67,0,0,0,69,0,72,0,76,74,72,69,65,0,0,0,0,0,0,0,70,0,69,67,65,0,67,0,69,0,0,0,67,0,64,0,65,0,69,72,76,0,74,0,72,0,0,0,69,0,0,0,70,0,72,74,77,0,76,74,72,0,70,0,67,0,0,0,69,72,74,72,69,0,67,0,65,0,0,0,0,0,0,0],
+    bass:   [43,0,50,0,43,0,50,0,36,0,43,0,36,0,43,0,41,0,48,0,41,0,48,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,36,0,43,0,36,0,43,0,41,0,48,0,41,0,48,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,36,0,43,0,36,0,43,0,41,0,48,0,41,0,48,0,38,0,45,0,38,0,45,0,43,0,50,0,43,0,50,0,36,0,43,0,36,0,43,0,41,0,48,0,41,0,48,0,41,0,48,0,41,0,48,0],
+    pads:   [[55,58,62,65],[55,58,60,64],[57,60,64,65],[57,60,62,65],[55,58,62,65],[55,58,60,64],[57,60,64,65],[57,60,62,65],[55,58,62,65],[55,58,60,64],[57,60,64,65],[57,60,62,65],[55,58,62,65],[55,58,60,64],[57,60,64,65],[57,60,64,65]],
+    padVol: 0.014,
+    kick: "x.......x.......",
+    hat:  "..x...x...x...x."
+  },
+  // 노을: our own calm piece — A minor to C major, slow and open.
+  {
+    name: "노을",
+    stepSec: 0.24, barSteps: 8, swing: 0.1, drumVol: 0.5, altOctave: -12,
+    lead: { type:"sine", vol:0.045, len:1.3 },
+    bassType: "triangle", bassVol: 0.06, bassLen: 2,
+    melody: [76,0,0,74,72,0,69,0,72,0,0,0,69,0,0,0,67,0,72,0,76,0,79,0,74,0,0,0,0,0,71,0,76,0,79,0,76,74,72,0,69,0,72,0,77,0,76,0,72,0,0,0,74,0,76,0,74,0,0,0,0,0,0,0,76,0,0,74,72,0,69,0,72,0,0,0,69,0,0,0,67,0,72,0,76,0,79,0,74,0,0,0,0,0,71,0,76,0,79,0,76,74,72,0,69,0,72,0,77,0,76,0,72,0,0,0,74,0,76,0,72,0,0,0,69,0,0,0],
+    bass:   [45,0,52,0,45,0,52,0,41,0,48,0,41,0,48,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,45,0,52,0,45,0,52,0,41,0,48,0,41,0,48,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,45,0,52,0,45,0,52,0,41,0,48,0,41,0,48,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,45,0,52,0,45,0,52,0,41,0,48,0,41,0,48,0,48,0,55,0,48,0,55,0,45,0,52,0,45,0,52,0],
+    pads:   [[57,60,64,67],[57,60,64,65],[55,60,64],[55,59,62],[57,60,64,67],[57,60,64,65],[55,60,64],[55,59,62],[57,60,64,67],[57,60,64,65],[55,60,64],[55,59,62],[57,60,64,67],[57,60,64,65],[55,60,64],[57,60,64,67]],
+    padVol: 0.015,
+    kick: "x.......x.......",
+    hat:  "....x.......x..."
   }
 ];
 // Menus and lobbies always play 산책; games play the track picked in settings (saved).
 var MENU_BGM = 1;
-var GAME_BGM_TRACKS = [0, 2, 3];
+var GAME_BGM_TRACKS = [0, 2, 3, 4, 5];
 var gameBgmIndex = 2;
 try{
   var savedBgm = Number(localStorage.getItem("straightGameBgm"));
