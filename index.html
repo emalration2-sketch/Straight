@@ -215,6 +215,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .border-ring.border-wave{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,conic-gradient(#1e6fd9,#5cc8ff,#e0f7ff,#5cc8ff,#1e6fd9) border-box;}
 .border-ring.border-shell{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#9bd26a 0 30deg,#5c8a2e 30deg 60deg) border-box;}
 @media (prefers-reduced-motion: reduce){.name-tag[class*="border-"]::before,.name-tag[class*="border-"]::after{animation:none !important;}}
+/* These borders read better as a clean rim: no motif on top. */
+.name-tag.border-mane::before,.name-tag.border-blackgold::before,.name-tag.border-dragon::before,.name-tag.border-coral::before,.name-tag.border-wave::before,.name-tag.border-shell::before,.name-tag.border-mint::before{content:none !important;}
 @keyframes legendSweep{0%{background-position:130% 0;}45%,100%{background-position:-30% 0;}}
 @media (prefers-reduced-motion: reduce){.name-tag.border-legend::after{animation:none;opacity:0;}}
 .border-ring.border-legend{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}@media (prefers-reduced-motion: reduce){.name-tag{animation:none !important;}}
