@@ -216,6 +216,21 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 @media (prefers-reduced-motion: reduce){.name-tag[class*="border-"]::before,.name-tag[class*="border-"]::after{animation:none !important;}}
 /* These borders read better as a clean rim: no motif on top. */
 .name-tag.border-mane::before,.name-tag.border-blackgold::before,.name-tag.border-dragon::before,.name-tag.border-wave::before,.name-tag.border-shell::before,.name-tag.border-mint::before{content:none !important;}
+/* 볼트: a crackling yellow rim, quick flashes and a ⚡. */
+.name-tag.border-bolt{border-color:transparent;background:linear-gradient(90deg,rgba(255,220,40,.3),rgba(255,220,40,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ffe600,#fffbe0,#ffb300,#fff36b,#ffe600) border-box;background-size:auto,auto,220% 100%;box-shadow:0 0 8px rgba(255,214,0,.6);animation:tagSheen .7s linear infinite alternate;}
+.name-tag.border-bolt::before{content:"⚡";animation:decoTwinkle .9s steps(2) infinite;}
+.name-tag.border-bolt::after{content:"";position:absolute;inset:-2px;border-radius:inherit;pointer-events:none;box-shadow:0 0 14px 3px rgba(255,240,120,.95);opacity:0;animation:boltFlash 2.6s linear infinite;}
+@keyframes boltFlash{0%,40%,46%,52%,100%{opacity:0;}42%,50%{opacity:1;}}
+/* 윈드: pale gusts streaming along the rim and through the tag. */
+.name-tag.border-wind{border-color:transparent;background:repeating-linear-gradient(100deg,transparent 0 14px,rgba(255,255,255,.16) 14px 16px,transparent 16px 30px) padding-box,linear-gradient(90deg,rgba(170,240,220,.24),rgba(170,240,220,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(90deg,#d9fff3 0 10px,#7fe0c4 10px 22px,#ffffff 22px 26px,#7fe0c4 26px 40px) border-box;background-size:60px 100%,auto,auto,80px 100%;animation:windFlow 1.4s linear infinite;box-shadow:0 0 7px rgba(140,240,210,.45);}
+.name-tag.border-wind::before{content:"💨";animation:decoBob 1.4s ease-in-out infinite;}
+@keyframes windFlow{from{background-position:0 0,0 0,0 0,0 0;}to{background-position:60px 0,0 0,0 0,80px 0;}}
+/* 파도 (stronger): a breaking wave rolls through the tag and the rim glows like water. */
+.name-tag.border-wave{--tag-glow:rgba(92,200,255,.9);animation:tagSheen 1.6s ease-in-out infinite alternate,tagGlow 2.2s ease-in-out infinite;}
+.name-tag.border-wave::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2012%27%3E%3Cpath%20d%3D%27M0%208%20Q5%202%2010%208%20T20%208%20T30%208%20T40%208%20V12%20H0%20Z%27%20fill%3D%27white%27%20fill-opacity%3D%27.28%27%2F%3E%3C%2Fsvg%3E") 0 100%/40px 60% repeat-x,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2012%27%3E%3Cpath%20d%3D%27M0%208%20Q5%202%2010%208%20T20%208%20T30%208%20T40%208%20V12%20H0%20Z%27%20fill%3D%27white%27%20fill-opacity%3D%27.28%27%2F%3E%3C%2Fsvg%3E") 20px 100%/40px 45% repeat-x;opacity:.9;animation:waveRoll 1.8s linear infinite;}
+@keyframes waveRoll{from{background-position:0 100%,20px 100%;}to{background-position:40px 100%,-20px 100%;}}
+.border-ring.border-bolt{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,conic-gradient(#ffe600,#fffbe0,#ffb300,#ffe600) border-box;box-shadow:0 0 6px rgba(255,214,0,.7);}
+.border-ring.border-wind{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#d9fff3 0 20deg,#7fe0c4 20deg 40deg) border-box;}
 @keyframes legendSweep{0%{background-position:130% 0;}45%,100%{background-position:-30% 0;}}
 @media (prefers-reduced-motion: reduce){.name-tag.border-legend::after{animation:none;opacity:0;}}
 .border-ring.border-legend{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}@media (prefers-reduced-motion: reduce){.name-tag{animation:none !important;}}
@@ -515,7 +530,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
-.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-carbon::after,.pattern-stained::after,.pattern-dots::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-diamond::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-stained::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:25% 17.857%;background-position:0 0,16.667% 10.87%;}
@@ -532,18 +547,12 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .pattern-snowflake::after{background:radial-gradient(rgba(255,255,255,.6) 1px,transparent 1.4px) 0 0/14px 14px,radial-gradient(rgba(255,255,255,.35) .8px,transparent 1.1px) 7px 7px/14px 14px;}
 /* Paid patterns: premium materials — stone, carbon, glass. */
 .pattern-onyx::after{background:radial-gradient(ellipse at 28% 18%,rgba(255,255,255,.3),transparent 42%),linear-gradient(125deg,transparent 0 40%,rgba(255,215,120,.6) 40.6% 41.3%,transparent 41.9%),linear-gradient(58deg,transparent 0 66%,rgba(255,215,120,.45) 66.3% 66.9%,transparent 67.4%),linear-gradient(160deg,transparent 0 22%,rgba(255,240,200,.35) 22.2% 22.7%,transparent 23.1%),radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.08) 30%,rgba(0,0,0,.5));}
-.pattern-carbon::after{background:linear-gradient(27deg,rgba(0,0,0,.3) 5px,transparent 5px) 0 5px,linear-gradient(207deg,rgba(0,0,0,.3) 5px,transparent 5px) 10px 0,linear-gradient(27deg,rgba(255,255,255,.12) 5px,transparent 5px) 0 10px,linear-gradient(207deg,rgba(255,255,255,.12) 5px,transparent 5px) 10px 5px,linear-gradient(90deg,rgba(0,0,0,.16) 10px,transparent 10px),linear-gradient(rgba(0,0,0,.2) 25%,rgba(0,0,0,.1) 25% 50%,transparent 50% 75%,rgba(255,255,255,.06) 75%);background-size:20px 20px;}
 .pattern-stained::after{background:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/25% 17.857%,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/25% 17.857%,conic-gradient(from 45deg,rgba(255,90,120,.18) 0 25%,rgba(80,160,255,.18) 0 50%,rgba(255,210,80,.18) 0 75%,rgba(90,220,150,.18) 0) 0 0/50% 35.714%;}
-/* 깅엄: a soft gingham check — 4 columns, so it ends cleanly at the card's edge. */
-.pattern-gingham::after,.pattern-fireworks::after,.pattern-wave::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
-.pattern-gingham::after{background:linear-gradient(90deg,rgba(255,255,255,.2) 50%,transparent 50%) 0 0/25% 100%,linear-gradient(rgba(255,255,255,.2) 50%,transparent 50%) 0 0/100% 17.857%;}
+.pattern-fireworks::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 /* 폭죽: little bursts scattered over the card. */
 .pattern-fireworks::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%23ffe39a%27%20stroke-opacity%3D%27.75%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%204v8M20%2028v8M4%2020h8M28%2020h8M8.7%208.7l5.6%205.6M25.7%2025.7l5.6%205.6M8.7%2031.3l5.6-5.6M25.7%2014.3l5.6-5.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%272%27%20fill%3D%27white%27%20fill-opacity%3D%27.85%27%2F%3E%3C%2Fsvg%3E") 10% 8%/42% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%23ffe39a%27%20stroke-opacity%3D%27.75%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%204v8M20%2028v8M4%2020h8M28%2020h8M8.7%208.7l5.6%205.6M25.7%2025.7l5.6%205.6M8.7%2031.3l5.6-5.6M25.7%2014.3l5.6-5.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%272%27%20fill%3D%27white%27%20fill-opacity%3D%27.85%27%2F%3E%3C%2Fsvg%3E") 92% 50%/34% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cg%20stroke%3D%27%23ffe39a%27%20stroke-opacity%3D%27.75%27%20stroke-width%3D%271.6%27%20stroke-linecap%3D%27round%27%3E%3Cpath%20d%3D%27M20%204v8M20%2028v8M4%2020h8M28%2020h8M8.7%208.7l5.6%205.6M25.7%2025.7l5.6%205.6M8.7%2031.3l5.6-5.6M25.7%2014.3l5.6-5.6%27%2F%3E%3C%2Fg%3E%3Ccircle%20cx%3D%2720%27%20cy%3D%2720%27%20r%3D%272%27%20fill%3D%27white%27%20fill-opacity%3D%27.85%27%2F%3E%3C%2Fsvg%3E") 18% 94%/30% auto no-repeat,radial-gradient(circle 1.2px at 70% 16%,#fff 70%,transparent),radial-gradient(circle 1px at 40% 70%,#fff 70%,transparent);}
-/* 물결: rolling waves, two per row. */
-.pattern-wave::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2020%27%3E%3Cpath%20d%3D%27M0%2010%20Q10%202%2020%2010%20T40%2010%27%20fill%3D%27none%27%20stroke%3D%27white%27%20stroke-opacity%3D%27.45%27%20stroke-width%3D%272%27%2F%3E%3C%2Fsvg%3E") 0 0/50% 14.286%,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2020%27%3E%3Cpath%20d%3D%27M0%2010%20Q10%202%2020%2010%20T40%2010%27%20fill%3D%27none%27%20stroke%3D%27white%27%20stroke-opacity%3D%27.45%27%20stroke-width%3D%272%27%2F%3E%3C%2Fsvg%3E") 25% 7.143%/50% 14.286%;opacity:.9;}
-.pattern-dots::after{background:radial-gradient(circle,rgba(255,255,255,.38) 0 2.4px,transparent 2.9px) 0 0/13px 13px,radial-gradient(circle,rgba(255,255,255,.22) 0 1.4px,transparent 1.8px) 6.5px 6.5px/13px 13px;}
 /* Patterns with marks all over fade out toward the middle so the number stays readable. */
-.pattern-sakura::after,.pattern-snowflake::after,.pattern-stained::after,.pattern-dots::after{-webkit-mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);}
+.pattern-sakura::after,.pattern-snowflake::after,.pattern-stained::after{-webkit-mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);mask-image:radial-gradient(ellipse at center,transparent 28%,#000 62%);}
 .pattern-preview{width:34px;height:34px;border-radius:7px;background:var(--panel2);position:relative;overflow:hidden;flex-shrink:0;border:1px solid rgba(var(--line-rgb),.3);}
 .card.back{background:repeating-linear-gradient(45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),repeating-linear-gradient(-45deg,rgba(255,255,255,.035) 0 6px,transparent 6px 12px),radial-gradient(circle at 50% 50%,rgba(255,215,107,.2),transparent 60%),linear-gradient(160deg,#241f3d,#171331);border:2px solid rgba(255,255,255,.22);}
 .card.back::after{content:"✦";color:var(--accent);font-size:.6em;text-shadow:0 1px 2px rgba(0,0,0,.55);opacity:.95;}
@@ -1330,14 +1339,10 @@ var CARD_BACK_PRESETS = [
   { id:"diamond", name:"다이아몬드", cls:"pattern-diamond", paid:true },
   { id:"onyx", name:"오닉스", cls:"pattern-onyx", paid:true },
   { id:"stained", name:"스테인드글라스", cls:"pattern-stained", paid:true },
-  { id:"carbon", name:"카본", cls:"pattern-carbon", paid:true },
-  { id:"gingham", name:"깅엄", cls:"pattern-gingham", paid:true },
   { id:"fireworks", name:"폭죽", cls:"pattern-fireworks" },
-  { id:"wave", name:"물결", cls:"pattern-wave", event:true },
   { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal", event:true },
   { id:"sakura", name:"벚꽃", cls:"pattern-sakura", event:true },
-  { id:"snowflake", name:"눈송이", cls:"pattern-snowflake", event:true },
-  { id:"dots", name:"물방울", cls:"pattern-dots", event:true }
+  { id:"snowflake", name:"눈송이", cls:"pattern-snowflake", event:true }
 ];
 
 /* ---------------- progress / unlocks ---------------- */
@@ -1845,6 +1850,8 @@ var BORDER_PRESETS = [
   { id:"chrome", name:"크롬", cls:"border-chrome", paid:true },
   { id:"dragon", name:"용비늘", cls:"border-dragon", paid:true },
   { id:"foxfire", name:"여우불", cls:"border-foxfire", paid:true },
+  { id:"bolt", name:"볼트", cls:"border-bolt", paid:true },
+  { id:"wind", name:"윈드", cls:"border-wind", paid:true },
   { id:"blackgold", name:"블랙골드", cls:"border-blackgold", paid:true },
   { id:"stars", name:"별자리", cls:"border-stars", paid:true },
   { id:"heart", name:"하트", cls:"border-heart", member:true },
