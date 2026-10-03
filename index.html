@@ -538,9 +538,8 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .card.wildfloor{animation:wildPulse 1.8s ease-in-out infinite;}
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;}
-.pattern-stripe::after,.pattern-zigzag::after,.pattern-argyle::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-stained::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-stripe::after,.pattern-argyle::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-stained::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
-.pattern-zigzag::after{background:repeating-linear-gradient(135deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px),repeating-linear-gradient(45deg,rgba(0,0,0,.09) 0 3px,transparent 3px 6px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:25% 17.857%;background-position:0 0,16.667% 10.87%;}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
 .pattern-diagonal::after{background-image:linear-gradient(135deg,transparent 0 50%,rgba(0,0,0,.18) 50% 100%);}
@@ -1386,10 +1385,10 @@ var COLOR_NAMES = { PINK:"핑크", BLUE:"블루", YELLOW:"옐로우", GREEN:"그
 var CARD_BACK_PRESETS = [
   { id:"stripe", name:"스트라이프", cls:"pattern-stripe" },
   { id:"argyle", name:"아가일", cls:"pattern-argyle" },
+  { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal" },
   { id:"ripple", name:"리플", cls:"pattern-ripple" },
   { id:"scale", name:"비늘", cls:"pattern-scale" },
   { id:"honeycomb", name:"허니콤", cls:"pattern-honeycomb" },
-  { id:"zigzag", name:"지그재그", cls:"pattern-zigzag" },
   { id:"cosmic", name:"루나", cls:"pattern-cosmic" },
   { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
   { id:"nebula", name:"네뷸라", cls:"pattern-nebula" },
@@ -1403,7 +1402,6 @@ var CARD_BACK_PRESETS = [
   { id:"framecut", name:"프레임컷", cls:"pattern-framecut", paid:true },
   { id:"crystal", name:"샤드", cls:"pattern-crystal", paid:true },
   { id:"fireworks", name:"폭죽", cls:"pattern-fireworks" },
-  { id:"diagonal", name:"다이애그널", cls:"pattern-diagonal", event:true },
   { id:"sakura", name:"벚꽃", cls:"pattern-sakura", event:true },
   { id:"snowflake", name:"눈송이", cls:"pattern-snowflake", event:true }
 ];
@@ -1411,7 +1409,7 @@ var CARD_BACK_PRESETS = [
 /* ---------------- progress / unlocks ---------------- */
 
 var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","매드독","크러셔 루"];
-var UNLOCK_STARTER_PATTERNS = ["stripe","argyle","zigzag"];
+var UNLOCK_STARTER_PATTERNS = ["stripe","argyle"];
 var UNLOCK_STARTER_BORDERS = ["basic"];
 
 var UNLOCK_MILESTONES = [
@@ -1426,6 +1424,7 @@ var UNLOCK_MILESTONES = [
   { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
   { id:"win:1000", kind:"avatar",  label:"렉스 버서커",    check:function(s){ return s.wins>=1000; }, detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
 
+  { id:"misc:tutorial:pattern", kind:"pattern", label:"다이애그널", check:function(s){ return s.tutorialDone; }, boolCond:true, detail:function(s){ return "튜토리얼 완료"; } },
   { id:"games:10",   kind:"pattern", label:"리플",     check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
   { id:"games:50",   kind:"pattern", label:"비늘",     check:function(s){ return s.games>=50; },   detail:function(s){ return "플레이 "+Math.min(s.games,50)+"/50판"; } },
   // 100 games rewards both a pattern and a title.
@@ -1523,7 +1522,7 @@ function initUnlocksIfNeeded(){
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
 // "10": 달밤 needs 20 online wins; A became 11 — re-derive once.
-var UNLOCK_SCHEMA_VERSION = "13";
+var UNLOCK_SCHEMA_VERSION = "14";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
