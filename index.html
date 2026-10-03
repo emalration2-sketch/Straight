@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Fredoka:wght@600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Jua&family=Fredoka:wght@600&display=swap" rel="stylesheet">
 <style>
 :root{
   --pink:#EC4899;
@@ -22,7 +22,7 @@
   --muted:#a79fc4;
   --accent:#ffd76b;
   --line-rgb:255,255,255;
-  --font-display:'Black Han Sans','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --font-display:'Jua','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   --card-w: clamp(32px, 7vh, 72px);
   --card-h: calc(var(--card-w) * 1.4);
 }
@@ -31,8 +31,10 @@ html,body{
   margin:0;padding:0;width:100vw;height:100vh;
   overflow:hidden;position:fixed;touch-action:none;
   background:var(--bg);color:var(--text);
-  font-family:-apple-system,BlinkMacSystemFont,'Pretendard','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  font-family:'Jua',-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  font-synthesis:none;
 }
+button,input,select,textarea{font-family:inherit;}
 #app{position:fixed;inset:0;}
 .screen{
   position:absolute;inset:0;display:flex;flex-direction:column;
