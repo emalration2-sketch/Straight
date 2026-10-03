@@ -20,6 +20,14 @@ service cloud.firestore {
       allow read, create, update: if signedIn() && request.auth.uid == uid;
       allow delete: if false;
     }
+    // Nicknames are unique: the first account to claim one keeps it for good.
+    match /nicknames/{key} {
+      allow get: if signedIn();
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','nick','at'])
+        && key.size() >= 1 && key.size() <= 32;
+      allow list, update, delete: if false;
+    }
     match /entitlements/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
       allow write: if false;

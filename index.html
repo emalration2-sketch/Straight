@@ -241,7 +241,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .daily-row .daily-rank{width:28px;text-align:center;font-weight:800;}
 .daily-row .daily-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
 .daily-row .daily-val{font-weight:800;color:var(--accent);white-space:nowrap;}
-.daily-row .daily-val small{font-size:10.5px;font-weight:600;color:var(--muted);}
+.daily-row .daily-val{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;}
+.daily-row .daily-val small{font-size:11px;font-weight:700;color:var(--text);opacity:.8;}
+.daily-tie-note{font-size:11px;color:var(--muted);margin:-4px 0 2px;}
 .daily-reward{display:inline-flex;align-items:center;gap:2px;font-size:11px;font-weight:800;color:#EF9F27;white-space:nowrap;}
 .coin-ico{width:15px;height:15px;flex-shrink:0;}
 .daily-row.me{outline:2px solid var(--accent);}
@@ -600,6 +602,9 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .login-msg{font-size:13px;color:var(--muted);min-height:1.4em;}
 .login-inapp,.login-nick{display:flex;flex-direction:column;gap:8px;width:100%;font-size:13px;color:var(--text);line-height:1.5;}
 .login-inapp.hidden,.login-nick.hidden{display:none;}
+.login-nick-warn{margin:0;padding:8px 10px;border-radius:10px;background:rgba(255,190,60,.12);border:1px solid rgba(255,190,60,.45);font-size:12.5px;}
+.login-nick-err{margin:0;min-height:16px;color:#ff6b7f;font-size:12.5px;font-weight:700;}
+.settings-nick{font-size:14px;}
 .login-nick .nickname-input{width:100%;text-align:center;font-size:15px;padding:10px;}
 #collection-btn{position:relative;}
 #collection-btn.has-new::after,.coll-tab.has-new::after{content:"";position:absolute;top:2px;right:2px;width:10px;height:10px;border-radius:50%;background:#ff4d6d;border:2px solid var(--bg);}
@@ -868,6 +873,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
       <button class="btn coll-tab primary" data-board="season">이번 시즌</button>
       <button class="btn coll-tab" data-board="last">지난 시즌</button>
     </div>
+    <p class="daily-tie-note">턴 수가 같으면 도전 시간이 짧은 사람이 앞서요</p>
     <div class="order-list daily-board" id="daily-board"></div>
     <button class="btn" id="daily-back-btn">← 뒤로</button>
   </div>
@@ -894,8 +900,10 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
     <button class="btn primary big hidden" id="login-google-btn">Google로 시작하기</button>
     <div class="login-nick hidden" id="login-nick">
       <p>게임에서 쓸 닉네임을 정해 주세요</p>
+      <p class="login-nick-warn">⚠️ 닉네임은 <b>한 번 정하면 바꿀 수 없어요.</b><br>다른 사람과 같은 닉네임은 쓸 수 없으니 신중히 정해 주세요.</p>
       <input type="text" class="nickname-input" id="login-nick-input" maxlength="16">
-      <button class="btn primary" id="login-nick-btn">시작하기</button>
+      <p class="login-nick-err" id="login-nick-err"></p>
+      <button class="btn primary" id="login-nick-btn">이 닉네임으로 시작하기</button>
     </div>
     <button class="btn hidden" id="login-retry-btn">다시 시도</button>
   </div>
@@ -1167,22 +1175,51 @@ function limitNickWidth(str){
   }
   return out;
 }
+// Same name regardless of letter case or spaces.
+function nickKey(nick){ return String(nick).toLowerCase().replace(/\s+/g,""); }
 function cleanNick(s){ return limitNickWidth(String(s==null?"":s).replace(/[<>&"'`]/g,"").trim()); }
 function askNickname(defaultName){
   showGate("nickname", "");
   var input = gateEl("login-nick-input");
   input.value = cleanNick(defaultName);
   input.oninput = function(){ var v = limitNickWidth(input.value); if(v!==input.value) input.value = v; };
-  gateEl("login-nick-btn").onclick = function(){
+  var err = gateEl("login-nick-err");
+  var btn = gateEl("login-nick-btn");
+  btn.onclick = function(){
     var nick = cleanNick(input.value);
+    err.textContent = "";
     if(!nick){ input.focus(); return; }
-    try{ localStorage.setItem("straightNickname", nick); }catch(e){}
+    if(!confirm("'"+nick+"'(으)로 정할까요?\n닉네임은 나중에 바꿀 수 없어요.")) return;
+    btn.disabled = true;
     var F = fbFs;
-    F.setDoc(F.doc(fbDb,"users",account.uid), {
-      progress: { straightNickname: nick }, createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp()
-    }, { merge:true }).catch(function(e){ console.error("계정 생성 실패", e); });
-    enterGame();
+    // nicknames/{key} is create-only in the rules, so the first account to claim a name keeps it.
+    var ref = F.doc(fbDb,"nicknames",nickKey(nick));
+    F.runTransaction(fbDb, function(tx){
+      return tx.get(ref).then(function(snap){
+        if(snap.exists() && snap.data().uid!==account.uid) throw new Error("taken");
+        if(!snap.exists()) tx.set(ref, { uid:account.uid, nick:nick, at:F.serverTimestamp() });
+      });
+    }).then(function(){
+      try{ localStorage.setItem("straightNickname", nick); }catch(e){}
+      return F.setDoc(F.doc(fbDb,"users",account.uid), {
+        progress: { straightNickname: nick }, createdAt: F.serverTimestamp(), updatedAt: F.serverTimestamp()
+      }, { merge:true });
+    }).then(function(){ enterGame(); }, function(e){
+      btn.disabled = false;
+      if(e && e.message==="taken"){ err.textContent = "이미 다른 사람이 쓰고 있는 닉네임이에요."; input.focus(); return; }
+      console.error("닉네임 저장 실패", e);
+      err.textContent = "저장하지 못했어요. 잠시 후 다시 시도해 주세요.";
+    });
   };
+}
+// Players who picked a nickname before names were unique: reserve it now if it is free.
+function reserveExistingNick(){
+  var nick = ""; try{ nick = localStorage.getItem("straightNickname") || ""; }catch(e){}
+  if(!nick || !account) return;
+  var F = fbFs, ref = F.doc(fbDb,"nicknames",nickKey(nick));
+  F.runTransaction(fbDb, function(tx){
+    return tx.get(ref).then(function(snap){ if(!snap.exists()) tx.set(ref, { uid:account.uid, nick:nick, at:F.serverTimestamp() }); });
+  }).catch(function(){});
 }
 function signInWithGoogle(){
   var provider = new fbAuthApi.GoogleAuthProvider();
@@ -1213,7 +1250,7 @@ function bootAuth(){
       if(!user){ showGate("signin", "구글 계정으로 로그인하면 기록이 저장돼요."); return; }
       showGate("loading", "계정 불러오는 중...");
       loadAccount(user).then(function(hasDoc){
-        if(hasDoc) enterGame();
+        if(hasDoc){ reserveExistingNick(); enterGame(); }
         else askNickname(user.displayName || "");
       }).catch(function(e){
         console.error("계정 불러오기 실패", e);
@@ -1287,10 +1324,10 @@ var UNLOCK_MILESTONES = [
   { id:"games:500",  kind:"pattern", label:"루나",   check:function(s){ return s.games>=500; },  detail:function(s){ return "플레이 "+Math.min(s.games,500)+"/500판"; } },
   { id:"games:1000", kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
 
-  { id:"misc:tutorial",   kind:"border", label:"새싹",      check:function(s){ return s.tutorialDone; },       boolCond:true, detail:function(s){ return "튜토리얼 완주"; } },
-  { id:"misc:online10",   kind:"border", label:"달밤",      check:function(s){ return s.onlineWins>=10; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,10)+"/10회"; } },
+  { id:"misc:tutorial",   kind:"border", label:"새싹",      check:function(s){ return s.tutorialDone; },       boolCond:true, detail:function(s){ return "튜토리얼 완료"; } },
+  { id:"misc:online10",   kind:"border", label:"달밤",      check:function(s){ return s.onlineWins>=20; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,20)+"/20회"; } },
   { id:"misc:streak10",   kind:"border", label:"불꽃",      check:function(s){ return s.winStreak>=10; },      detail:function(s){ return "연승 "+Math.min(s.winStreak,10)+"/10회"; } },
-  { id:"misc:kstraight",  kind:"border", label:"사자 갈기", check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "6-7-8-9-10 스트레이트"; } },
+  { id:"misc:kstraight",  kind:"border", label:"사자 갈기", check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "7-8-9-10-A 스트레이트"; } },
   { id:"misc:prism50",    kind:"border", label:"수정구",    check:function(s){ return s.prismBanked>=50; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,50)+"/50개"; } },
 
   { id:"misc:streak5",    kind:"title",  label:"연승 머신",  check:function(s){ return s.winStreak>=5; },       detail:function(s){ return "연승 "+Math.min(s.winStreak,5)+"/5회"; } },
@@ -1372,8 +1409,8 @@ function initUnlocksIfNeeded(){
 // their real condition was met), re-derive the unlock set strictly from the player's
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
-// "9": 코랄 removed, 트로피 earned by a season 1위 — re-derive once.
-var UNLOCK_SCHEMA_VERSION = "9";
+// "10": 달밤 needs 20 online wins; A became 11 — re-derive once.
+var UNLOCK_SCHEMA_VERSION = "10";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
@@ -1392,7 +1429,7 @@ function recordGameResult(outcome, meta){
       if(meta.difficulty==="hard") stats.hardWins = stats.hardWins+1;
       if(meta.isOnline) stats.onlineWins = stats.onlineWins+1;
       if(meta.isOnline && meta.playerCount===4) stats.fourPOnlineWins = stats.fourPOnlineWins+1;
-      if(meta.straight && meta.straight.start===6) stats.hasKStraightWin = true;
+      if(meta.straight && meta.straight.start===7) stats.hasKStraightWin = true;
       if(meta.straight) stats.winsByColor[meta.straight.color] = (stats.winsByColor[meta.straight.color]||0)+1;
     }
   } else if(outcome==="draw"){
@@ -1941,6 +1978,7 @@ function switchScreen(name){
     $("screen-"+s).classList.toggle("hidden", s!==name);
   });
   if(name==="start") renderStartFan();
+  setBgmTrack(["count","order","game","win"].indexOf(name)!==-1 ? gameBgmIndex : MENU_BGM);
 }
 
 // Title art: a fanned 3-4-5-6-7 straight drawn with the live card renderer, so it
@@ -1973,6 +2011,12 @@ function requestFS(){
 var audioCtx = null;
 var sfxOn = true;
 var bgmOn = true;
+try{
+  var savedSound = JSON.parse(localStorage.getItem("straightSound") || "{}");
+  if(savedSound.sfx===false) sfxOn = false;
+  if(savedSound.bgm===false) bgmOn = false;
+}catch(e){}
+function saveSoundPrefs(){ try{ localStorage.setItem("straightSound", JSON.stringify({ sfx:sfxOn, bgm:bgmOn })); }catch(e){} }
 
 // Backgrounded: suspend the audio clock (BGM scheduling pauses with it) to save battery.
 document.addEventListener("visibilitychange", function(){
@@ -2138,9 +2182,32 @@ var BGM_TRACKS = [
     padVol: 0.011,
     kick:  "x...x...",
     hat:   "..x...x."
+  },
+  // 캉캉: the galop from Offenbach's Orpheus in the Underworld (1858, public domain), our
+  // own arrangement. One step = an eighth note.
+  {
+    name: "캉캉",
+    stepSec: 0.15, barSteps: 8, altOctave: -12,
+    lead: { type:"square", vol:0.024, len:0.9 },
+    bassType: "triangle", bassVol: 0.065, bassLen: 0.9,
+    melody: [72,0,74,77,76,74,79,0,79,0,79,81,76,77,74,0,74,0,74,77,76,74,72,84,83,81,79,77,76,74,72,0,72,0,74,77,76,74,79,0,79,0,79,81,76,77,74,0,74,0,74,77,76,74,72,84,72,0,79,0,74,76,72,0,79,0,79,0,81,79,77,76,74,0,74,0,76,74,72,71,72,0,76,0,79,0,84,0,83,0,79,0,74,0,79,0,79,0,79,0,81,79,77,76,74,0,74,0,76,74,72,71,72,0,76,0,79,0,81,0,79,0,74,0,72,0,0,0,72,0,74,77,76,74,79,0,79,0,79,81,76,77,74,0,74,0,74,77,76,74,72,84,83,81,79,77,76,74,72,0,72,0,74,77,76,74,79,0,79,0,79,81,76,77,74,0,74,0,74,77,76,74,72,84,72,0,79,0,74,76,72,0],
+    bass:   [48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,48,0,55,0,48,0,55,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,48,0,55,0,48,0,55,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,41,0,48,0,41,0,48,0,48,0,55,0,48,0,55,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,48,0,55,0,48,0,55,0,48,0,55,0,48,0,55,0,43,0,50,0,43,0,50,0,43,0,50,0,43,0,50,0,48,0,55,0,48,0,55,0],
+    pads:   [[55,60,64],[53,59,62],[53,59,62],[55,60,64],[55,60,64],[53,59,62],[53,59,62],[55,60,64],[55,60,64],[53,59,62],[55,60,64],[55,59,62],[55,60,64],[53,59,62],[57,60,65],[55,60,64],[55,60,64],[53,59,62],[53,59,62],[55,60,64],[55,60,64],[53,59,62],[53,59,62],[55,60,64]],
+    padVol: 0.011,
+    kick:  "x...x...",
+    snare: "..x...x.",
+    hat:   ".x.x.x.x"
   }
 ];
-var bgmTrackIndex = 1; // 산책
+// Menus and lobbies always play 산책; games play the track picked in settings (saved).
+var MENU_BGM = 1;
+var GAME_BGM_TRACKS = [0, 2, 3];
+var gameBgmIndex = 2;
+try{
+  var savedBgm = Number(localStorage.getItem("straightGameBgm"));
+  if(GAME_BGM_TRACKS.indexOf(savedBgm)!==-1) gameBgmIndex = savedBgm;
+}catch(e){}
+var bgmTrackIndex = MENU_BGM;
 var bgmPlaying = false;
 var bgmTimer = null;
 var bgmStep = 0;
@@ -2310,15 +2377,17 @@ function colorsForCount(n){ return ALL_COLORS.slice(0, n); }
 // doesn't add cards: for a prism rank, one of its 2 normal per-color copies becomes a
 // colorless prism instead (so total card count per rank stays the same). A fresh pair
 // each game keeps which ranks are wild unpredictable from one game to the next.
+// Ranks are 2..10 and A, which counts as 11 (the highest card).
+var ACE = 11;
 function pickPrismRanks(){
-  var ranks = [1,2,3,4,5,6,7,8,9,10];
+  var ranks = [2,3,4,5,6,7,8,9,10,ACE];
   return shuffle(ranks).slice(0,2);
 }
 
 function buildDeck(colors, prismRanks){
   var deck=[]; var id=0;
   colors.forEach(function(c){
-    for(var v=1; v<=10; v++){
+    for(var v=2; v<=ACE; v++){
       if(prismRanks.indexOf(v)!==-1){
         deck.push({ id:id++, color:c, value:v, isJoker:false, isPrism:false });
         deck.push({ id:id++, color:null, value:v, isJoker:false, isPrism:true });
@@ -2343,10 +2412,10 @@ function coinLabel(coin){
   return COLOR_NAMES[coin.color] + " " + v;
 }
 
-function pointValue(coin){ if(coin.isReset) return 0; if(coin.isJoker) return 10; return coin.value===1 ? 1 : coin.value; }
+function pointValue(coin){ if(coin.isReset) return 0; if(coin.isJoker) return 10; return coin.value; }
 
 function rankLabel(v){
-  if(v===1) return "A";
+  if(v===ACE) return "A";
   return v;
 }
 
@@ -2361,7 +2430,7 @@ function rankLabel(v){
 function isValidEat(hand, floor){
   if(hand.isJoker || hand.isReset) return false;
   if(floor.isReset) return true;
-  if(floor.isJoker) return hand.value === 1;
+  if(floor.isJoker) return hand.value === ACE;
   if(hand.value === floor.value) return true;
   if(!hand.isPrism && !floor.isPrism && hand.color !== floor.color) return false;
   return hand.value >= floor.value;
@@ -2373,7 +2442,7 @@ function findStraight(score, colors){
     var color = colors[ci];
     var vals = {};
     score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) vals[c.value]=true; });
-    for(var start=1; start<=6; start++){
+    for(var start=2; start<=7; start++){
       var missing=0;
       for(var k=0;k<5;k++){
         if(!vals[start+k]) missing++;
@@ -2392,7 +2461,7 @@ function straightProgress(score, colors){
   colors.forEach(function(color){
     var vals = {};
     score.forEach(function(c){ if(!c.isJoker && (c.color===color || c.isPrism)) vals[c.value]=true; });
-    for(var start=1; start<=6; start++){
+    for(var start=2; start<=7; start++){
       var have = 0;
       for(var k=0;k<5;k++){ if(vals[start+k]) have++; }
       var n = Math.min(5, have + jokerCount);
@@ -2528,7 +2597,7 @@ function cleanCard(c){
   var special = !!c.isJoker || !!c.isReset;
   return { id:Number(c.id)||0, isJoker:!!c.isJoker, isReset:!!c.isReset, isPrism:!!c.isPrism,
     color: ALL_COLORS.indexOf(c.color)!==-1 ? c.color : null,
-    value: special ? null : (v>=1 && v<=10 ? v : 1) };
+    value: special ? null : (v>=2 && v<=ACE ? v : ACE) };
 }
 function cleanCards(list){ return Array.isArray(list) ? list.map(cleanCard).filter(Boolean) : []; }
 function cleanPlayer(p){
@@ -2560,13 +2629,13 @@ function sanitizeRoomData(data){
   data.floor = cleanCards(data.floor);
   data.centerDeck = cleanCards(data.centerDeck);
   data.colors = Array.isArray(data.colors) ? data.colors.filter(function(c){ return ALL_COLORS.indexOf(c)!==-1; }) : [];
-  data.prismRanks = Array.isArray(data.prismRanks) ? data.prismRanks.map(Number).filter(function(n){ return n>=1 && n<=10; }) : [];
+  data.prismRanks = Array.isArray(data.prismRanks) ? data.prismRanks.map(Number).map(function(n){ return n===1 ? ACE : n; }).filter(function(n){ return n>=2 && n<=ACE; }) : [];
   data.log = Array.isArray(data.log) ? data.log.slice(0,30).map(function(m){ return String(m).slice(0,200); }) : [];
   data.maxPlayers = Math.min(4, Math.max(2, Number(data.maxPlayers)||4));
   var n = data.players.length;
   data.turnOrder = Array.isArray(data.turnOrder) ? data.turnOrder.map(Number).filter(function(i){ return i>=0 && i<n; }) : [];
   var ws = data.winnerStraight;
-  data.winnerStraight = (ws && typeof ws==="object" && ALL_COLORS.indexOf(ws.color)!==-1 && Number(ws.start)>=1 && Number(ws.start)<=6)
+  data.winnerStraight = (ws && typeof ws==="object" && ALL_COLORS.indexOf(ws.color)!==-1 && Number(ws.start)>=2 && Number(ws.start)<=7)
     ? { color:ws.color, start:Number(ws.start) } : null;
   data.turnDeadline = Math.max(0, Number(data.turnDeadline)||0);
   data.hostIndex = Math.min(Math.max(0, Math.floor(Number(data.hostIndex)||0)), Math.max(0, n-1));
@@ -2976,14 +3045,6 @@ function reclaimSeat(ref, seat){
   });
 }
 
-
-function applyNickname(raw){
-  var nick = cleanNick(raw);
-  chosenNickname = nick || null;
-  try{ localStorage.setItem("straightNickname", chosenNickname||""); }catch(e){}
-  updateMyDisplayName();
-  saveProgressSoon();
-}
 
 function updateMyDisplayName(){
   if(!state.players || !state.players.length) return;
@@ -3900,7 +3961,27 @@ function dailyIdentity(){
   var ch = chosenCharacter || presetByName("avatar", getDefaultAvatarName()) || CHARACTERS[0];
   return { ch:ch, name:cleanNick(chosenNickname || ch.name), avatar:ch.name };
 }
+// Time left until 00:00 KST, when the next daily deal opens.
+var dailyCountdownTimer = null;
+function msToKstMidnight(){ return 86400000 - ((Date.now() + 9*3600000) % 86400000); }
+function fmtCountdown(ms){
+  var t = Math.ceil(ms/1000), h = Math.floor(t/3600), m = Math.floor(t%3600/60), sec = t%60;
+  return (h<10?"0":"")+h+":"+(m<10?"0":"")+m+":"+(sec<10?"0":"")+sec;
+}
+function startDailyCountdown(btn){
+  clearInterval(dailyCountdownTimer);
+  var tick = function(){
+    if($("screen-daily").classList.contains("hidden")){ clearInterval(dailyCountdownTimer); return; }
+    var left = msToKstMidnight();
+    // Past midnight while watching: the new deal is open.
+    if(left > 86400000 - 2000){ clearInterval(dailyCountdownTimer); openDaily(); return; }
+    btn.textContent = "⏳ "+fmtCountdown(left)+" 후 다시 도전";
+  };
+  tick();
+  dailyCountdownTimer = setInterval(tick, 1000);
+}
 function openDaily(){
+  clearInterval(dailyCountdownTimer);
   switchScreen("daily");
   renderSeasonPayoutButton();
   var st = $("daily-status"), btn = $("daily-start-btn");
@@ -3914,8 +3995,9 @@ function openDaily(){
     return F.getDoc(F.doc(fbDb,"daily",dailyKey(),"scores",account.uid)).then(function(snap){
       if(!snap.exists()){ st.textContent = "오늘 아직 도전하지 않았어요."; btn.disabled = false; return; }
       var d = snap.data();
-      btn.textContent = "내일 다시 도전";
-      st.textContent = (d.failed || !d.turns) ? "오늘 도전 완료 · 완성하지 못했어요" : ("오늘 도전 완료 · "+d.turns+"턴"+(typeof d.ms==="number" ? " · "+fmtPlayTime(d.ms) : ""));
+      startDailyCountdown(btn);
+      st.innerHTML = ((d.failed || !d.turns) ? "오늘의 도전 완료 · 완성하지 못했어요" : ("오늘의 도전 완료 · <b>"+d.turns+"턴 · ⏱ "+fmtPlayTime(d.ms)+"</b>"))+
+        "<br><small>새 도전은 매일 밤 12시(한국 시간)에 열려요</small>";
       if(!d.failed && d.turns) return backfillSeasonBest(d);
     });
   }).catch(function(e){ st.textContent = "불러오지 못했어요."; console.error("챌린지 불러오기 실패", e); })
@@ -3970,7 +4052,7 @@ function renderDailyBoard(){
       var row = el("div","order-row daily-row"+(r.id===account.uid ? " me" : ""));
       row.innerHTML = "<span class=\"daily-rank\">"+rank+"</span><span>"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
         "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span>"+reward+
-        "<span class=\"daily-val\">"+r.data.bestTurns+"턴"+(r.data.bestMs ? " <small>"+fmtPlayTime(r.data.bestMs)+"</small>" : "")+"</span>";
+        "<span class=\"daily-val\">"+r.data.bestTurns+"턴<small>⏱ "+(r.data.bestMs ? fmtPlayTime(r.data.bestMs) : "-")+"</small></span>";
       board.appendChild(row);
     });
   }).catch(function(e){
@@ -4464,7 +4546,7 @@ function straightNeed(score, colors, others){
   colors.forEach(function(color){
     var vals = {};
     score.forEach(function(c){ if(!c.isJoker && !c.isReset && (c.color===color || c.isPrism)) vals[c.value] = true; });
-    for(var start=1; start<=6; start++){
+    for(var start=2; start<=7; start++){
       var missing = 0, dead = false;
       for(var k=0;k<5;k++){
         var v = start+k;
@@ -5019,7 +5101,7 @@ function buildRulebookPanel(){
   panel.innerHTML =
     "<h2>📖 게임 규칙 요약</h2>"+
     "<ul>"+
-    "<li><b>숫자 체계</b>: A(1), 2~10. 스트레이트는 A-2-3-4-5부터 6-7-8-9-10까지 가능합니다.</li>"+
+    "<li><b>숫자 체계</b>: 2~10과 A. A는 11로, 가장 높은 숫자입니다. 스트레이트는 2-3-4-5-6부터 7-8-9-10-A까지 가능합니다.</li>"+
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
     "<li><b>오늘의 프리즘</b>: 매 게임 무작위로 숫자 2개가 뽑혀, 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 프리즘이 됩니다(카드 수는 그대로). 프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다. 이번 게임의 프리즘 숫자는 게임 시작 시 안내됩니다.</li>"+
@@ -5047,9 +5129,9 @@ document.addEventListener("click", function(e){
 
 var COLLECTION_TABS = [
   { kind:"avatar", label:"아바타" },
-  { kind:"title", label:"칭호" },
   { kind:"pattern", label:"패턴" },
   { kind:"border", label:"테두리" },
+  { kind:"title", label:"칭호" },
   { kind:"theme", label:"테마" }
 ];
 var collectionActiveTab = "avatar";
@@ -5324,7 +5406,7 @@ var TUTORIAL_SLIDES = [
     title: "🎯 목표",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 A(1)부터 10까지입니다."));
+      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 2부터 10까지, 그리고 가장 높은 A(11)가 있습니다."));
       var row = el("div","tutorial-card-row");
       [3,4,5,6,7].forEach(function(v){
         row.appendChild(cardEl({ id:"tut-goal-"+v, color:"PINK", value:v }, { cls:"tiny" }));
@@ -5384,7 +5466,7 @@ var TUTORIAL_SLIDES = [
       var wrap = el("div","tutorial-slide-body");
       wrap.appendChild(el("p","tutorial-text","바닥에 놓인 조커는 손패의 <b>A</b>로만 가져올 수 있습니다."));
       var row = el("div","tutorial-card-row");
-      row.appendChild(cardEl({ id:"tut-floorjoker-a", color:"YELLOW", value:1 }, { cls:"tiny" }));
+      row.appendChild(cardEl({ id:"tut-floorjoker-a", color:"YELLOW", value:ACE }, { cls:"tiny" }));
       row.appendChild(el("span","tutorial-arrow","→"));
       row.appendChild(cardEl({ id:"tut-floorjoker-j", isJoker:true }, { cls:"tiny" }));
       wrap.appendChild(row);
@@ -5473,24 +5555,30 @@ function openSettingsModal(){
   var sfxBtn = el("button","btn"+(sfxOn?" primary":""), "효과음");
   sfxBtn.addEventListener("click", function(){
     sfxOn = !sfxOn;
+    saveSoundPrefs();
     sfxBtn.classList.toggle("primary", sfxOn);
     if(sfxOn) sfxSelect();
   });
   var bgmBtn = el("button","btn"+(bgmOn?" primary":""), "BGM");
   bgmBtn.addEventListener("click", function(){
     bgmOn = !bgmOn;
+    saveSoundPrefs();
     bgmBtn.classList.toggle("primary", bgmOn);
   });
   avBtns.appendChild(sfxBtn);
   avBtns.appendChild(bgmBtn);
   avRow.appendChild(avBtns);
 
-  var trackLabel = el("div","section-label","🎼 BGM 선택");
+  var trackLabel = el("div","section-label","🎼 게임 중 BGM");
   var trackRow = el("div","settings-track-row");
-  BGM_TRACKS.forEach(function(track, i){
-    var tb = el("button","btn"+(i===bgmTrackIndex?" primary":""), track.name);
+  GAME_BGM_TRACKS.forEach(function(i){
+    var track = BGM_TRACKS[i];
+    var tb = el("button","btn"+(i===gameBgmIndex?" primary":""), track.name);
     tb.addEventListener("click", function(){
-      setBgmTrack(i);
+      gameBgmIndex = i;
+      try{ localStorage.setItem("straightGameBgm", String(i)); }catch(e){}
+      // Heard right away in a game; on the menus 산책 keeps playing.
+      if(!$("screen-game").classList.contains("hidden")) setBgmTrack(i);
       Array.prototype.forEach.call(trackRow.children, function(c){ c.classList.remove("primary"); });
       tb.classList.add("primary");
       sfxSelect();
@@ -5500,22 +5588,8 @@ function openSettingsModal(){
 
   var nickRow = el("div","settings-row");
   nickRow.innerHTML = "<span>✏️ 닉네임</span>";
-  var nickInput = document.createElement("input");
-  nickInput.type = "text";
-  nickInput.maxLength = 16;
-  nickInput.placeholder = "캐릭터 이름 사용";
-  nickInput.value = chosenNickname || "";
-  nickInput.className = "nickname-input";
-  nickInput.addEventListener("input", function(){ var v = limitNickWidth(nickInput.value); if(v!==nickInput.value) nickInput.value = v; });
-  var nickLocked = ["game","order","lobby"].some(function(s){ return !$("screen-"+s).classList.contains("hidden"); });
-  if(nickLocked){
-    nickInput.disabled = true;
-    nickInput.title = "게임 중에는 닉네임을 바꿀 수 없어요";
-    nickRow.appendChild(el("span","nick-lock-hint","🔒 게임 중 변경 불가"));
-  }
-  nickInput.addEventListener("keydown", function(e){ if(e.key==="Enter"){ nickInput.blur(); } });
-  nickInput.addEventListener("blur", function(){ if(!nickLocked) applyNickname(nickInput.value); });
-  nickRow.appendChild(nickInput);
+  // Chosen once at first sign-in; shown here, not editable.
+  nickRow.appendChild(el("b","settings-nick", chosenNickname || "-"));
 
   var logoutRow = el("div","settings-row");
   logoutRow.style.justifyContent = "center";
@@ -5548,17 +5622,16 @@ function openSettingsModal(){
   }
 
   var closeBtn = el("button","btn primary","닫기");
-  closeBtn.addEventListener("click", function(){ if(!nickLocked) applyNickname(nickInput.value); closeModal(); });
+  closeBtn.addEventListener("click", function(){ closeModal(); });
   var actions = el("div","modal-actions");
   actions.appendChild(closeBtn);
 
-  // In a game the settings modal is sound/BGM + surrender only: the theme is picked from
-  // the collection, and the nickname can't change once a game/lobby is under way.
+  // In a game the settings modal is sound/BGM + surrender only.
   var inGame = !$("screen-game").classList.contains("hidden");
   box.appendChild(avRow);
   box.appendChild(trackLabel);
   box.appendChild(trackRow);
-  if(!nickLocked) box.appendChild(nickRow);
+  if(!inGame) box.appendChild(nickRow);
   if(!inGame && account) box.appendChild(logoutRow);
   if(quitRow) box.appendChild(quitRow);
   box.appendChild(actions);
