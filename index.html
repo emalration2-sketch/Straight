@@ -555,9 +555,15 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 /* Paid patterns: premium materials — stone, carbon, glass. */
 .pattern-onyx::after{background:radial-gradient(ellipse at 28% 18%,rgba(255,255,255,.3),transparent 42%),linear-gradient(125deg,transparent 0 40%,rgba(255,215,120,.6) 40.6% 41.3%,transparent 41.9%),linear-gradient(58deg,transparent 0 66%,rgba(255,215,120,.45) 66.3% 66.9%,transparent 67.4%),linear-gradient(160deg,transparent 0 22%,rgba(255,240,200,.35) 22.2% 22.7%,transparent 23.1%),radial-gradient(ellipse at 50% 50%,rgba(0,0,0,.08) 30%,rgba(0,0,0,.5));}
 .pattern-stained::after{background:linear-gradient(rgba(255,255,255,.22) 1px,transparent 1px) 0 0/25% 17.857%,linear-gradient(90deg,rgba(255,255,255,.22) 1px,transparent 1px) 0 0/25% 17.857%,conic-gradient(from 45deg,rgba(255,90,120,.18) 0 25%,rgba(80,160,255,.18) 0 50%,rgba(255,210,80,.18) 0 75%,rgba(90,220,150,.18) 0) 0 0/50% 35.714%;}
-.pattern-harlequin::after,.pattern-framecut::after,.pattern-crystal::after,.pattern-fireworks::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
-/* 할리퀸: big alternating diamonds, two per row. */
-.pattern-harlequin::after{background:conic-gradient(from 45deg at 50% 50%,rgba(255,255,255,.2) 0 25%,rgba(0,0,0,.18) 0 50%,rgba(255,255,255,.2) 0 75%,rgba(0,0,0,.18) 0) 0 0/50% 35.714%;}
+.pattern-neon::after,.pattern-aurora::after,.pattern-nebula::after,.pattern-harlequin::after,.pattern-framecut::after,.pattern-crystal::after,.pattern-fireworks::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+/* 네온: dark diamonds outlined in glowing cyan and magenta. */
+.pattern-neon::after{background:linear-gradient(45deg,transparent 47.5%,#7ff6ff 48.5% 51.5%,transparent 52.5%) 0 0/50% 35.714%,linear-gradient(-45deg,transparent 47.5%,#ff7af0 48.5% 51.5%,transparent 52.5%) 0 0/50% 35.714%,linear-gradient(rgba(10,6,30,.5),rgba(10,6,30,.5));}
+/* 오로라: a rainbow foil wash with two glints. */
+.pattern-aurora::after{background:radial-gradient(circle 1.4px at 20% 22%,#fff 70%,transparent),radial-gradient(circle 1.2px at 76% 70%,#fff 70%,transparent),linear-gradient(115deg,rgba(255,110,170,.45),rgba(255,220,110,.4) 25%,rgba(110,255,200,.4) 50%,rgba(110,170,255,.45) 75%,rgba(220,120,255,.45));}
+/* 네뷸라 (1000판): violet and teal clouds with two stars. */
+.pattern-nebula::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cpath%20d%3D%27M20%204%20L23%2017%20L36%2020%20L23%2023%20L20%2036%20L17%2023%20L4%2020%20L17%2017%20Z%27%20fill%3D%27white%27%2F%3E%3C%2Fsvg%3E") 72% 18%/22% auto no-repeat,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2040%27%3E%3Cpath%20d%3D%27M20%204%20L23%2017%20L36%2020%20L23%2023%20L20%2036%20L17%2023%20L4%2020%20L17%2017%20Z%27%20fill%3D%27white%27%2F%3E%3C%2Fsvg%3E") 22% 80%/14% auto no-repeat,radial-gradient(ellipse at 30% 30%,rgba(190,90,255,.55),transparent 55%),radial-gradient(ellipse at 75% 75%,rgba(60,220,230,.5),transparent 55%),linear-gradient(rgba(10,6,40,.4),rgba(10,6,40,.4));}
+/* 할리퀸: big alternating diamonds edged in gold, two per row. */
+.pattern-harlequin::after{background:linear-gradient(45deg,transparent 48.5%,rgba(255,215,120,.9) 49% 51%,transparent 51.5%) 0 0/50% 35.714%,linear-gradient(-45deg,transparent 48.5%,rgba(255,215,120,.9) 49% 51%,transparent 51.5%) 0 0/50% 35.714%,conic-gradient(from 45deg at 50% 50%,rgba(255,255,255,.18) 0 25%,rgba(0,0,0,.2) 0 50%,rgba(255,255,255,.18) 0 75%,rgba(0,0,0,.2) 0) 0 0/50% 35.714%;}
 /* 프레임컷: bevelled corners like a cut stone — light from the top, shade below. */
 .pattern-framecut::after{background:linear-gradient(135deg,rgba(255,255,255,.4) 0 14%,transparent 14%),linear-gradient(225deg,rgba(255,255,255,.4) 0 14%,transparent 14%),linear-gradient(315deg,rgba(0,0,0,.25) 0 14%,transparent 14%),linear-gradient(45deg,rgba(0,0,0,.25) 0 14%,transparent 14%);}
 /* 샤드: angular shards of light and shade. */
@@ -702,6 +708,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 @keyframes attendPop{0%{transform:scale(0) rotate(-30deg);}100%{transform:scale(1) rotate(0);}}
 .coin-perks b{color:var(--accent);}
 .wallet-member-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;padding:8px 10px;border-radius:12px;background:var(--panel2);font-size:13px;font-weight:700;}
+.nick-change-row{display:flex;gap:6px;margin:8px 0 2px;}
+.nick-change-row .nickname-input{flex:1;min-width:0;}
+.nick-check-msg{font-size:12px;margin:4px 0;color:var(--muted);min-height:16px;}
+.nick-check-msg.ok{color:#5fe0a6;font-weight:700;}
+.nick-check-msg.bad{color:#ff6b7f;font-weight:700;}
 .wallet-price{display:inline-flex;align-items:center;gap:4px;font-size:15px;}
 .wallet-price .coin-ico{width:20px;height:20px;}
 .wallet-member-row .btn{padding:6px 14px;min-height:0;font-size:13px;}
@@ -1158,6 +1169,7 @@ function loadAccount(user){
 // can't mint coins. Prices must match paidItems()/itemPrice() in firestore.rules.
 var COIN_PRICES = { pattern:220, border:220, theme:330 };
 var MEMBERSHIP_COINS = 330;
+var NICK_CHANGE_COINS = 490;
 var MEMBERSHIP_MS = 30*86400000;
 function kstDayNum(){ return Math.floor((Date.now() + 9*3600000) / 86400000); }
 function emptyWallet(){ return { coins:0, items:[], membershipUntil:0, attendDay:0, streak:0 }; }
@@ -1211,6 +1223,32 @@ function buyItemWithCoins(kind, id){
     next.items = w.items.concat([key]);
     next.lastBuy = key;
     return next;
+  });
+}
+// Nickname change: the new name is claimed (nicknames/{key}, create-only for others),
+// the old one released, and the coins taken — all in one transaction.
+function buyNicknameChange(nick){
+  var F = fbFs, key = nickKey(nick);
+  var oldNick = ""; try{ oldNick = localStorage.getItem("straightNickname") || ""; }catch(e){}
+  var walletRef = F.doc(fbDb,"wallets",account.uid), newRef = F.doc(fbDb,"nicknames",key);
+  var oldRef = oldNick && nickKey(oldNick)!==key ? F.doc(fbDb,"nicknames",nickKey(oldNick)) : null;
+  return F.runTransaction(fbDb, function(tx){
+    return Promise.all([tx.get(walletRef), tx.get(newRef), oldRef ? tx.get(oldRef) : Promise.resolve(null)]).then(function(r){
+      var w = r[0].exists() ? readWallet(r[0].data()) : null;
+      if(!w || w.coins < NICK_CHANGE_COINS) throw new Error("coins");
+      if(r[1].exists() && r[1].data().uid!==account.uid) throw new Error("taken");
+      var next = readWallet(w);
+      next.coins -= NICK_CHANGE_COINS;
+      next.lastBuy = "nick:"+Date.now();
+      tx.set(walletRef, next);
+      if(!r[1].exists()) tx.set(newRef, { uid:account.uid, nick:nick, at:F.serverTimestamp() });
+      if(r[2] && r[2].exists() && r[2].data().uid===account.uid) tx.delete(oldRef);
+      return next;
+    });
+  }).then(function(next){
+    account.wallet = next;
+    try{ localStorage.setItem("straightNickname", nick); }catch(e){}
+    return saveProgressNow();
   });
 }
 function buyMembership(){
@@ -1354,11 +1392,14 @@ var CARD_BACK_PRESETS = [
   { id:"zigzag", name:"지그재그", cls:"pattern-zigzag" },
   { id:"cosmic", name:"루나", cls:"pattern-cosmic" },
   { id:"hologram", name:"홀로그램", cls:"pattern-hologram" },
+  { id:"nebula", name:"네뷸라", cls:"pattern-nebula" },
   // Grand Master pattern (gold foil).
   { id:"goldfoil", name:"로열", cls:"pattern-goldfoil", gm:true },
   { id:"onyx", name:"오닉스", cls:"pattern-onyx", paid:true },
   { id:"stained", name:"스테인드글라스", cls:"pattern-stained", paid:true },
   { id:"harlequin", name:"할리퀸", cls:"pattern-harlequin", paid:true },
+  { id:"neon", name:"네온", cls:"pattern-neon", paid:true },
+  { id:"aurora", name:"오로라", cls:"pattern-aurora", paid:true },
   { id:"framecut", name:"프레임컷", cls:"pattern-framecut", paid:true },
   { id:"crystal", name:"샤드", cls:"pattern-crystal", paid:true },
   { id:"fireworks", name:"폭죽", cls:"pattern-fireworks" },
@@ -1370,7 +1411,7 @@ var CARD_BACK_PRESETS = [
 /* ---------------- progress / unlocks ---------------- */
 
 var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","매드독","크러셔 루"];
-var UNLOCK_STARTER_PATTERNS = ["stripe","argyle"];
+var UNLOCK_STARTER_PATTERNS = ["stripe","argyle","zigzag"];
 var UNLOCK_STARTER_BORDERS = ["basic"];
 
 var UNLOCK_MILESTONES = [
@@ -1393,7 +1434,7 @@ var UNLOCK_MILESTONES = [
   { id:"games:200",  kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=200; },  detail:function(s){ return "플레이 "+Math.min(s.games,200)+"/200판"; } },
   { id:"games:400",  kind:"title",   label:"카드에 진심", check:function(s){ return s.games>=400; },  detail:function(s){ return "플레이 "+Math.min(s.games,400)+"/400판"; } },
   { id:"games:500",  kind:"pattern", label:"루나",   check:function(s){ return s.games>=500; },  detail:function(s){ return "플레이 "+Math.min(s.games,500)+"/500판"; } },
-  { id:"games:1000", kind:"pattern", label:"지그재그", check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
+  { id:"games:1000", kind:"pattern", label:"네뷸라", check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
 
   { id:"misc:tutorial",   kind:"border", label:"새싹",      check:function(s){ return s.tutorialDone; },       boolCond:true, detail:function(s){ return "튜토리얼 완료"; } },
   { id:"misc:online10",   kind:"border", label:"크롬",      check:function(s){ return s.onlineWins>=20; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,20)+"/20회"; } },
@@ -1482,7 +1523,7 @@ function initUnlocksIfNeeded(){
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
 // "10": 달밤 needs 20 online wins; A became 11 — re-derive once.
-var UNLOCK_SCHEMA_VERSION = "12";
+var UNLOCK_SCHEMA_VERSION = "13";
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
@@ -1877,10 +1918,9 @@ var BORDER_PRESETS = [
   { id:"foxfire", name:"여우불", cls:"border-foxfire", paid:true },
   { id:"bolt", name:"볼트", cls:"border-bolt", paid:true },
   { id:"wind", name:"윈드", cls:"border-wind", paid:true },
-  { id:"blackgold", name:"블랙골드", cls:"border-blackgold", paid:true },
   { id:"stars", name:"별자리", cls:"border-stars", paid:true },
   { id:"heart", name:"하트", cls:"border-heart", member:true },
-  { id:"neon", name:"네온", cls:"border-neon", member:true },
+  { id:"blackgold", name:"블랙골드", cls:"border-blackgold", member:true },
   { id:"candy", name:"캔디", cls:"border-candy", event:true },
   { id:"mint", name:"민트", cls:"border-mint", event:true },
   { id:"wave", name:"파도", cls:"border-wave", event:true },
@@ -1899,7 +1939,7 @@ function getActiveBorder(){
   try{ id = localStorage.getItem("straightActiveBorder"); }catch(e){}
   // 골드 was replaced by 코랄 (too close to the Grand Master border); keep it equipped.
   // Retired borders map to their replacement (골드 → 코랄; the 2026-10-03 avatar sets).
-  var RENAMED = { gold:"basic", coral:"basic", blueberry:"owlmoon", silver:"mane", aurora:"crystal", rainbow:"dragon", opal:"foxfire", emerald:"wave", ruby:"shell" };
+  var RENAMED = { gold:"basic", coral:"basic", neon:"basic", blueberry:"owlmoon", silver:"mane", aurora:"crystal", rainbow:"dragon", opal:"foxfire", emerald:"wave", ruby:"shell" };
   return RENAMED[id] || id;
 }
 function setActiveBorder(id){
@@ -4465,11 +4505,13 @@ function openWalletModal(){
   coinModal("내 코인",
     "<div class=\"coin-balance\">"+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></div>"+
     "<p class=\"coin-note\">👑 "+(member ? "남은 멤버십 기간 <b>"+fmtDate(w.membershipUntil)+"</b>까지" : "멤버십 없음")+"</p>"+
-    "<div class=\"wallet-member-row\"><span>멤버십 30일</span><span class=\"wallet-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></span><button class=\"btn primary\" id=\"wallet-buy-member\">"+(member ? "연장" : "구입")+"</button></div>",
+    "<div class=\"wallet-member-row\"><span>멤버십 30일</span><span class=\"wallet-price\">"+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></span><button class=\"btn primary\" id=\"wallet-buy-member\">"+(member ? "연장" : "구입")+"</button></div>"+
+    "<div class=\"wallet-member-row\"><span>닉네임 변경</span><span class=\"wallet-price\">"+COIN_SVG+"<b>"+NICK_CHANGE_COINS+"</b></span><button class=\"btn\" id=\"wallet-buy-nick\">변경</button></div>",
     [{ label:"멤버십 혜택", onClick:function(){ openMembershipModal(openWalletModal); } },
      { label:"💳 코인 충전", onClick:function(){ openChargeModal(openWalletModal); } },
      { label:"닫기" }]);
   $("wallet-buy-member").addEventListener("click", function(){ sfxSelect(); openMembershipBuyModal(); });
+  $("wallet-buy-nick").addEventListener("click", function(){ sfxSelect(); openNicknameChangeModal(); });
 }
 // Confirm step for 구입/연장. Short on coins → offer charging instead.
 function openMembershipBuyModal(){
@@ -4504,6 +4546,55 @@ function openAttendanceModal(r){
     "<div class=\"attend-grid\">"+cells+"</div>"+
     "<p class=\"coin-note\">오늘 "+COIN_SVG+"<b>+"+r.gain+"</b> 받았어요"+(r.gain>2 ? " · 7일 연속 보너스!" : "")+"</p>",
     [{ label:"확인", primary:true }]);
+}
+// 닉네임 변경: type → 중복 확인 → 변경하기 (only once the check passed for exactly that name).
+function openNicknameChangeModal(){
+  var w = account.wallet;
+  if(w.coins < NICK_CHANGE_COINS){
+    coinModal("코인이 부족해요",
+      "<p class=\"coin-note\">닉네임 변경에 "+COIN_SVG+"<b>"+NICK_CHANGE_COINS+"</b>이 필요해요.<br>지금 "+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b> · <b>"+(NICK_CHANGE_COINS-w.coins)+"</b>코인 더 필요해요.</p>",
+      [{ label:"💳 코인 충전", primary:true, onClick:function(){ openChargeModal(openWalletModal); } },
+       { label:"← 뒤로", onClick:openWalletModal }]);
+    return;
+  }
+  coinModal("✏️ 닉네임 변경",
+    "<p class=\"coin-note\">지금 닉네임 <b>"+cleanText(chosenNickname||"-", 16)+"</b></p>"+
+    "<div class=\"nick-change-row\"><input type=\"text\" class=\"nickname-input\" id=\"nick-new\" maxlength=\"16\" placeholder=\"새 닉네임\"><button class=\"btn\" id=\"nick-check\">중복 확인</button></div>"+
+    "<p class=\"nick-check-msg\" id=\"nick-msg\">한글 8자(영문 16자)까지 쓸 수 있어요.</p>"+
+    "<p class=\"coin-note\">가격 "+COIN_SVG+"<b>"+NICK_CHANGE_COINS+"</b></p>",
+    [{ label:"변경하기", primary:true, onClick:function(btn){
+        var nick = cleanNick($("nick-new").value);
+        if(!checked || checked!==nick){ $("nick-msg").textContent = "먼저 중복 확인을 해 주세요."; $("nick-msg").className = "nick-check-msg bad"; return; }
+        if(!confirm("닉네임을 '"+nick+"'(으)로 바꿀까요?\n"+NICK_CHANGE_COINS+"코인이 사용돼요.")) return;
+        btn.disabled = true;
+        buyNicknameChange(nick).then(function(){
+          chosenNickname = nick; closeModal(); renderCoinPills(); renderStartMe(); sfxCapture();
+          coinToast("✏️ 닉네임이 <b>"+cleanText(nick,16)+"</b>(으)로 바뀌었어요");
+        }).catch(function(e){
+          btn.disabled = false;
+          $("nick-msg").textContent = e && e.message==="taken" ? "방금 다른 사람이 가져갔어요. 다른 닉네임을 골라 주세요." : e && e.message==="coins" ? "코인이 부족해요." : "바꾸지 못했어요. 잠시 후 다시 시도해 주세요.";
+          $("nick-msg").className = "nick-check-msg bad";
+          console.error("닉네임 변경 실패", e);
+        });
+      } },
+     { label:"← 뒤로", onClick:openWalletModal }]);
+  var checked = null;
+  var input = $("nick-new");
+  input.addEventListener("input", function(){
+    var v = limitNickWidth(input.value); if(v!==input.value) input.value = v;
+    checked = null; $("nick-msg").textContent = "한글 8자(영문 16자)까지 쓸 수 있어요."; $("nick-msg").className = "nick-check-msg";
+  });
+  $("nick-check").addEventListener("click", function(){
+    var nick = cleanNick(input.value), msg = $("nick-msg");
+    if(!nick){ msg.textContent = "닉네임을 입력해 주세요."; msg.className = "nick-check-msg bad"; return; }
+    if(nickKey(nick)===nickKey(chosenNickname||"")){ msg.textContent = "지금 쓰고 있는 닉네임이에요."; msg.className = "nick-check-msg bad"; return; }
+    msg.textContent = "확인 중…"; msg.className = "nick-check-msg";
+    fbFs.getDoc(fbFs.doc(fbDb,"nicknames",nickKey(nick))).then(function(snap){
+      if(cleanNick(input.value)!==nick) return;
+      if(snap.exists() && snap.data().uid!==account.uid){ checked = null; msg.textContent = "이미 다른 사람이 쓰고 있어요."; msg.className = "nick-check-msg bad"; }
+      else { checked = nick; msg.textContent = "✓ 쓸 수 있는 닉네임이에요."; msg.className = "nick-check-msg ok"; }
+    }).catch(function(){ msg.textContent = "확인하지 못했어요. 다시 눌러 주세요."; msg.className = "nick-check-msg bad"; });
+  });
 }
 // 멤버십 혜택: what membership gives; only a way back.
 function openMembershipModal(back){
@@ -5947,7 +6038,6 @@ function openSettingsModal(){
   box.appendChild(avRow);
   box.appendChild(trackLabel);
   box.appendChild(trackRow);
-  if(!inGame) box.appendChild(nickRow);
   if(!inGame && account) box.appendChild(logoutRow);
   if(quitRow) box.appendChild(quitRow);
   box.appendChild(actions);

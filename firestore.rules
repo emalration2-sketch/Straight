@@ -26,7 +26,9 @@ service cloud.firestore {
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid
         && request.resource.data.keys().hasOnly(['uid','nick','at'])
         && key.size() >= 1 && key.size() <= 32;
-      allow list, update, delete: if false;
+      // The owner can release their old name when changing it.
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow list, update: if false;
     }
     match /entitlements/{uid} {
       allow read: if signedIn() && request.auth.uid == uid;
@@ -115,9 +117,9 @@ service cloud.firestore {
     // or a developer grant (season rewards). Prices match COIN_PRICES in index.html.
     function kstToday(){ return math.floor((request.time.toMillis() + 32400000) / 86400000); }
     function paidItems(){
-      return ['pattern:onyx','pattern:stained','pattern:harlequin','pattern:framecut','pattern:crystal',
+      return ['pattern:onyx','pattern:stained','pattern:harlequin','pattern:neon','pattern:aurora','pattern:framecut','pattern:crystal',
               'theme:neon','theme:ocean','theme:felt',
-              'border:owlmoon','border:dragon','border:foxfire','border:bolt','border:wind','border:blackgold','border:stars'];
+              'border:owlmoon','border:dragon','border:foxfire','border:bolt','border:wind','border:stars'];
     }
     function itemPrice(key){ return key.split(':')[0] == 'theme' ? 330 : 220; }
     function walletShape(n){
@@ -149,6 +151,13 @@ service cloud.firestore {
             && n.membershipUntil >= request.time.toMillis() + 2592000000 - 600000
             && n.membershipUntil <= request.time.toMillis() + 2592000000 + 600000));
     }
+    // 닉네임 변경: 490 coins, stamped with a fresh lastBuy ("nick:<time>").
+    function isNickChange(n, o){
+      return sameExcept(n, o, ['coins','lastBuy'])
+        && n.lastBuy is string && n.lastBuy.matches('^nick:[0-9]+$')
+        && n.lastBuy != o.get('lastBuy', '')
+        && n.coins == o.coins - 490;
+    }
     function isGrant(n, o){
       return devRole() && sameExcept(n, o, ['coins']) && n.coins > o.coins && n.coins <= o.coins + 100;
     }
@@ -169,7 +178,8 @@ service cloud.firestore {
         (signedIn() && request.auth.uid == uid && (
           isAttend(request.resource.data, resource.data)
           || isBuy(request.resource.data, resource.data)
-          || isMembership(request.resource.data, resource.data)))
+          || isMembership(request.resource.data, resource.data)
+          || isNickChange(request.resource.data, resource.data)))
         || isGrant(request.resource.data, resource.data));
       allow delete: if false;
     }
