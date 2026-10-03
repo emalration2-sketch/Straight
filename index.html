@@ -600,6 +600,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 @keyframes cardReveal{0%{filter:grayscale(.8) brightness(.6);transform:scale(.94);}60%{filter:none;transform:scale(1.07);}100%{filter:none;transform:scale(1);}}
 @media (prefers-reduced-motion: reduce){.coll-item.just-unlocked,.unlock-lock{animation:none;}.unlock-lock{display:none;}}
 .achv-preview{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;font-size:18px;border-radius:50%;}
+.achv-title-chip.title-none-chip{background:transparent;border:1.5px solid rgba(var(--line-rgb),.35);color:var(--muted);padding:2px 7px;}
 .achv-title-chip{font-size:10px;background:var(--accent);color:#3a2604;width:auto;padding:3px 8px;border-radius:8px;white-space:nowrap;}
 .theme-light .name-tag-title{color:#9a5f0e;}
 .coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
@@ -631,6 +632,17 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coin-note{font-size:13px;margin:6px 0;line-height:1.55;}
 .coin-note.muted{color:var(--muted);font-size:12px;}
 .coin-note .coin-ico,.unlock-popup .coin-ico{vertical-align:-3px;}
+.attend-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:6px 0 10px;}
+.attend-day{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;border-radius:11px;background:rgba(var(--line-rgb),.06);border:1.5px solid rgba(var(--line-rgb),.14);}
+.attend-day.bonus{grid-column:span 2;border-color:rgba(239,159,39,.6);background:rgba(239,159,39,.1);}
+.attend-label{font-size:11px;font-weight:800;color:var(--muted);}
+.attend-stamp{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:900;border:1.5px dashed rgba(var(--line-rgb),.25);color:#1b1300;}
+.attend-day.done .attend-stamp{background:var(--accent);border:none;}
+.attend-day.done .attend-label{color:var(--text);}
+.attend-day.today .attend-stamp{animation:attendPop .6s cubic-bezier(.3,1.6,.5,1) .25s both;}
+.attend-gain{display:inline-flex;align-items:center;gap:2px;font-size:11.5px;font-weight:800;}
+.attend-gain .coin-ico{width:13px;height:13px;}
+@keyframes attendPop{0%{transform:scale(0) rotate(-30deg);}100%{transform:scale(1) rotate(0);}}
 .coin-perks{text-align:left;font-size:13px;line-height:1.75;margin:4px 0 8px;padding-left:20px;}
 .coin-modal-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
 .coin-buy-preview{display:flex;justify-content:center;padding:14px 0;transform:scale(1.35);}
@@ -3074,6 +3086,13 @@ function renderMyEquipSummary(){
 renderMyEquipSummary();
 renderAvatarGrid();
 
+// BGM starts as soon as the app opens. Browsers hold sound until the first interaction, so
+// any first touch or key anywhere also starts it (startBgm ignores repeat calls).
+function kickBgm(){ unlockAudio(); startBgm(); }
+kickBgm();
+["pointerdown","touchend","keydown"].forEach(function(ev){
+  document.addEventListener(ev, kickBgm, { capture:true, once:true });
+});
 $("start-btn").addEventListener("click", function(){
   unlockAudio();
   sfxSelect();
@@ -4017,13 +4036,26 @@ function openWalletModal(){
   var w = account && account.wallet;
   if(!w) return;
   var member = w.membershipUntil > Date.now();
-  coinModal(COIN_SVG+" 내 코인",
+  coinModal("내 코인",
     "<div class=\"coin-balance\">"+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></div>"+
-    "<p class=\"coin-note\">📅 출석: 하루 2코인 · 7일 연속마다 +5코인"+(w.streak ? "<br>지금 연속 <b>"+w.streak+"일</b>째" : "")+"</p>"+
-    "<p class=\"coin-note\">🏆 챌린지: 매달 시즌 1위 30 · 2위 20 · 3위 10코인</p>"+
-    "<p class=\"coin-note\">👑 멤버십: "+(member ? fmtDate(w.membershipUntil)+"까지" : "없음")+"</p>"+
-    "<p class=\"coin-note muted\">💳 코인 충전은 곧 열려요</p>",
-    [{ label:"👑 멤버십", primary:true, onClick:function(){ openMembershipModal(); } }, { label:"닫기" }]);
+    "<p class=\"coin-note\">👑 멤버십 "+(member ? "<b>"+fmtDate(w.membershipUntil)+"</b>까지" : "없음")+"</p>",
+    [{ label:"👑 멤버십 구독", primary:true, onClick:function(){ openMembershipModal(); } }, { label:"닫기" }]);
+}
+// Attendance card: a 7-day row (day 7 carries the +5 bonus); days done so far this week are
+// stamped and today's stamp lands with a pop.
+function openAttendanceModal(r){
+  var dayInWeek = (r.streak-1) % 7 + 1;
+  var cells = "";
+  for(var d=1; d<=7; d++){
+    var gain = d===7 ? 7 : 2;
+    var cls = "attend-day"+(d<dayInWeek ? " done" : "")+(d===dayInWeek ? " done today" : "")+(d===7 ? " bonus" : "");
+    cells += "<div class=\""+cls+"\"><span class=\"attend-label\">"+d+"일차</span><span class=\"attend-stamp\">"+(d<=dayInWeek ? "✓" : (d===7 ? "🎁" : ""))+"</span>"+
+      "<span class=\"attend-gain\">"+COIN_SVG+gain+"</span></div>";
+  }
+  coinModal("📅 출석 체크",
+    "<div class=\"attend-grid\">"+cells+"</div>"+
+    "<p class=\"coin-note\">오늘 "+COIN_SVG+"<b>+"+r.gain+"</b> 받았어요"+(r.gain>2 ? " · 7일 연속 보너스!" : "")+"</p>",
+    [{ label:"확인", primary:true }]);
 }
 function openMembershipModal(onDone){
   var w = account && account.wallet;
@@ -4113,8 +4145,10 @@ renderCoinPills();
 claimAttendance().then(function(r){
   renderCoinPills();
   if(!r) return;
-  coinToast("📅 출석 "+COIN_SVG+"<b>+"+r.gain+"</b>"+(r.gain>2 ? " · 7일 연속 보너스!" : "")+"<br><small>연속 "+r.streak+"일째</small>");
+  openAttendanceModal(r);
 });
+// ?attendtest (local only) previews the card without claiming.
+if(localTestFlag("attendtest")) setTimeout(function(){ openAttendanceModal({ streak:3, gain:2 }); }, 600);
 
 $("daily-back-btn").addEventListener("click", function(){ sfxSelect(); switchScreen("mode"); });
 $("daily-start-btn").addEventListener("click", function(){ sfxSelect(); startDailyChallenge(); });
@@ -4993,7 +5027,8 @@ function collectionItemsFor(kind){
     var titleItems = TITLE_PRESETS.map(function(t){
       return { id:t.id, name:t.name, unlocked:isTitleUnlocked(t.id, straightUnlocks), preview:"<span class=\"achv-preview achv-title-chip\">"+t.name+"</span>" };
     });
-    return sortCollectionItems(titleItems, "title");
+    // "칭호 없음" first: wear no title at all.
+    return [{ id:"none", name:"칭호 없음", unlocked:true, preview:"<span class=\"achv-preview achv-title-chip title-none-chip\">칭호 없음</span>" }].concat(sortCollectionItems(titleItems, "title"));
   }
   if(kind==="theme"){
     var themeItems = CARD_THEMES.map(function(t, i){
@@ -5134,7 +5169,7 @@ function renderCollectionScreen(){
   }
   function isEquippedItem(it){
     if(!it.unlocked) return false;
-    if(tab==="title") return getActiveTitle()===it.id;
+    if(tab==="title") return it.id==="none" ? !activeTitleLabel() : getActiveTitle()===it.id;
     if(tab==="border") return getActiveBorder()===it.id || (it.id==="basic" && !activeBorderCls());
     if(tab==="pattern") return backPresetIndex===it.idx;
     if(tab==="theme") return cardThemeIndex===it.idx;
@@ -5219,7 +5254,7 @@ function renderCollectionScreen(){
     if(it.unlocked){
       card.classList.add("owned");
       card.addEventListener("click", function(){
-        if(tab==="title") setActiveTitle(it.id);
+        if(tab==="title") setActiveTitle(it.id==="none" ? "" : it.id);
         else if(tab==="border") setActiveBorder(it.id);
         else if(tab==="pattern") setBackPreset(it.idx);
         else if(tab==="theme") setCardTheme(it.idx);
