@@ -534,6 +534,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
 .coll-tab{font-size:13px;padding:7px 13px;}
 .coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
+.price-pill{margin-top:3px;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;background:var(--accent);color:#2a1d00;line-height:1.4;}
 .coll-tip{position:fixed;z-index:99990;max-width:220px;padding:7px 11px;border-radius:9px;background:var(--text);color:var(--bg);font-size:12px;font-weight:700;line-height:1.35;text-align:center;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;box-shadow:0 4px 14px rgba(0,0,0,.3);}
 .coll-tip.show{opacity:1;transform:translateY(0);}
 .coll-section{grid-column:1/-1;font-size:13px;font-weight:800;color:var(--text);margin:8px 2px 0;display:flex;align-items:center;gap:6px;}
@@ -1583,7 +1584,7 @@ function milestoneSortKey(kind, label){
   }
   return -1;
 }
-var PRICE_LABELS = { border:"2,200원", pattern:"2,200원", theme:"3,300원" };
+var PRICE_LABELS = { border:"₩2,200", pattern:"₩2,200", theme:"₩3,300" };
 function presetListFor(kind){
   if(kind==="avatar") return CHARACTERS;
   if(kind==="pattern") return CARD_BACK_PRESETS;
@@ -4662,7 +4663,7 @@ function collectionItemsFor(kind){
 function collectionItemDetailText(kind, name){
   if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
   if(isMemberItem(kind, name)) return "👑 멤버십 전용";
-  if(isPaidItem(kind, name)) return "💎 "+PRICE_LABELS[kind];
+  if(isPaidItem(kind, name)) return PRICE_LABELS[kind]+" · 구매 아이템";
   if(kind==="theme") return "기본 테마";
   if(isGrandMasterItem(kind, name)){
     var gp = grandMasterProgress();
@@ -4767,6 +4768,8 @@ function renderCollectionScreen(){
     }
     card.appendChild(el("div","coll-item-preview", it.preview));
     card.appendChild(el("p","coll-item-name", tab==="title" ? "" : it.name));
+    // Paid and not owned: the price sits on the card as a pill.
+    if(!it.unlocked && isPaidItem(tab, it.name)) card.appendChild(el("span","price-pill", PRICE_LABELS[tab]));
     // How to get / price shows in a bubble on hover or tap, so the grid stays clean.
     var tipText = collectionItemDetailText(tab, it.name);
     // Owned without the achievement (special accounts): describe the condition, not the progress.
