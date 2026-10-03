@@ -542,6 +542,23 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .achv-title-chip{font-size:10px;background:var(--accent);color:#3a2604;width:auto;padding:3px 8px;border-radius:8px;white-space:nowrap;}
 .theme-light .name-tag-title{color:#9a5f0e;}
 .coll-tabs{display:flex;gap:6px;margin:8px 0;flex-wrap:wrap;justify-content:center;}
+.coll-stage{width:100%;max-width:480px;display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:4px;}
+.coll-stage-table{width:100%;box-sizing:border-box;border-radius:14px;padding:12px 10px 14px;display:flex;flex-direction:column;align-items:center;gap:10px;background:var(--skin-bg,var(--bg));color:var(--text);border:1px solid rgba(var(--line-rgb),.18);box-shadow:0 4px 14px rgba(0,0,0,.25);overflow:hidden;}
+.coll-stage-tag{max-width:100%;}
+.coll-stage-tag .name-tag{font-size:13px;}
+.coll-stage-floor{display:flex;gap:7px;padding:9px 12px;border-radius:12px;background:var(--skin-floor-bg,rgba(var(--line-rgb),.05));border:2px solid var(--skin-floor-border,rgba(var(--line-rgb),.15));box-shadow:var(--skin-floor-shadow,none);}
+.coll-stage-floor .card.coll-card{width:40px;height:56px;font-size:21px;}
+.coll-stage-bar{display:flex;align-items:center;justify-content:center;gap:8px;font-size:11.5px;color:var(--muted);min-height:26px;}
+.coll-stage-reset{padding:3px 10px;font-size:11.5px;min-height:0;}
+.coll-grid .coll-item.trying{outline:2px dashed var(--accent);outline-offset:-2px;border-radius:10px;}
+.coll-event-item{cursor:pointer;}
+.theme-thumb{width:46px;height:62px;box-sizing:border-box;border-radius:7px;padding:4px 4px 5px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;background:var(--skin-bg,var(--bg));border:1px solid rgba(var(--line-rgb),.25);box-shadow:0 1px 4px rgba(0,0,0,.3);overflow:hidden;}
+.theme-thumb .tt-opp{display:flex;gap:3px;width:100%;}
+.theme-thumb .tt-opp b{flex:1;height:7px;border-radius:2px;background:rgba(var(--line-rgb),.14);}
+.theme-thumb .tt-floor{display:grid;grid-template-columns:repeat(4,6px);grid-auto-rows:8px;gap:2px;padding:2px 3px;border-radius:3px;background:var(--skin-floor-bg,rgba(var(--line-rgb),.06));border:1px solid var(--skin-floor-border,rgba(var(--line-rgb),.25));}
+.theme-thumb .tt-hand{display:flex;gap:2px;}
+.theme-thumb i{display:block;width:6px;height:8px;border-radius:1.5px;}
+.theme-thumb .tt-hand i{width:7px;height:10px;}
 .coll-tab{font-size:13px;padding:7px 13px;}
 .coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
 .price-pill{margin-top:3px;font-size:11px;font-weight:800;padding:2px 9px;border-radius:999px;background:var(--accent);color:#2a1d00;line-height:1.4;}
@@ -752,6 +769,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 
   <div class="screen hidden" id="screen-collection">
     <h1 style="font-size:20px;">💎 수집품</h1>
+    <div class="coll-stage" id="coll-stage"></div>
     <div class="coll-tabs" id="coll-tabs"></div>
     <div class="coll-grid" id="coll-grid"></div>
     <button class="btn" id="coll-back-btn">← 뒤로</button>
@@ -4658,10 +4676,7 @@ function collectionItemsFor(kind){
   }
   if(kind==="theme"){
     var themeItems = CARD_THEMES.map(function(t, i){
-      var chips = ["PINK","BLUE","YELLOW","GREEN"].map(function(c){ return "<i style=\"background:"+t.colors[c]+"\"></i>"; }).join("");
-      var bg = t.skin ? "" : " style=\"background:"+t.bg+";border-color:"+t.panel2+"\"";
-      return { id:t.id, idx:i, name:t.name, unlocked:isThemeOwned(t),
-        preview:"<span class=\"achv-preview board-preview "+(t.skin||"")+"\""+bg+">"+chips+"</span>" };
+      return { id:t.id, idx:i, name:t.name, unlocked:isThemeOwned(t), preview:themeThumbHTML(t) };
     });
     return sortCollectionItems(themeItems, "theme");
   }
@@ -4671,6 +4686,67 @@ function collectionItemsFor(kind){
   });
   return sortCollectionItems(borderItems, "border");
 }
+// Theme thumbnail: a miniature table — the skin, the floor with its frame, a hand row —
+// so a theme reads as "what my game looks like", not as a row of color swatches.
+function themeVarsStyle(t){
+  return "--bg:"+t.bg+";--panel:"+t.panel+";--panel2:"+t.panel2+";--text:"+t.text+";--muted:"+t.muted+";--line-rgb:"+t.lineRgb+";--accent:"+t.colors.YELLOW+";";
+}
+function themeThumbHTML(t){
+  var floor = "", hand = "";
+  ["PINK","BLUE","YELLOW","GREEN","BLUE","GREEN","PINK","YELLOW"].forEach(function(c){ floor += "<i style=\"background:"+t.colors[c]+"\"></i>"; });
+  ["YELLOW","PINK","GREEN","BLUE"].forEach(function(c){ hand += "<i style=\"background:"+t.colors[c]+"\"></i>"; });
+  return "<span class=\"theme-thumb "+(t.skin||"")+"\" style=\""+themeVarsStyle(t)+"\">"+
+    "<span class=\"tt-opp\"><b></b><b></b></span><span class=\"tt-floor\">"+floor+"</span><span class=\"tt-hand\">"+hand+"</span></span>";
+}
+
+// Collection try-on: one pick per part (avatar, title, border, pattern, theme) — owned or
+// not — shown together on a mini table at the top. Owned picks also equip; locked ones are
+// only previewed until 되돌리기 or leaving the screen.
+var collTry = {};
+function collPartValue(kind){
+  if(collTry[kind]!==undefined) return collTry[kind];
+  if(kind==="avatar"){
+    var ch = presetByName("avatar", getDefaultAvatarName());
+    if(!ch || !isAvatarUnlocked(ch.name, straightUnlocks)) ch = chosenCharacter || presetByName("avatar", UNLOCK_STARTER_AVATARS[0]);
+    return ch ? ch.name : null;
+  }
+  if(kind==="title"){ var tl = getActiveTitle(); return (tl && isTitleUnlocked(tl, straightUnlocks)) ? tl : null; }
+  if(kind==="border"){ var bd = getActiveBorder(); return (bd && isBorderUnlocked(bd, straightUnlocks)) ? bd : "basic"; }
+  if(kind==="pattern") return backPresetIndex;
+  return cardThemeIndex;
+}
+function renderCollectionStage(){
+  var stage = $("coll-stage");
+  if(!stage) return;
+  var theme = CARD_THEMES[collPartValue("theme")] || CARD_THEMES[0];
+  var pattern = CARD_BACK_PRESETS[collPartValue("pattern")] || CARD_BACK_PRESETS[0];
+  var ch = presetByName("avatar", collPartValue("avatar")) || CHARACTERS[0];
+  var titleId = collPartValue("title"), title = null;
+  TITLE_PRESETS.forEach(function(t){ if(t.id===titleId) title = t.name; });
+  var borderId = collPartValue("border"), border = "";
+  BORDER_PRESETS.forEach(function(b){ if(b.id===borderId) border = b.cls; });
+  var mf = myMemberFields();
+  var tag = playerTagHTML({ avatar:avatarIconHTML(ch), name:cleanNick(chosenNickname || ch.name), title:title, border:border, vip:mf.vip, medal:mf.medal });
+  var cards = "";
+  [["PINK",3],["BLUE",4],["YELLOW",5],["GREEN",6]].forEach(function(cv){
+    var base = theme.colors[cv[0]];
+    cards += "<span class=\"card coll-card "+pattern.cls+"\" style=\"background:linear-gradient(155deg,"+shadeColor(base,35)+","+base+" 55%,"+shadeColor(base,-35)+")\"><span class=\"card-num\">"+cv[1]+"</span></span>";
+  });
+  var trying = Object.keys(collTry).length>0;
+  stage.innerHTML = "<div class=\"coll-stage-table "+(theme.skin||"")+(theme.isDark?"":" light")+"\" style=\""+themeVarsStyle(theme)+"\">"+
+    "<div class=\"coll-stage-tag\">"+tag+"</div><div class=\"coll-stage-floor\">"+cards+"</div></div>"+
+    "<div class=\"coll-stage-bar\">"+(trying ? "<span>👀 미리보기 중 · 보유하지 않은 아이템 포함</span><button class=\"btn coll-stage-reset\">되돌리기</button>"
+      : "<span>아이템을 눌러 조합해 보세요</span>")+"</div>";
+  var reset = stage.querySelector(".coll-stage-reset");
+  if(reset) reset.addEventListener("click", function(){ collTry = {}; sfxSelect(); renderCollectionScreen(); });
+  fitNameTags(stage);
+}
+function collItemValue(kind, it){
+  if(kind==="avatar") return it.name;
+  if(kind==="pattern" || kind==="theme") return it.idx;
+  return it.id;
+}
+
 function collectionItemDetailText(kind, name){
   if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
   if(isMemberItem(kind, name)) return "👑 멤버십 전용";
@@ -4732,6 +4808,9 @@ function renderCollectionScreen(){
   var tab = collectionActiveTab;
   var items = collectionItemsFor(tab);
   var revealed = [];
+  function isTryingItem(it){
+    return collTry[tab]!==undefined && collTry[tab]===collItemValue(tab, it);
+  }
   function isEquippedItem(it){
     if(!it.unlocked) return false;
     if(tab==="title") return getActiveTitle()===it.id;
@@ -4744,7 +4823,11 @@ function renderCollectionScreen(){
   // scroll position and restarted every animated preview, so the other items twitched.
   var cards = [];
   function refreshEquipped(){
-    cards.forEach(function(c){ c.card.classList.toggle("equipped", isEquippedItem(c.it)); });
+    cards.forEach(function(c){
+      c.card.classList.toggle("equipped", isEquippedItem(c.it));
+      c.card.classList.toggle("trying", isTryingItem(c.it));
+    });
+    renderCollectionStage();
   }
   // Sections: what you own first, then goals, the shop, and a compact strip of event items.
   function sectionOf(it){
@@ -4761,7 +4844,9 @@ function renderCollectionScreen(){
     if(sec[0]==="event"){
       var strip = el("div","coll-event-strip");
       list.forEach(function(it){
-        strip.appendChild(el("div","coll-event-item", "<div class=\"coll-item-preview\">"+it.preview+"</div><p>"+(tab==="title" ? "" : it.name)+"</p>"));
+        var ev = el("div","coll-event-item", "<div class=\"coll-item-preview\">"+it.preview+"</div><p>"+(tab==="title" ? "" : it.name)+"</p>");
+        ev.addEventListener("click", function(){ collTry[tab] = collItemValue(tab, it); sfxSelect(); renderCollectionStage(); });
+        strip.appendChild(ev);
       });
       grid.appendChild(strip);
       return;
@@ -4771,7 +4856,7 @@ function renderCollectionScreen(){
   function addCard(it){
     var isEquipped = isEquippedItem(it);
 
-    var card = el("div","coll-item"+(it.unlocked?"":" locked")+(isEquipped?" equipped":""));
+    var card = el("div","coll-item"+(it.unlocked?"":" locked")+(isEquipped?" equipped":"")+(isTryingItem(it)?" trying":""));
     var itemMilestone = findMilestoneByLabel(tab, it.name);
     if(it.unlocked && itemMilestone && newIds.indexOf(itemMilestone.id)!==-1){
       card.classList.add("just-unlocked");
@@ -4791,6 +4876,13 @@ function renderCollectionScreen(){
       card.addEventListener("mouseleave", hideCollTip);
       if(!it.unlocked) card.addEventListener("click", function(){ showCollTip(card, tipText, 2200); });
     }
+    if(!it.unlocked){
+      card.addEventListener("click", function(){
+        collTry[tab] = collItemValue(tab, it);
+        sfxSelect();
+        refreshEquipped();
+      });
+    }
     // Owned items equip on tap; the lock corner and the ✓ badge carry the state.
     if(it.unlocked){
       card.classList.add("owned");
@@ -4800,6 +4892,7 @@ function renderCollectionScreen(){
         else if(tab==="pattern") setBackPreset(it.idx);
         else if(tab==="theme") setCardTheme(it.idx);
         else setDefaultAvatar(it.name);
+        delete collTry[tab];
         sfxSelect();
         refreshEquipped();
         if(tipText) showCollTip(card, tipText, 1600);
@@ -4809,6 +4902,7 @@ function renderCollectionScreen(){
     grid.appendChild(card);
   }
   if(revealed.length) saveNewUnlocks(newIds.filter(function(id){ return revealed.indexOf(id)===-1; }));
+  renderCollectionStage();
 }
 
 var TUTORIAL_SLIDES = [
@@ -5077,6 +5171,7 @@ $("collection-btn").addEventListener("click", function(){
   var newIds = loadNewUnlocks();
   var firstNew = newIds.length ? findMilestoneById(newIds[0]) : null;
   collectionActiveTab = firstNew ? firstNew.kind : "pattern";
+  collTry = {};
   renderCollectionScreen();
   switchScreen("collection");
   if(newIds.length) announceNewUnlocks(newIds);
