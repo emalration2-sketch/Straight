@@ -389,11 +389,12 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .opponent-card{flex:1 1 0;display:flex;flex-direction:column;gap:4px;background:var(--panel);border:2px solid transparent;border-radius:10px;padding:4px;min-width:0;max-width:280px;overflow:hidden;}
 .opponent-card.active{border-color:var(--accent);}
 .opponent-card:only-child{max-width:210px;}
-.opp-head-row{display:flex;align-items:center;flex-shrink:0;line-height:1.2;min-width:0;padding-top:5px;}
+.opp-head-row{display:flex;flex-direction:column;align-items:flex-start;gap:3px;flex-shrink:0;line-height:1.2;min-width:0;padding-top:5px;}
 .opp-head-row .name-tag{max-width:100%;}
 /* Opponent's best straight progress; at 4/5 ("레디!") it pulses. */
 .opp-head-row .name-tag{min-width:0;flex:0 1 auto;}
-.opp-progress{flex-shrink:0;margin-left:auto;padding-left:4px;font-size:11.5px;font-weight:800;color:var(--prog-color);white-space:nowrap;}
+/* Progress sits under the name tag so the name keeps the full width. */
+.opp-progress{flex-shrink:0;padding-left:4px;font-size:11.5px;font-weight:800;color:var(--prog-color);white-space:nowrap;}
 .opp-progress.ready{padding:1px 6px;border-radius:6px;background:var(--prog-color);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);animation:readyPulse 1.2s ease-in-out infinite;}
 @keyframes readyPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
 @media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
