@@ -264,7 +264,12 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .daily-row .daily-rank{width:28px;text-align:center;font-weight:800;}
 .daily-row .daily-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
 .daily-row .daily-val{font-weight:800;color:var(--accent);white-space:nowrap;}
-.daily-row .daily-val{display:flex;align-items:baseline;gap:6px;}
+/* Nicknames are at most ~8 Hangul, so the name column has a fixed width and the board hugs its rows. */
+.daily-board{width:fit-content;max-width:94vw;}
+.daily-row{display:grid;grid-template-columns:26px 22px 8.4em 3.4em 2.6em 3.9em;gap:6px;justify-content:start;}
+.daily-row .daily-val{text-align:right;}
+.daily-row .daily-time{text-align:left;}
+.daily-gap{grid-column:1/-1;}
 .daily-row .daily-time{font-size:12.5px;font-weight:700;color:var(--text);opacity:.75;}
 .daily-gap{justify-content:center;color:var(--muted);padding:0;min-height:0;}
 .daily-tie{font-size:13px;opacity:.75;}
@@ -4398,11 +4403,11 @@ function renderDailyBoard(){
       var r = rows[i];
       var ch = presetByName("avatar", r.data.avatar);
       var rank = i<3 ? ["🥇","🥈","🥉"][i] : String(i+1);
-      var reward = i<3 ? ("<span class=\"daily-reward\">"+COIN_SVG+CHALLENGE_REWARDS[i]+"</span>") : "";
+      var reward = i<3 ? ("<span class=\"daily-reward\">"+COIN_SVG+CHALLENGE_REWARDS[i]+"</span>") : "<span></span>";
       var row = el("div","order-row daily-row"+(r.id===account.uid ? " me" : ""));
       row.innerHTML = "<span class=\"daily-rank\">"+rank+"</span><span>"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
         "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span>"+reward+
-        "<span class=\"daily-val\">"+r.data.bestTurns+"턴"+(r.data.bestMs ? "<span class=\"daily-time\">⏱ "+fmtPlayTime(r.data.bestMs)+"</span>" : "")+"</span>";
+        "<span class=\"daily-val\">"+r.data.bestTurns+"턴</span><span class=\"daily-time\">"+(r.data.bestMs ? "⏱ "+fmtPlayTime(r.data.bestMs) : "")+"</span>";
       board.appendChild(row);
     });
   }).catch(function(e){
