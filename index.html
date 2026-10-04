@@ -332,12 +332,14 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .daily-row .daily-val{font-weight:800;color:var(--accent);white-space:nowrap;}
 /* Nicknames are at most ~8 Hangul, so the name column has a fixed width and the board hugs its rows. */
 .daily-board{width:fit-content;max-width:94vw;}
-.daily-row{display:grid;grid-template-columns:22px 20px 10.2em 3em 2.5em 3.5em;gap:5px;justify-content:start;font-size:14.5px;padding:6px 8px;}
+.daily-row{display:grid;grid-template-columns:22px 20px 10.2em 2.5em 3.5em;gap:5px;justify-content:start;font-size:14.5px;padding:6px 8px;}
 .daily-row .daily-val{text-align:right;}
 .daily-row .daily-time{text-align:left;}
 .daily-gap{grid-column:1/-1;}
 .daily-row .daily-time{font-size:12.5px;font-weight:700;color:var(--text);opacity:.75;}
 .daily-gap{justify-content:center;color:var(--muted);padding:0;min-height:0;}
+.daily-prizes{display:inline-flex;align-items:center;gap:2px;color:#EF9F27;white-space:nowrap;}
+.daily-prizes .coin-ico{width:15px;height:15px;}
 .daily-tie{font-size:13px;opacity:.75;}
 .daily-season{font-size:14px;font-weight:700;color:var(--text);margin:-2px 0 2px;}
 .daily-season small{font-weight:400;color:var(--muted);}
@@ -1070,7 +1072,7 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 
   <div class="screen hidden" id="screen-daily">
     <h1 style="font-size:20px;margin-bottom:0;">🏆 챌린지</h1>
-    <p class="sub daily-rules"><b>가장 빠른 턴에 스트레이트 완성하기!</b><br>하루 한 번 도전 가능, 매달 1~3위에 보상<br><span class="daily-tie">턴 수가 같으면 시간이 짧은 사람이 앞서요</span></p>
+    <p class="sub daily-rules"><b>가장 빠른 턴에 스트레이트 완성하기!</b><br>하루 한 번 도전 가능, 매달 1~3위에 보상 <span class="daily-prizes" id="daily-prizes"></span><br><span class="daily-tie">턴 수가 같으면 시간이 짧은 사람이 앞서요</span></p>
     <div class="daily-status" id="daily-status"></div>
     <button class="btn primary big" id="daily-start-btn">도전하기</button>
     <div class="coll-tabs" id="daily-tabs">
@@ -4543,6 +4545,8 @@ function renderDailyBoard(){
     b.classList.toggle("primary", b.getAttribute("data-board")===dailyBoardTab);
   });
   $("daily-season").innerHTML = dailySeasonLabel(dailyBoardTab);
+  // Rewards for 1~3위 live in the rules line, not on every row.
+  $("daily-prizes").innerHTML = "("+COIN_SVG+CHALLENGE_REWARDS.join(" · ")+")";
   if(!account || !fbDb) return;
   var tab = dailyBoardTab;
   board.appendChild(el("div","order-row","불러오는 중..."));
@@ -4561,10 +4565,9 @@ function renderDailyBoard(){
       var r = rows[i];
       var ch = presetByName("avatar", r.data.avatar);
       var rank = i<3 ? ["🥇","🥈","🥉"][i] : String(i+1);
-      var reward = i<3 ? ("<span class=\"daily-reward\">"+COIN_SVG+CHALLENGE_REWARDS[i]+"</span>") : "<span></span>";
       var row = el("div","order-row daily-row"+(r.id===account.uid ? " me" : ""));
       row.innerHTML = "<span class=\"daily-rank\">"+rank+"</span><span>"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
-        "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span>"+reward+
+        "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span>"+
         "<span class=\"daily-val\">"+r.data.bestTurns+"턴</span><span class=\"daily-time\">"+"⏱ "+(r.data.bestMs ? fmtPlayTime(r.data.bestMs) : "-")+"</span>";
       board.appendChild(row);
     });
