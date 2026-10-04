@@ -84,6 +84,27 @@ service cloud.firestore {
     function dailyResult(day, uid){
       return get(/databases/$(database)/documents/daily/$(day)/scores/$(uid)).data;
     }
+    function fillsMissingTime(uid){
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['bestMs','updatedAt'])
+        && resource.data.get('bestMs', 0) == 0
+        && dailyResult(resource.data.lastDay, uid).turns == resource.data.bestTurns
+        && request.resource.data.bestMs == dailyResult(resource.data.lastDay, uid).get('ms', 0);
+    }
+    function nextDayResult(season, uid){
+      let n = request.resource.data;
+      let old = resource.data;
+      let r = dailyResult(n.lastDay, uid);
+      return n.lastDay is string
+        && n.lastDay.matches('^' + season + '-[0-9]{2}$')
+        && n.lastDay > old.get('lastDay', '')
+        && n.days == old.get('days', 0) + 1
+        && r.failed == false
+        && ((n.bestTurns == old.get('bestTurns', -1) && n.bestMs == old.get('bestMs', 0))
+          || (n.bestTurns == r.turns && n.bestMs == r.get('ms', 0)
+              && (n.bestTurns < old.get('bestTurns', 200)
+                || (n.bestTurns == old.get('bestTurns', 200)
+                  && (old.get('bestMs', 0) == 0 || n.bestMs < old.get('bestMs', 0))))));
+    }
     match /seasons/{season}/players/{uid} {
       allow read: if signedIn();
       allow create: if signedIn() && request.auth.uid == uid
@@ -95,20 +116,10 @@ service cloud.firestore {
         && request.resource.data.bestTurns == dailyResult(request.resource.data.lastDay, uid).turns
         && request.resource.data.bestMs == dailyResult(request.resource.data.lastDay, uid).get('ms', 0)
         && request.resource.data.days == 1;
+      // A next-day result, or (once) filling in the time a record made before times existed lacked.
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['name','avatar','bestTurns','bestMs','days','lastDay','updatedAt'])
-        && request.resource.data.lastDay is string
-        && request.resource.data.lastDay.matches('^' + season + '-[0-9]{2}$')
-        && request.resource.data.lastDay > resource.data.get('lastDay', '')
-        && request.resource.data.days == resource.data.get('days', 0) + 1
-        && dailyResult(request.resource.data.lastDay, uid).failed == false
-        && ((request.resource.data.bestTurns == resource.data.get('bestTurns', -1)
-              && request.resource.data.bestMs == resource.data.get('bestMs', 0))
-          || (request.resource.data.bestTurns == dailyResult(request.resource.data.lastDay, uid).turns
-              && request.resource.data.bestMs == dailyResult(request.resource.data.lastDay, uid).get('ms', 0)
-              && (request.resource.data.bestTurns < resource.data.get('bestTurns', 200)
-                || (request.resource.data.bestTurns == resource.data.get('bestTurns', 200)
-                  && request.resource.data.bestMs < resource.data.get('bestMs', 0)))));
+        && (fillsMissingTime(uid) || nextDayResult(season, uid));
       allow delete: if false;
     }
 

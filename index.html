@@ -1182,7 +1182,7 @@ function loadSeasonMedal(uid){
   var F = fbFs;
   var q = F.query(F.collection(fbDb,"seasons",prevSeasonKey(),"players"), F.orderBy("bestTurns"), F.limit(20));
   return F.getDocs(q).then(function(snap){
-    var rows = snap.docs.map(function(d){ return { id:d.id, t:d.data().bestTurns, ms:d.data().bestMs||0 }; })
+    var rows = snap.docs.map(function(d){ return { id:d.id, t:d.data().bestTurns, ms:d.data().bestMs||864e5 }; })
       .sort(function(a, b){ return (a.t-b.t) || (a.ms-b.ms); });
     var medal = 0;
     rows.slice(0,3).forEach(function(r, i){ if(r.id===uid) medal = i+1; });
@@ -4491,9 +4491,9 @@ function openDaily(){
       if(!snap.exists()){ st.textContent = "오늘 아직 도전하지 않았어요."; btn.disabled = false; return; }
       var d = snap.data();
       startDailyCountdown(btn);
-      st.innerHTML = ((d.failed || !d.turns) ? "오늘의 도전 완료 · 완성하지 못했어요" : ("오늘의 도전 완료 · <b>"+d.turns+"턴 · ⏱ "+fmtPlayTime(d.ms)+"</b>"))+
+      st.innerHTML = ((d.failed || !d.turns) ? "오늘의 도전 완료 · 완성하지 못했어요" : "오늘의 도전 완료")+
         "<br><small>새 도전은 매일 밤 12시(한국 시간)에 열려요</small>";
-      if(!d.failed && d.turns) return backfillSeasonBest(d);
+      if(!d.failed && d.turns) return backfillSeasonBest(d).then(function(){ delete seasonBoardCache[seasonKey()]; });
     });
   }).catch(function(e){ st.textContent = "불러오지 못했어요."; console.error("챌린지 불러오기 실패", e); })
     .then(renderDailyBoard);
@@ -4504,7 +4504,11 @@ function backfillSeasonBest(d){
   return F.runTransaction(fbDb, function(tx){
     return tx.get(sref).then(function(snap){
       var cur = snap.exists() ? snap.data() : {};
-      if(typeof cur.bestTurns==="number") return;
+      // A record saved before times existed: fill in today's time once.
+      if(typeof cur.bestTurns==="number"){
+        if(!cur.bestMs && d.ms && cur.lastDay===dailyKey() && cur.bestTurns===d.turns) tx.update(sref, { bestMs:d.ms, updatedAt:Date.now() });
+        return;
+      }
       tx.set(sref, { name:me.name, avatar:me.avatar, bestTurns:d.turns, bestMs:typeof d.ms==="number" ? d.ms : 0, days:(cur.days||0)+1, lastDay:dailyKey(), updatedAt:Date.now() });
     });
   }).catch(function(e){ console.error("시즌 기록 옮기기 실패", e); });
@@ -4519,7 +4523,7 @@ function seasonBoardRows(season){
   var q = F.query(F.collection(fbDb,"seasons",season,"players"), F.orderBy("bestTurns"), F.limit(50));
   return F.getDocs(q).then(function(snap){
     var rows = snap.docs.map(function(d){ return { id:d.id, data:d.data() }; })
-      .sort(function(a, b){ return (a.data.bestTurns-b.data.bestTurns) || ((a.data.bestMs||0)-(b.data.bestMs||0)); });
+      .sort(function(a, b){ return (a.data.bestTurns-b.data.bestTurns) || ((a.data.bestMs||864e5)-(b.data.bestMs||864e5)); });
     seasonBoardCache[season] = { at:Date.now(), rows:rows };
     return rows;
   });
@@ -4560,7 +4564,7 @@ function renderDailyBoard(){
       var row = el("div","order-row daily-row"+(r.id===account.uid ? " me" : ""));
       row.innerHTML = "<span class=\"daily-rank\">"+rank+"</span><span>"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
         "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span>"+reward+
-        "<span class=\"daily-val\">"+r.data.bestTurns+"턴</span><span class=\"daily-time\">"+(r.data.bestMs ? "⏱ "+fmtPlayTime(r.data.bestMs) : "")+"</span>";
+        "<span class=\"daily-val\">"+r.data.bestTurns+"턴</span><span class=\"daily-time\">"+"⏱ "+(r.data.bestMs ? fmtPlayTime(r.data.bestMs) : "-")+"</span>";
       board.appendChild(row);
     });
   }).catch(function(e){
@@ -4603,7 +4607,7 @@ function finishDaily(outcome){
       return tx.get(sref).then(function(snap){
         var d = snap.exists() ? snap.data() : {};
         var hasBest = typeof d.bestTurns==="number";
-        var better = !hasBest || turns < d.bestTurns || (turns===d.bestTurns && ms < (d.bestMs||0));
+        var better = !hasBest || turns < d.bestTurns || (turns===d.bestTurns && (!d.bestMs || ms < d.bestMs));
         tx.set(sref, {
           name:me.name, avatar:me.avatar,
           bestTurns: better ? turns : d.bestTurns,
