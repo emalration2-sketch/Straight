@@ -400,9 +400,6 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .opp-progress.ready{padding:1px 6px;border-radius:6px;background:var(--prog-color);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);animation:readyPulse 1.2s ease-in-out infinite;}
 @keyframes readyPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
 @media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
-.quick-box{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}
-.quick-count{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--muted);}
-.quick-count .count-btn{width:46px;height:46px;font-size:18px;}
 .btn.quick-match-btn{padding:20px 24px;font-size:20px;font-weight:900;margin-top:6px;background:linear-gradient(135deg,#ff5c8a,#ffb03a);color:#fff;box-shadow:0 8px 20px rgba(255,92,138,.35);}
 .lobby-invite-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
 .lobby-invite-row.hidden{display:none;}
@@ -952,17 +949,14 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
       <button class="btn primary big" id="online-create-btn">➕ 방 만들기</button>
       <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
-      <div class="quick-box">
-        <button class="btn primary big quick-match-btn" id="online-quick-btn">⚡ 빠른 매칭</button>
-        <div class="quick-count"><span>인원</span><div class="count-row" id="quick-count-row"></div></div>
-      </div>
+      <button class="btn primary big quick-match-btn" id="online-quick-btn">⚡ 빠른 매칭</button>
     </div>
     <button class="btn" id="online-back-btn">← 뒤로</button>
   </div>
 
   <div class="screen hidden" id="screen-room-create">
-    <h1 style="font-size:20px;">최대 인원 선택</h1>
-    <p class="sub">방을 만들면 코드가 발급됩니다. 부족한 인원은 게임 시작 시 AI가 채웁니다.</p>
+    <h1 style="font-size:20px;" id="create-title">최대 인원 선택</h1>
+    <p class="sub" id="create-sub" style="word-break:keep-all;text-align:center;">방을 만들면 코드가 발급됩니다. 부족한 인원은 게임 시작 시 AI가 채웁니다.</p>
     <div class="count-row" id="create-count-row"></div>
     <button class="btn primary big" id="create-room-btn" disabled>방 만들기</button>
     <button class="btn" id="create-back-btn">← 뒤로</button>
@@ -1031,7 +1025,6 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
         </div>
         <div class="turn-chip-wrap"><div class="turn-chip" id="turn-timer"></div></div>
         <div class="topbar-right">
-          <button class="icon-btn hidden" id="sync-btn" title="서버와 재동기화">🔄</button>
           <button class="icon-btn" id="settings-btn" title="설정">⚙️</button>
         </div>
       </div>
@@ -3792,25 +3785,27 @@ var createCountRow = $("create-count-row");
   createCountRow.appendChild(b);
 });
 
-// ⚡ 빠른 매칭 player count (remembered); rooms only match others with the same count.
-var quickCount = 4;
-try{ var qc = Number(localStorage.getItem("straightQuickCount")); if([2,3,4].indexOf(qc)!==-1) quickCount = qc; }catch(e){}
-var quickCountRow = $("quick-count-row");
-[2,3,4].forEach(function(n){
-  var b = el("button","count-btn"+(n===quickCount?" selected":""),n);
-  b.addEventListener("click", function(){
-    sfxSelect();
-    Array.prototype.forEach.call(quickCountRow.children, function(c){ c.classList.remove("selected"); });
-    b.classList.add("selected");
-    quickCount = n;
-    try{ localStorage.setItem("straightQuickCount", String(n)); }catch(e){}
-  });
-  quickCountRow.appendChild(b);
-});
-
+// 방 만들기 and ⚡ 빠른 매칭 share one screen: pick the player count, then go.
+var roomCreateMode = "create";
+function openCountScreen(mode){
+  roomCreateMode = mode;
+  var quick = mode==="quick";
+  $("create-title").textContent = quick ? "⚡ 빠른 매칭 인원 선택" : "최대 인원 선택";
+  $("create-sub").textContent = quick ? "같은 인원을 고른 사람과 바로 매칭돼요. 빈자리는 AI가 채워요."
+                                      : "방을 만들면 코드가 발급됩니다. 부족한 인원은 게임 시작 시 AI가 채웁니다.";
+  $("create-room-btn").textContent = quick ? "⚡ 매칭 시작" : "방 만들기";
+  chosenCreateCount = null;
+  Array.prototype.forEach.call(createCountRow.children, function(c){ c.classList.remove("selected"); });
+  $("create-room-btn").disabled = true;
+  switchScreen("room-create");
+}
 $("online-create-btn").addEventListener("click", function(){
   sfxSelect();
-  switchScreen("room-create");
+  openCountScreen("create");
+});
+$("online-quick-btn").addEventListener("click", function(){
+  sfxSelect();
+  openCountScreen("quick");
 });
 $("create-back-btn").addEventListener("click", function(){
   sfxSelect();
@@ -3819,12 +3814,16 @@ $("create-back-btn").addEventListener("click", function(){
 $("create-room-btn").addEventListener("click", function(){
   sfxSelect();
   requestFS();
-  $("create-room-btn").disabled = true;
-  createRoom(chosenCreateCount, function(err, code){
-    $("create-room-btn").disabled = false;
-    if(err){ alert("방 생성 실패: "+err); return; }
+  var btn = $("create-room-btn"), quick = roomCreateMode==="quick", label = btn.textContent;
+  btn.disabled = true;
+  if(quick) btn.textContent = "⚡ 찾는 중...";
+  var done = function(err){
+    btn.disabled = false;
+    btn.textContent = label;
+    if(err){ alert((quick ? "빠른 매칭 실패: " : "방 생성 실패: ")+err); return; }
     switchScreen("lobby");
-  });
+  };
+  if(quick) quickMatch(chosenCreateCount, done); else createRoom(chosenCreateCount, done);
 });
 
 $("online-join-btn").addEventListener("click", function(){
@@ -3889,19 +3888,6 @@ $("lobby-ready-btn").addEventListener("click", function(){
   sfxSelect();
   var me = state.players[state.myIndex];
   setMyReady(!(me && me.ready));
-});
-$("online-quick-btn").addEventListener("click", function(){
-  sfxSelect();
-  requestFS();
-  var b = $("online-quick-btn");
-  b.disabled = true;
-  b.textContent = "⚡ 찾는 중...";
-  quickMatch(quickCount, function(err){
-    b.disabled = false;
-    b.textContent = "⚡ 빠른 매칭";
-    if(err){ alert("빠른 매칭 실패: "+err); return; }
-    switchScreen("lobby");
-  });
 });
 $("rematch-btn").addEventListener("click", function(){
   sfxSelect();
@@ -5394,7 +5380,6 @@ function render(){
   renderLog();
   renderInstruction();
   if(!turnTimerId) renderTurnTimer(null);
-  $("sync-btn").classList.toggle("hidden", !isMultiplayer());
   renderReclaimButton();
   fitBoard();
   fitNameTags($("screen-game"));
@@ -6322,13 +6307,6 @@ $("coll-back-btn").addEventListener("click", function(){
   switchScreen("start");
 });
 
-$("sync-btn").addEventListener("click", function(){
-  sfxSelect();
-  var btn = $("sync-btn");
-  btn.classList.add("spinning");
-  forceResync();
-  setTimeout(function(){ btn.classList.remove("spinning"); }, 500);
-});
 
 }
 bootAuth();
