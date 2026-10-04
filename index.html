@@ -2175,6 +2175,8 @@ function switchScreen(name){
       var others = GAME_BGM_TRACKS.filter(function(i){ return i!==gameBgmIndex; });
       setGameBgm(others[Math.floor(Math.random()*others.length)]);
     }
+    // Prepare the next game's track while the results are on screen.
+    if(audioCtx && bgmOn) renderBgm(gameBgmIndex).catch(function(){});
   } else {
     setBgmTrack(name==="game" ? gameBgmIndex : MENU_BGM);
     if(!bgmPlaying && audioCtx) startBgm();
@@ -2436,9 +2438,8 @@ function restoreScreenBgm(){
   setBgmTrack(inGame ? gameBgmIndex : MENU_BGM);
 }
 var bgmPlaying = false;
-var bgmTimer = null;
-var bgmStep = 0;
-var bgmNextTime = 0;
+var bgmSource = null;
+var bgmGen = 0;
 var bgmMasterGain = null;
 var bgmFilter = null;
 var bgmBus = null;
@@ -2469,91 +2470,152 @@ function releaseBgmBus(){
   setTimeout(function(){ try{ old.disconnect(); }catch(e){} }, 500);
 }
 
-function bgmNote(freq, t0, duration, type, vol, attack){
-  var osc = audioCtx.createOscillator();
-  var g = audioCtx.createGain();
+// Each track is synthesized once into a looping buffer (OfflineAudioContext, mono 22kHz) and
+// then simply played back: building oscillators note by note the whole time kept phones warm.
+function bgmNote(ctx, dest, freq, t0, duration, type, vol, attack){
+  var osc = ctx.createOscillator();
+  var g = ctx.createGain();
   osc.type = type;
   osc.frequency.setValueAtTime(freq, t0);
   g.gain.setValueAtTime(0.0001, t0);
   g.gain.linearRampToValueAtTime(vol, t0+(attack||0.015));
   g.gain.exponentialRampToValueAtTime(0.0001, t0+duration);
-  osc.connect(g); g.connect(bgmOutput());
+  osc.connect(g); g.connect(dest);
   osc.start(t0); osc.stop(t0+duration+0.02);
 }
 // level: per-track drum volume (track.drumVol, default 1).
-function bgmDrum(kind, t0, level){
+function bgmDrum(ctx, dest, noise, kind, t0, level){
   level = level===undefined ? 1 : level;
   if(kind==="kick"){
-    var osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+    var osc = ctx.createOscillator(), g = ctx.createGain();
     osc.frequency.setValueAtTime(130, t0);
     osc.frequency.exponentialRampToValueAtTime(48, t0+0.12);
     g.gain.setValueAtTime(0.09*level, t0);
     g.gain.exponentialRampToValueAtTime(0.0001, t0+0.16);
-    osc.connect(g); g.connect(bgmOutput());
+    osc.connect(g); g.connect(dest);
     osc.start(t0); osc.stop(t0+0.18);
     return;
   }
-  var src = audioCtx.createBufferSource();
-  src.buffer = noiseBuffer();
-  var f = audioCtx.createBiquadFilter();
-  var g2 = audioCtx.createGain();
+  var src = ctx.createBufferSource();
+  src.buffer = noise;
+  var f = ctx.createBiquadFilter();
+  var g2 = ctx.createGain();
   var dur = kind==="hat" ? 0.035 : 0.09;
   f.type = kind==="hat" ? "highpass" : "bandpass";
   f.frequency.value = kind==="hat" ? 7000 : 1800;
   g2.gain.setValueAtTime((kind==="hat" ? 0.018 : 0.035)*level, t0);
   g2.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
-  src.connect(f); f.connect(g2); g2.connect(bgmOutput());
+  src.connect(f); f.connect(g2); g2.connect(dest);
   src.start(t0, Math.random()*0.5); src.stop(t0+dur+0.02);
 }
 
-function playBgmStep(track, step, t0){
+function playBgmStep(ctx, dest, noise, track, step, t0){
   var i = step % track.melody.length;
   var m = track.melody[i];
   // Every other pass through the tune the lead moves an octave, so long sessions don't loop flat.
   if(m && track.altOctave && Math.floor(step / track.melody.length) % 2===1) m += track.altOctave;
-  if(m) bgmNote(midiHz(m), t0, track.stepSec*track.lead.len, track.lead.type, track.lead.vol);
+  if(m) bgmNote(ctx, dest, midiHz(m), t0, track.stepSec*track.lead.len, track.lead.type, track.lead.vol);
   var b = track.bass[step % track.bass.length];
-  if(b) bgmNote(midiHz(b), t0, track.stepSec*track.bassLen, track.bassType, track.bassVol);
+  if(b) bgmNote(ctx, dest, midiHz(b), t0, track.stepSec*track.bassLen, track.bassType, track.bassVol);
   if(track.pads && i % track.barSteps===0){
     var chord = track.pads[(i/track.barSteps) % track.pads.length];
-    chord.forEach(function(n){ bgmNote(midiHz(n), t0, track.stepSec*track.barSteps*0.98, "sine", track.padVol, 0.25); });
+    chord.forEach(function(n){ bgmNote(ctx, dest, midiHz(n), t0, track.stepSec*track.barSteps*0.98, "sine", track.padVol, 0.25); });
   }
   ["kick","snare","hat"].forEach(function(kind){
     var pat = track[kind];
-    if(pat && pat.charAt(step % pat.length)==="x") bgmDrum(kind, t0, track.drumVol);
+    if(pat && pat.charAt(step % pat.length)==="x") bgmDrum(ctx, dest, noise, kind, t0, track.drumVol);
   });
 }
 
-// Look-ahead scheduler: notes are placed on the audio clock a little ahead of time, so
-// timer jitter (busy main thread during card animations) no longer drags the beat.
-function scheduleBgmStep(){
-  if(!bgmPlaying) return;
-  var track = BGM_TRACKS[bgmTrackIndex];
-  if(audioCtx){
-    var now = audioCtx.currentTime;
-    if(bgmNextTime < now) bgmNextTime = now + 0.05;
-    while(bgmNextTime < now + 0.2){
-      if(bgmOn) playBgmStep(track, bgmStep, bgmNextTime);
-      var sw = track.swing ? (bgmStep%2===0 ? 1+track.swing : 1-track.swing) : 1;
-      bgmNextTime += track.stepSec*sw;
-      bgmStep++;
-    }
+// Steps until every part (melody, octave pass, bass, drum patterns, swing) lines up again.
+function bgmLoopSteps(track){
+  function gcd(a, b){ return b ? gcd(b, a % b) : a; }
+  var n = track.melody.length * (track.altOctave ? 2 : 1);
+  [track.bass.length, track.swing ? 2 : 1].concat(["kick","snare","hat"].map(function(k){ return track[k] ? track[k].length : 1; }))
+    .forEach(function(l){ n = n / gcd(n, l) * l; });
+  return n;
+}
+var bgmBuffers = {}, bgmBufferOrder = [];
+function renderBgm(idx){
+  if(bgmBuffers[idx]) return bgmBuffers[idx];
+  var Off = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+  if(!Off) return Promise.reject(new Error("no OfflineAudioContext"));
+  var track = BGM_TRACKS[idx], steps = bgmLoopSteps(track), rate = 22050, tail = 3;
+  var times = [], t = 0;
+  for(var k=0;k<steps;k++){
+    times.push(t);
+    t += track.stepSec * (track.swing ? (k%2===0 ? 1+track.swing : 1-track.swing) : 1);
   }
-  bgmTimer = setTimeout(scheduleBgmStep, bgmOn ? 50 : 500);
+  var loopSec = t;
+  var ctx = new Off(1, Math.ceil((loopSec+tail)*rate), rate);
+  var noise = ctx.createBuffer(1, rate, rate), nd = noise.getChannelData(0);
+  for(var j=0;j<rate;j++) nd[j] = Math.random()*2-1;
+  for(var st=0; st<steps; st++) playBgmStep(ctx, ctx.destination, noise, track, st, times[st]);
+  var p = new Promise(function(res, rej){
+    ctx.oncomplete = function(e){ res(e.renderedBuffer); };
+    var r = ctx.startRendering();
+    if(r && r.then) r.then(res, rej);
+  }).then(function(full){
+    // Fold the notes ringing past the end back onto the start, so the loop seam is seamless.
+    var L = Math.round(loopSec*rate);
+    var loop = audioCtx.createBuffer(1, L, rate);
+    var src = full.getChannelData(0), dst = loop.getChannelData(0);
+    dst.set(src.subarray(0, L));
+    for(var i=L; i<src.length && i-L<L; i++) dst[i-L] += src[i];
+    return loop;
+  });
+  p.catch(function(){ delete bgmBuffers[idx]; });
+  bgmBuffers[idx] = p;
+  bgmBufferOrder.push(idx);
+  // Keep at most three tracks in memory.
+  while(bgmBufferOrder.length > 3){
+    var old = bgmBufferOrder.shift();
+    if(old!==bgmTrackIndex) delete bgmBuffers[old]; else bgmBufferOrder.push(old);
+  }
+  return p;
+}
+
+function playBgmBuffer(){
+  stopBgmSource();
+  var gen = bgmGen, idx = bgmTrackIndex;
+  renderBgm(idx).then(function(buf){
+    if(gen!==bgmGen || !bgmPlaying || !bgmOn || idx!==bgmTrackIndex) return;
+    var src = audioCtx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    src.connect(bgmOutput());
+    src.start();
+    bgmSource = src;
+    // Next likely track, rendered while this one plays.
+    var next = idx===MENU_BGM ? gameBgmIndex : MENU_BGM;
+    setTimeout(function(){ if(bgmPlaying) renderBgm(next).catch(function(){}); }, 1500);
+  }).catch(function(e){ console.error("BGM 준비 실패", e); });
+}
+function stopBgmSource(){
+  bgmGen++;
+  if(bgmSource){
+    var s = bgmSource;
+    bgmSource = null;
+    try{ s.stop(audioCtx.currentTime + 0.3); }catch(e){}
+  }
+  releaseBgmBus();
 }
 
 function startBgm(){
   if(bgmPlaying || !audioCtx) return;
   bgmPlaying = true;
-  bgmStep = 0;
-  bgmNextTime = 0;
-  scheduleBgmStep();
+  if(bgmOn) playBgmBuffer();
 }
 
 function stopBgm(){
   bgmPlaying = false;
-  if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer = null; }
-  releaseBgmBus();
+  stopBgmSource();
+}
+// The BGM switch in settings.
+function syncBgmOn(){
+  if(!bgmOn){ stopBgmSource(); return; }
+  unlockAudio();
+  if(bgmPlaying) playBgmBuffer(); else startBgm();
 }
 
 function duckBgm(duration){
@@ -2568,13 +2630,7 @@ function duckBgm(duration){
 function setBgmTrack(idx){
   if(idx===bgmTrackIndex) return;
   bgmTrackIndex = idx;
-  if(bgmPlaying){
-    if(bgmTimer){ clearTimeout(bgmTimer); bgmTimer=null; }
-    releaseBgmBus();
-    bgmStep = 0;
-    bgmNextTime = 0;
-    scheduleBgmStep();
-  }
+  if(bgmPlaying && bgmOn) playBgmBuffer();
 }
 
 // The daily challenge deals everyone the same game: while it runs, shuffles draw from a
@@ -6048,6 +6104,7 @@ function openSettingsModal(){
     bgmOn = !bgmOn;
     saveSoundPrefs();
     bgmBtn.classList.toggle("primary", bgmOn);
+    syncBgmOn();
   });
   avBtns.appendChild(sfxBtn);
   avBtns.appendChild(bgmBtn);
