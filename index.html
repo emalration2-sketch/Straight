@@ -400,6 +400,9 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .opp-progress.ready{padding:1px 6px;border-radius:6px;background:var(--prog-color);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);animation:readyPulse 1.2s ease-in-out infinite;}
 @keyframes readyPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
 @media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
+.quick-box{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%;}
+.quick-count{display:flex;align-items:center;gap:10px;font-size:15px;color:var(--muted);}
+.quick-count .count-btn{width:46px;height:46px;font-size:18px;}
 .btn.quick-match-btn{padding:20px 24px;font-size:20px;font-weight:900;margin-top:6px;background:linear-gradient(135deg,#ff5c8a,#ffb03a);color:#fff;box-shadow:0 8px 20px rgba(255,92,138,.35);}
 .lobby-invite-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
 .lobby-invite-row.hidden{display:none;}
@@ -949,7 +952,10 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
       <button class="btn primary big" id="online-create-btn">➕ 방 만들기</button>
       <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
-      <button class="btn primary big quick-match-btn" id="online-quick-btn">⚡ 빠른 매칭</button>
+      <div class="quick-box">
+        <button class="btn primary big quick-match-btn" id="online-quick-btn">⚡ 빠른 매칭</button>
+        <div class="quick-count"><span>인원</span><div class="count-row" id="quick-count-row"></div></div>
+      </div>
     </div>
     <button class="btn" id="online-back-btn">← 뒤로</button>
   </div>
@@ -3786,6 +3792,22 @@ var createCountRow = $("create-count-row");
   createCountRow.appendChild(b);
 });
 
+// ⚡ 빠른 매칭 player count (remembered); rooms only match others with the same count.
+var quickCount = 4;
+try{ var qc = Number(localStorage.getItem("straightQuickCount")); if([2,3,4].indexOf(qc)!==-1) quickCount = qc; }catch(e){}
+var quickCountRow = $("quick-count-row");
+[2,3,4].forEach(function(n){
+  var b = el("button","count-btn"+(n===quickCount?" selected":""),n);
+  b.addEventListener("click", function(){
+    sfxSelect();
+    Array.prototype.forEach.call(quickCountRow.children, function(c){ c.classList.remove("selected"); });
+    b.classList.add("selected");
+    quickCount = n;
+    try{ localStorage.setItem("straightQuickCount", String(n)); }catch(e){}
+  });
+  quickCountRow.appendChild(b);
+});
+
 $("online-create-btn").addEventListener("click", function(){
   sfxSelect();
   switchScreen("room-create");
@@ -3874,7 +3896,7 @@ $("online-quick-btn").addEventListener("click", function(){
   var b = $("online-quick-btn");
   b.disabled = true;
   b.textContent = "⚡ 찾는 중...";
-  quickMatch(function(err){
+  quickMatch(quickCount, function(err){
     b.disabled = false;
     b.textContent = "⚡ 빠른 매칭";
     if(err){ alert("빠른 매칭 실패: "+err); return; }
@@ -4022,10 +4044,10 @@ function updateLobbyAutoStart(data, isHost, allPicked){
   }
 }
 // ⚡ 빠른 매칭: join an open quick-match room that is still alive, or open a new one.
-function quickMatch(cb){
+function quickMatch(count, cb){
   ensureFirebase().then(function(){
     var F = fbFs;
-    var q = F.query(F.collection(fbDb,"rooms"), F.where("public","==",true), F.where("phase","==","lobby"), F.limit(20));
+    var q = F.query(F.collection(fbDb,"rooms"), F.where("public","==",true), F.where("phase","==","lobby"), F.where("maxPlayers","==",count), F.limit(20));
     return F.getDocs(q).then(function(snap){
       var now = Date.now(), pick = null;
       snap.forEach(function(d){
@@ -4036,11 +4058,11 @@ function quickMatch(cb){
         if(!pick && open && fresh && !mineAlready) pick = d.id;
       });
       if(pick) joinRoom(pick, cb);
-      else createRoom(4, cb, { public:true });
+      else createRoom(count, cb, { public:true });
     }, function(e){
       // Listing open rooms isn't allowed yet (rules not published) — just open one.
       console.warn("빠른 매칭 조회 실패, 새 방을 엽니다", e);
-      createRoom(4, cb, { public:true });
+      createRoom(count, cb, { public:true });
     });
   }).catch(function(e){ cb("네트워크 연결에 실패했습니다: "+(e&&e.message?e.message:e)); });
 }
