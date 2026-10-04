@@ -259,17 +259,20 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .order-list{display:flex;flex-direction:column;gap:6px;min-width:240px;}
 .daily-rules{word-break:keep-all;max-width:340px;text-align:center;line-height:1.5;margin:4px 0;}
 .daily-status{font-size:14.5px;font-weight:700;color:var(--text);min-height:1.4em;text-align:center;}
-.daily-board{min-width:280px;max-width:360px;width:100%;max-height:38vh;overflow-y:auto;}
+.daily-board{width:min(340px,92vw);box-sizing:border-box;scrollbar-width:thin;max-height:46vh;overflow-y:auto;}
 .daily-row{display:flex;align-items:center;gap:8px;}
 .daily-row .daily-rank{width:28px;text-align:center;font-weight:800;}
 .daily-row .daily-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
 .daily-row .daily-val{font-weight:800;color:var(--accent);white-space:nowrap;}
-.daily-row .daily-val{display:flex;flex-direction:column;align-items:flex-end;line-height:1.15;}
-.daily-row .daily-val small{font-size:12.5px;font-weight:700;color:var(--text);opacity:.8;}
-.daily-tie-note{font-size:12.5px;color:var(--muted);margin:-4px 0 2px;}
+.daily-row .daily-val{display:flex;align-items:baseline;gap:6px;}
+.daily-row .daily-time{font-size:12.5px;font-weight:700;color:var(--text);opacity:.75;}
+.daily-gap{justify-content:center;color:var(--muted);padding:0;min-height:0;}
+.daily-tie{font-size:13px;opacity:.75;}
+.daily-season{font-size:14px;font-weight:700;color:var(--text);margin:-2px 0 2px;}
+.daily-season small{font-weight:400;color:var(--muted);}
 .daily-reward{display:inline-flex;align-items:center;gap:2px;font-size:12.5px;font-weight:800;color:#EF9F27;white-space:nowrap;}
 .coin-ico{width:15px;height:15px;flex-shrink:0;}
-.daily-row.me{outline:2px solid var(--accent);}
+.daily-row.me{box-shadow:inset 0 0 0 2px var(--accent);}
 .season-medal{margin-right:2px;}
 .lobby-slot{display:flex;align-items:center;gap:10px;min-height:46px;}
 .lobby-slot.empty{opacity:.55;border:1.5px dashed rgba(var(--line-rgb),.25);background:transparent;}
@@ -759,6 +762,10 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .charge-list{display:flex;flex-direction:column;gap:7px;margin-top:8px;}
 .charge-pack{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(var(--line-rgb),.18);background:var(--panel2);color:var(--text);font:inherit;cursor:pointer;text-align:left;}
 .charge-pack:active{transform:scale(.98);}
+.charge-list{width:fit-content;margin:8px auto 0;}
+.charge-pack{grid-template-columns:5.6em 3.6em 5.6em;gap:8px;font-size:16px;padding:10px 14px;}
+.charge-pack .charge-bonus{justify-self:start;}
+.charge-pack .charge-won{text-align:right;}
 .charge-coins{display:inline-flex;align-items:center;gap:5px;font-size:16px;}
 .charge-coins{font-size:17px;}
 .charge-coins .coin-ico{width:28px;height:28px;}
@@ -979,14 +986,14 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 
   <div class="screen hidden" id="screen-daily">
     <h1 style="font-size:20px;margin-bottom:0;">🏆 챌린지</h1>
-    <p class="sub daily-rules"><b>가장 빠른 턴에 스트레이트 완성하기!</b><br>하루 한 번 도전 가능, 매달 1~3위에 보상</p>
+    <p class="sub daily-rules"><b>가장 빠른 턴에 스트레이트 완성하기!</b><br>하루 한 번 도전 가능, 매달 1~3위에 보상<br><span class="daily-tie">턴 수가 같으면 시간이 짧은 사람이 앞서요</span></p>
     <div class="daily-status" id="daily-status"></div>
     <button class="btn primary big" id="daily-start-btn">도전하기</button>
     <div class="coll-tabs" id="daily-tabs">
       <button class="btn coll-tab primary" data-board="season">이번 시즌</button>
       <button class="btn coll-tab" data-board="last">지난 시즌</button>
     </div>
-    <p class="daily-tie-note">턴 수가 같으면 도전 시간이 짧은 사람이 앞서요</p>
+    <p class="daily-season" id="daily-season"></p>
     <div class="order-list daily-board" id="daily-board"></div>
     <button class="btn" id="daily-back-btn">← 뒤로</button>
   </div>
@@ -4359,12 +4366,20 @@ function seasonBoardRows(season){
     return rows;
   });
 }
+// "10월 시즌 · 종료까지 27일" for this season, "9월 시즌 최종 순위" for the last one.
+function dailySeasonLabel(tab){
+  if(tab!=="season") return (+prevSeasonKey().slice(5))+"월 시즌 <small>최종 순위</small>";
+  var d = kstDate(), last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth()+1, 0)).getUTCDate();
+  var left = last - d.getUTCDate();
+  return (d.getUTCMonth()+1)+"월 시즌 <small>· "+(left ? "종료까지 "+left+"일" : "오늘 밤 12시 종료")+"</small>";
+}
 function renderDailyBoard(){
   var board = $("daily-board");
   board.innerHTML = "";
   Array.prototype.forEach.call($("daily-tabs").children, function(b){
     b.classList.toggle("primary", b.getAttribute("data-board")===dailyBoardTab);
   });
+  $("daily-season").innerHTML = dailySeasonLabel(dailyBoardTab);
   if(!account || !fbDb) return;
   var tab = dailyBoardTab;
   board.appendChild(el("div","order-row","불러오는 중..."));
@@ -4375,14 +4390,19 @@ function renderDailyBoard(){
       board.appendChild(el("div","order-row", tab==="last" ? "지난 시즌 기록이 없어요." : "아직 기록이 없어요. 첫 번째가 되어 보세요!"));
       return;
     }
-    rows.slice(0, 10).forEach(function(r, i){
+    var mine = rows.findIndex(function(r){ return r.id===account.uid; });
+    var shown = rows.slice(0, 10).map(function(r, i){ return i; });
+    if(mine>=10){ shown.push(-1, mine); }
+    shown.forEach(function(i){
+      if(i<0){ board.appendChild(el("div","order-row daily-gap","⋯")); return; }
+      var r = rows[i];
       var ch = presetByName("avatar", r.data.avatar);
       var rank = i<3 ? ["🥇","🥈","🥉"][i] : String(i+1);
       var reward = i<3 ? ("<span class=\"daily-reward\">"+COIN_SVG+CHALLENGE_REWARDS[i]+"</span>") : "";
       var row = el("div","order-row daily-row"+(r.id===account.uid ? " me" : ""));
       row.innerHTML = "<span class=\"daily-rank\">"+rank+"</span><span>"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
         "<span class=\"daily-name\">"+cleanText(r.data.name, 16)+"</span>"+reward+
-        "<span class=\"daily-val\">"+r.data.bestTurns+"턴<small>⏱ "+(r.data.bestMs ? fmtPlayTime(r.data.bestMs) : "-")+"</small></span>";
+        "<span class=\"daily-val\">"+r.data.bestTurns+"턴"+(r.data.bestMs ? "<span class=\"daily-time\">⏱ "+fmtPlayTime(r.data.bestMs)+"</span>" : "")+"</span>";
       board.appendChild(row);
     });
   }).catch(function(e){
