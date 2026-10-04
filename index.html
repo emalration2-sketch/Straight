@@ -400,6 +400,8 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .opp-progress.ready{padding:1px 6px;border-radius:6px;background:var(--prog-color);color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);animation:readyPulse 1.2s ease-in-out infinite;}
 @keyframes readyPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.08);}}
 @media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
+.online-choice-list{display:flex;flex-direction:column;align-items:stretch;gap:12px;width:min(300px,84vw);}
+.online-choice-list .btn{width:100%;box-sizing:border-box;margin:0;}
 .btn.quick-match-btn{padding:20px 24px;font-size:20px;font-weight:900;margin-top:6px;background:linear-gradient(135deg,#ff5c8a,#ffb03a);color:#fff;box-shadow:0 8px 20px rgba(255,92,138,.35);}
 .lobby-invite-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
 .lobby-invite-row.hidden{display:none;}
@@ -946,7 +948,7 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 
   <div class="screen hidden" id="screen-online-choice">
     <h1 style="font-size:20px;">온라인 멀티플레이</h1>
-    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;max-width:480px;">
+    <div class="online-choice-list">
       <button class="btn primary big" id="online-create-btn">➕ 방 만들기</button>
       <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
       <button class="btn primary big quick-match-btn" id="online-quick-btn">⚡ 빠른 매칭</button>
@@ -1149,7 +1151,9 @@ function ensureFirebase(){
       if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
       acMod.initializeAppCheck(fbApp, { provider: new acMod.ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
     }
-    fbDb = fsMod.getFirestore(fbApp);
+    // Long polling: some mobile networks buffer Firestore's streamed connection, so other
+    // players' moves arrived ~25 s late. Polling delivers each change as it happens.
+    fbDb = fsMod.initializeFirestore(fbApp, { experimentalForceLongPolling: true });
     fbFs = fsMod;
     fbDoc = fsMod.doc;
     fbSetDoc = fsMod.setDoc;
@@ -3075,7 +3079,9 @@ function handleRoomSnapshot(data){
 function subscribeRoom(code){
   if(roomUnsub){ roomUnsub(); roomUnsub=null; }
   roomUnsub = fbOnSnapshot(fbDoc(fbDb,"rooms",code), function(snap){
+    lastRoomSnapAt = Date.now();
     if(!snap.exists()) return;
+    lastRoomData = snap.data();
     handleRoomSnapshot(snap.data());
   }, function(err){
     console.error("room subscribe error", err);
@@ -3085,7 +3091,16 @@ function subscribeRoom(code){
 // onSnapshot already streams every change; this is only a catch-up after the tab was
 // backgrounded. Returning to the tab fires both "visibilitychange" and "focus", so
 // throttle to avoid paying for duplicate full-document reads.
-var lastResyncAt = 0;
+var lastResyncAt = 0, lastRoomSnapAt = 0, lastRoomData = null;
+// Safety net: while someone else is playing, read the room again if nothing has arrived for 8 s.
+setInterval(function(){
+  if(!isMultiplayer() || document.hidden || $("screen-game").classList.contains("hidden")) return;
+  if(state.gameOver || state.currentTurnPos==null) return;
+  if(currentPlayerIdx()===state.myIndex) return;
+  if(Date.now() - lastRoomSnapAt < 8000) return;
+  lastRoomSnapAt = Date.now();
+  forceResync();
+}, 2000);
 function forceResync(){
   if(!isMultiplayer() || !state.mpRoomCode || !fbDb) return;
   var now = Date.now();
@@ -3621,6 +3636,7 @@ function dealOnlineGame(lobbyPlayers, maxPlayers){
 function leaveRoom(){
   if(roomUnsub){ roomUnsub(); roomUnsub=null; }
   state.mpRoomCode = null;
+  lastRoomData = null;
 }
 
 /* ---------------- avatar / count / start flow ---------------- */
@@ -3981,6 +3997,7 @@ function leaveLobby(){
     var rest = players.filter(function(x){ return x.clientId!==myClientId; });
     var upd = { players: rest };
     if(data.hostClientId===myClientId && rest.length) upd.hostClientId = rest[0].clientId;
+    if(!rest.length) upd.public = false;   // an empty room must not be matched any more
     return upd;
   });
   stopLobbyTimers();
@@ -3999,6 +4016,36 @@ function stopLobbyTimers(){
 // host starts with AI in the empty seats. The host also keeps the room fresh so it stays
 // findable.
 var QUICK_START_SECONDS = 30;
+var quickMergeBusy = false;
+setInterval(function(){
+  var d = lastRoomData;
+  if(quickMergeBusy || !d || !state.mpRoomCode || !fbDb || $("screen-lobby").classList.contains("hidden")) return;
+  if(!d.public || d.phase!=="lobby" || d.hostClientId!==myClientId || (d.players||[]).length!==1) return;
+  var F = fbFs, mine = state.mpRoomCode, myAt = Number(d.createdAt)||0;
+  quickMergeBusy = true;
+  var q = F.query(F.collection(fbDb,"rooms"), F.where("public","==",true), F.where("phase","==","lobby"), F.where("maxPlayers","==",d.maxPlayers), F.limit(20));
+  F.getDocs(q).then(function(snap){
+    var now = Date.now(), best = null;
+    snap.forEach(function(doc){
+      var r = doc.data();
+      if(doc.id===mine) return;
+      var n = (r.players||[]).length;
+      if(!n || n >= (r.maxPlayers||4) || now - (Number(r.updatedAt)||0) > 60000) return;
+      var at = Number(r.createdAt)||0;
+      var older = at < myAt || (at===myAt && doc.id < mine);
+      if(older && (!best || at < best.at)) best = { id:doc.id, at:at };
+    });
+    if(!best || state.mpRoomCode!==mine) return;
+    // The older room wins: leave ours (it closes, being empty) and join theirs.
+    return leaveLobby().then(function(){
+      joinRoom(best.id, function(err){
+        if(err){ alert("빠른 매칭 실패: "+err); switchScreen("online-choice"); return; }
+        switchScreen("lobby");
+      });
+    });
+  }).catch(function(e){ console.warn("빠른 매칭 합치기 실패", e); })
+    .then(function(){ quickMergeBusy = false; });
+}, 3000);
 function updateLobbyAutoStart(data, isHost, allPicked){
   var msg = $("lobby-auto-msg");
   if(!data.public){ stopLobbyTimers(); return; }
