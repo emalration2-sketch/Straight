@@ -132,7 +132,7 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .name-tag.border-sprout{border-color:#7ed957;background:linear-gradient(90deg,rgba(126,217,87,.28),rgba(126,217,87,.05)),var(--panel2);}
 .name-tag.border-candy{border-color:transparent;background:linear-gradient(90deg,rgba(255,122,168,.24),rgba(255,122,168,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(45deg,#ff7aa8 0 5px,#ffffff 5px 10px) border-box;}
 .name-tag.border-neon{border-color:#39f3ff;background:linear-gradient(90deg,rgba(255,61,230,.24),rgba(57,243,255,.08)),var(--panel2);box-shadow:0 0 6px rgba(57,243,255,.8),0 0 12px rgba(255,61,230,.45);}
-.name-tag.border-chrome{border-color:transparent;background:linear-gradient(90deg,rgba(207,224,255,.22),rgba(207,224,255,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#ffffff,#55657a 16%,#eef4ff 28%,#151b24 46%,#d6e6ff 60%,#5d6b7e 78%,#ffffff) border-box;background-size:auto,auto,260% 100%;animation:tagSheen 1.8s ease-in-out infinite alternate;box-shadow:0 0 6px rgba(190,215,255,.35);}
+.name-tag.border-chrome{border-color:transparent;background:linear-gradient(90deg,rgba(207,224,255,.22),rgba(207,224,255,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#ffffff,#55657a 16%,#eef4ff 28%,#151b24 46%,#d6e6ff 60%,#5d6b7e 78%,#ffffff) border-box;background-size:auto,auto,260% 100%;animation:tagSheen 1.8s steps(22) infinite alternate;box-shadow:0 0 6px rgba(190,215,255,.35);}
 .name-tag.border-blackgold{border-color:#e9b949;background:linear-gradient(90deg,rgba(0,0,0,.6),rgba(0,0,0,.28)),var(--panel2);box-shadow:inset 0 0 0 1px #111;}
 .name-tag.border-blackgold .name-tag-text{color:#f6e7b8;}
 /* Border motifs: one small emoji/glyph perched on the tag's top-right rim. */
@@ -149,7 +149,7 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .name-tag.border-chrome::before{content:"✧";color:#d6e6ff;font-size:13px;text-shadow:0 0 4px #9fc3ff;}
 .name-tag.border-blackgold::before{content:"♛";color:#e9b949;font-size:12px;}
 /* Motion: flame glows, neon flickers, aurora drifts. */
-.name-tag.border-flame{animation:flameGlow 1.6s ease-in-out infinite;}
+.name-tag.border-flame{}
 .name-tag.border-neon{animation:neonFlicker 3s linear infinite;}
 @keyframes flameGlow{0%,100%{box-shadow:0 0 3px rgba(255,120,40,.45);}50%{box-shadow:0 0 9px rgba(255,140,40,.9);}}
 @keyframes neonFlicker{0%,18%,22%,62%,64%,100%{box-shadow:0 0 6px rgba(57,243,255,.8),0 0 12px rgba(255,61,230,.45);}20%,63%{box-shadow:none;}}
@@ -166,49 +166,49 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 @keyframes tagGlow{0%,100%{box-shadow:0 0 2px var(--tag-glow,transparent);}50%{box-shadow:0 0 10px var(--tag-glow,transparent),0 0 3px var(--tag-glow,transparent);}}
 @keyframes decoBob{0%,100%{transform:translateY(0);}50%{transform:translateY(-2.5px);}}
 @keyframes decoSway{0%,100%{transform:rotate(-12deg);}50%{transform:rotate(12deg);}}
-@keyframes decoGlow{0%,100%{filter:drop-shadow(0 0 1px var(--deco-glow,#fff));}50%{filter:drop-shadow(0 0 5px var(--deco-glow,#fff));}}
+@keyframes decoGlow{0%,100%{transform:scale(1);opacity:.8;}50%{transform:scale(1.14);opacity:1;}}
 @keyframes tagSweep{0%{background-position:130% 0;}50%,100%{background-position:-30% 0;}}
 @keyframes candyRoll{from{background-position:0 0,0 0,0 0;}to{background-position:0 0,0 0,28.28px 0;}}
-.name-tag.border-sprout{--tag-glow:rgba(126,217,87,.8);animation:tagGlow 2.8s ease-in-out infinite;}
+.name-tag.border-sprout{--tag-glow:rgba(126,217,87,.8);}
 .name-tag.border-sprout::before{transform-origin:50% 100%;animation:decoSway 2.2s ease-in-out infinite;}
-.name-tag.border-flame{border-color:transparent;background:linear-gradient(90deg,rgba(216,90,48,.34),rgba(216,90,48,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ff3d1f,#ffb03a,#ff6a2a,#ffd23a,#ff3d1f) border-box;background-size:auto,auto,300% 100%;animation:tagSheen 1.1s linear infinite alternate,flameGlow 1.6s ease-in-out infinite;}
-.name-tag.border-legend{--tag-glow:rgba(255,214,110,.75);animation:tagGlow 3s ease-in-out infinite;}
+.name-tag.border-flame{border-color:transparent;background:linear-gradient(90deg,rgba(216,90,48,.34),rgba(216,90,48,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ff3d1f,#ffb03a,#ff6a2a,#ffd23a,#ff3d1f) border-box;background-size:auto,auto,300% 100%;animation:tagSheen 1.1s steps(13) infinite alternate;}
+.name-tag.border-legend{--tag-glow:rgba(255,214,110,.75);}
 .name-tag.border-chrome::before{animation:decoTwinkle 1.6s ease-in-out infinite;}
 .name-tag.border-chrome::after,.name-tag.border-blackgold::after,.name-tag.border-dragon::after,.name-tag.border-trophy::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.4) 50%,transparent 62%);background-size:260% 100%;animation:tagSweep 3s ease-in-out infinite;}
-.name-tag.border-blackgold{--tag-glow:rgba(233,185,73,.7);animation:tagGlow 3s ease-in-out infinite;}
+.name-tag.border-blackgold{--tag-glow:rgba(233,185,73,.7);}
 .name-tag.border-blackgold::after{background-image:linear-gradient(105deg,transparent 38%,rgba(255,215,120,.5) 50%,transparent 62%);animation-duration:3.6s;}
 .name-tag.border-blackgold::before{animation:decoBob 3s ease-in-out infinite;}
-.name-tag.border-stars{background:radial-gradient(1px 1px at 22% 30%,#fff,transparent),radial-gradient(1px 1px at 56% 72%,#fff,transparent),radial-gradient(1.4px 1.4px at 84% 34%,#ffe66d,transparent),linear-gradient(90deg,rgba(255,230,109,.2),rgba(40,44,90,.55)),var(--panel2);--tag-glow:rgba(255,230,109,.7);animation:tagGlow 2.2s ease-in-out infinite;}
-.name-tag.border-heart{--tag-glow:rgba(255,92,138,.9);animation:tagGlow 1.4s ease-in-out infinite;}
+.name-tag.border-stars{background:radial-gradient(1px 1px at 22% 30%,#fff,transparent),radial-gradient(1px 1px at 56% 72%,#fff,transparent),radial-gradient(1.4px 1.4px at 84% 34%,#ffe66d,transparent),linear-gradient(90deg,rgba(255,230,109,.2),rgba(40,44,90,.55)),var(--panel2);--tag-glow:rgba(255,230,109,.7);}
+.name-tag.border-heart{--tag-glow:rgba(255,92,138,.9);}
 .name-tag.border-neon::before{content:"★";color:#ff7af0;font-size:12px;filter:none;text-shadow:0 0 3px #ff3de6,0 0 7px #ff3de6,0 0 10px #39f3ff;animation:decoTwinkle 1.6s steps(2) infinite;}
-.name-tag.border-candy{background-size:auto,auto,auto;animation:candyRoll 1.2s linear infinite;}
+.name-tag.border-candy{background-size:auto,auto,auto;animation:candyRoll 1.2s steps(14) infinite;}
 .name-tag.border-candy::before{animation:decoSway 1.8s ease-in-out infinite;}
-.name-tag.border-trophy{--tag-glow:rgba(246,168,60,.8);animation:tagGlow 2.6s ease-in-out infinite;}
+.name-tag.border-trophy{--tag-glow:rgba(246,168,60,.8);}
 .name-tag.border-trophy::before{animation:decoBob 2s ease-in-out infinite;}
-.name-tag.border-mint{--tag-glow:rgba(51,230,192,.75);animation:tagGlow 2.6s ease-in-out infinite;}
+.name-tag.border-mint{--tag-glow:rgba(51,230,192,.75);}
 .name-tag.border-mint::before{transform-origin:50% 100%;animation:decoSway 2.6s ease-in-out infinite;}
 /* 🦉 달밤: a night sky in the pill, the moon rocking on the rim. */
-.name-tag.border-owlmoon{border-color:#9fb8ff;background:radial-gradient(1px 1px at 18% 30%,#fff,transparent),radial-gradient(1px 1px at 48% 75%,#dfe8ff,transparent),radial-gradient(1px 1px at 78% 28%,#fff,transparent),linear-gradient(90deg,rgba(40,52,120,.8),rgba(20,24,60,.6)),var(--panel2);--tag-glow:rgba(159,184,255,.75);animation:tagGlow 3.2s ease-in-out infinite;}
+.name-tag.border-owlmoon{border-color:#9fb8ff;background:radial-gradient(1px 1px at 18% 30%,#fff,transparent),radial-gradient(1px 1px at 48% 75%,#dfe8ff,transparent),radial-gradient(1px 1px at 78% 28%,#fff,transparent),linear-gradient(90deg,rgba(40,52,120,.8),rgba(20,24,60,.6)),var(--panel2);--tag-glow:rgba(159,184,255,.75);}
 .name-tag.border-owlmoon .name-tag-text{color:#eef2ff;}
 .name-tag.border-owlmoon::before{content:"🌙";transform-origin:50% 100%;animation:decoSway 3.2s ease-in-out infinite;}
 /* 🦁 사자 갈기: a striped golden mane rim that ripples. */
-.name-tag.border-mane{border-color:transparent;background:linear-gradient(90deg,rgba(246,168,60,.32),rgba(246,168,60,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(70deg,#ffd76a 0 3px,#e0861f 3px 6px,#a8541a 6px 8px) border-box;background-size:auto,auto,200% 100%;--tag-glow:rgba(255,170,60,.8);animation:tagSheen 2.4s ease-in-out infinite alternate,tagGlow 2.4s ease-in-out infinite;}
+.name-tag.border-mane{border-color:transparent;background:linear-gradient(90deg,rgba(246,168,60,.32),rgba(246,168,60,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(70deg,#ffd76a 0 3px,#e0861f 3px 6px,#a8541a 6px 8px) border-box;background-size:auto,auto,200% 100%;--tag-glow:rgba(255,170,60,.8);animation:tagSheen 2.4s steps(29) infinite alternate;}
 .name-tag.border-mane::before{content:"♌";color:#ffd76a;font-size:12px;filter:none;text-shadow:0 0 4px rgba(255,170,60,.9);animation:decoBob 2.4s ease-in-out infinite;}
 /* 🐈‍⬛ 수정구: a shimmering crystal rim and a glowing ball. */
-.name-tag.border-crystal{border-color:transparent;background:linear-gradient(90deg,rgba(150,110,255,.3),rgba(80,220,230,.12)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#b48cff,#6ee7f0,#ff9ad5,#b48cff) border-box;background-size:auto,auto,300% 100%;box-shadow:0 0 8px rgba(180,140,255,.55);animation:tagSheen 2.6s linear infinite alternate;}
-.name-tag.border-crystal::before{content:"🔮";--deco-glow:#c9a8ff;animation:decoGlow 2s ease-in-out infinite;}
+.name-tag.border-crystal{border-color:transparent;background:linear-gradient(90deg,rgba(150,110,255,.3),rgba(80,220,230,.12)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#b48cff,#6ee7f0,#ff9ad5,#b48cff) border-box;background-size:auto,auto,300% 100%;box-shadow:0 0 8px rgba(180,140,255,.55);animation:tagSheen 2.6s steps(31) infinite alternate;}
+.name-tag.border-crystal::before{content:"🔮";--deco-glow:#c9a8ff;filter:drop-shadow(0 0 4px #c9a8ff);animation:decoGlow 2s ease-in-out infinite;}
 /* 🐉 용비늘: green scales, an electric glint, a ⚡ for 볼트 드라코. */
-.name-tag.border-dragon{border-color:transparent;background:linear-gradient(90deg,rgba(31,174,106,.34),rgba(31,174,106,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(135deg,#7ff0b8 0 2px,#1fae6a 2px 5px,#0b6b3f 5px 7px) border-box;--tag-glow:rgba(94,224,160,.75);animation:tagGlow 2s ease-in-out infinite;}
+.name-tag.border-dragon{border-color:transparent;background:linear-gradient(90deg,rgba(31,174,106,.34),rgba(31,174,106,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(135deg,#7ff0b8 0 2px,#1fae6a 2px 5px,#0b6b3f 5px 7px) border-box;--tag-glow:rgba(94,224,160,.75);}
 .name-tag.border-dragon::after{background-image:linear-gradient(105deg,transparent 40%,rgba(255,240,120,.55) 50%,transparent 60%);animation-duration:2.4s;}
 .name-tag.border-dragon::before{content:"⚡";animation:decoTwinkle 1.2s steps(2) infinite;}
 /* 🦊 여우불: a ghost-fire rim flowing orange → violet → blue. */
-.name-tag.border-foxfire{border-color:transparent;background:linear-gradient(90deg,rgba(255,140,60,.26),rgba(120,90,255,.16)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ff8a3c,#ffd06a,#7f6bff,#3cc8ff,#ff8a3c) border-box;background-size:auto,auto,300% 100%;box-shadow:0 0 8px rgba(127,107,255,.55);animation:tagSheen 1.6s ease-in-out infinite alternate;}
+.name-tag.border-foxfire{border-color:transparent;background:linear-gradient(90deg,rgba(255,140,60,.26),rgba(120,90,255,.16)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ff8a3c,#ffd06a,#7f6bff,#3cc8ff,#ff8a3c) border-box;background-size:auto,auto,300% 100%;box-shadow:0 0 8px rgba(127,107,255,.55);animation:tagSheen 1.6s steps(19) infinite alternate;}
 .name-tag.border-foxfire::before{content:"🔥";filter:hue-rotate(200deg) saturate(1.5) drop-shadow(0 0 3px rgba(80,160,255,.9));animation:decoFlicker 1s ease-in-out infinite;}
 /* 🐳 파도: a rolling blue rim and a splash. */
-.name-tag.border-wave{border-color:transparent;background:linear-gradient(90deg,rgba(60,160,255,.3),rgba(60,160,255,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#1e6fd9,#5cc8ff,#e0f7ff,#5cc8ff,#1e6fd9) border-box;background-size:auto,auto,250% 100%;animation:tagSheen 2s ease-in-out infinite alternate;box-shadow:0 0 7px rgba(92,200,255,.5);}
+.name-tag.border-wave{border-color:transparent;background:linear-gradient(90deg,rgba(60,160,255,.3),rgba(60,160,255,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#1e6fd9,#5cc8ff,#e0f7ff,#5cc8ff,#1e6fd9) border-box;background-size:auto,auto,250% 100%;animation:tagSheen 2s steps(24) infinite alternate;box-shadow:0 0 7px rgba(92,200,255,.5);}
 .name-tag.border-wave::before{content:"💦";animation:decoBob 1.6s ease-in-out infinite;}
 /* 🐢 등껍질: a woven shell rim, slow and steady. */
-.name-tag.border-shell{border-color:transparent;background:linear-gradient(90deg,rgba(120,170,60,.3),rgba(120,170,60,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(60deg,#9bd26a 0 3px,#5c8a2e 3px 4px) border-box;--tag-glow:rgba(155,210,106,.7);animation:tagGlow 3.6s ease-in-out infinite;}
+.name-tag.border-shell{border-color:transparent;background:linear-gradient(90deg,rgba(120,170,60,.3),rgba(120,170,60,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(60deg,#9bd26a 0 3px,#5c8a2e 3px 4px) border-box;--tag-glow:rgba(155,210,106,.7);}
 .name-tag.border-shell::before{content:"🌿";transform-origin:50% 100%;animation:decoSway 3.6s ease-in-out infinite;}
 .border-ring.border-owlmoon{border:3px solid #9fb8ff;box-shadow:0 0 5px rgba(159,184,255,.7);}
 .border-ring.border-mane{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#ffd76a 0 15deg,#e0861f 15deg 30deg) border-box;}
@@ -221,22 +221,54 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 /* These borders read better as a clean rim: no motif on top. */
 .name-tag.border-mane::before,.name-tag.border-blackgold::before,.name-tag.border-dragon::before,.name-tag.border-wave::before,.name-tag.border-shell::before,.name-tag.border-mint::before{content:none !important;}
 /* 볼트: a crackling yellow rim, quick flashes and a ⚡. */
-.name-tag.border-bolt{border-color:transparent;background:linear-gradient(90deg,rgba(255,220,40,.3),rgba(255,220,40,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ffe600,#fffbe0,#ffb300,#fff36b,#ffe600) border-box;background-size:auto,auto,220% 100%;box-shadow:0 0 8px rgba(255,214,0,.6);animation:tagSheen .7s linear infinite alternate;}
+.name-tag.border-bolt{border-color:transparent;background:linear-gradient(90deg,rgba(255,220,40,.3),rgba(255,220,40,.06)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(90deg,#ffe600,#fffbe0,#ffb300,#fff36b,#ffe600) border-box;background-size:auto,auto,220% 100%;box-shadow:0 0 8px rgba(255,214,0,.6);animation:tagSheen .7s steps(8) infinite alternate;}
 .name-tag.border-bolt::before{content:"⚡";animation:decoTwinkle .9s steps(2) infinite;}
 .name-tag.border-bolt::after{content:"";position:absolute;inset:-2px;border-radius:inherit;pointer-events:none;box-shadow:0 0 14px 3px rgba(255,240,120,.95);opacity:0;animation:boltFlash 2.6s linear infinite;}
 @keyframes boltFlash{0%,40%,46%,52%,100%{opacity:0;}42%,50%{opacity:1;}}
 /* 윈드: pale gusts streaming along the rim and through the tag. */
-.name-tag.border-wind{animation-duration:3.2s !important;border-color:transparent;background:repeating-linear-gradient(100deg,transparent 0 14px,rgba(255,255,255,.16) 14px 16px,transparent 16px 30px) padding-box,linear-gradient(90deg,rgba(170,240,220,.24),rgba(170,240,220,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(90deg,#d9fff3 0 10px,#7fe0c4 10px 22px,#ffffff 22px 26px,#7fe0c4 26px 40px) border-box;background-size:60px 100%,auto,auto,80px 100%;animation:windFlow 1.4s linear infinite;box-shadow:0 0 7px rgba(140,240,210,.45);}
+.name-tag.border-wind{animation-duration:3.2s !important;border-color:transparent;background:repeating-linear-gradient(100deg,transparent 0 14px,rgba(255,255,255,.16) 14px 16px,transparent 16px 30px) padding-box,linear-gradient(90deg,rgba(170,240,220,.24),rgba(170,240,220,.05)) padding-box,linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-linear-gradient(90deg,#d9fff3 0 10px,#7fe0c4 10px 22px,#ffffff 22px 26px,#7fe0c4 26px 40px) border-box;background-size:60px 100%,auto,auto,80px 100%;animation:windFlow 1.4s steps(38) infinite;box-shadow:0 0 7px rgba(140,240,210,.45);}
 .name-tag.border-wind::before{content:none;}
 @keyframes windFlow{from{background-position:0 0,0 0,0 0,0 0;}to{background-position:60px 0,0 0,0 0,80px 0;}}
 /* 파도 (stronger): a breaking wave rolls through the tag and the rim glows like water. */
-.name-tag.border-wave{--tag-glow:rgba(92,200,255,.7);animation:tagSheen 5s ease-in-out infinite alternate,tagGlow 4.5s ease-in-out infinite;}
-.name-tag.border-wave::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2012%27%3E%3Cpath%20d%3D%27M0%208%20Q5%202%2010%208%20T20%208%20T30%208%20T40%208%20V12%20H0%20Z%27%20fill%3D%27white%27%20fill-opacity%3D%27.28%27%2F%3E%3C%2Fsvg%3E") 0 100%/40px 60% repeat-x,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2012%27%3E%3Cpath%20d%3D%27M0%208%20Q5%202%2010%208%20T20%208%20T30%208%20T40%208%20V12%20H0%20Z%27%20fill%3D%27white%27%20fill-opacity%3D%27.28%27%2F%3E%3C%2Fsvg%3E") 20px 100%/40px 45% repeat-x;opacity:.9;animation:waveRoll 6s linear infinite;opacity:.7;}
+.name-tag.border-wave{--tag-glow:rgba(92,200,255,.7);animation:tagSheen 5s steps(60) infinite alternate;}
+.name-tag.border-wave::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2012%27%3E%3Cpath%20d%3D%27M0%208%20Q5%202%2010%208%20T20%208%20T30%208%20T40%208%20V12%20H0%20Z%27%20fill%3D%27white%27%20fill-opacity%3D%27.28%27%2F%3E%3C%2Fsvg%3E") 0 100%/40px 60% repeat-x,url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2012%27%3E%3Cpath%20d%3D%27M0%208%20Q5%202%2010%208%20T20%208%20T30%208%20T40%208%20V12%20H0%20Z%27%20fill%3D%27white%27%20fill-opacity%3D%27.28%27%2F%3E%3C%2Fsvg%3E") 20px 100%/40px 45% repeat-x;opacity:.9;animation:waveRoll 6s steps(72) infinite;opacity:.7;}
 @keyframes waveRoll{from{background-position:0 100%,20px 100%;}to{background-position:40px 100%,-20px 100%;}}
 .border-ring.border-bolt{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,conic-gradient(#ffe600,#fffbe0,#ffb300,#ffe600) border-box;box-shadow:0 0 6px rgba(255,214,0,.7);}
 .border-ring.border-wind{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,repeating-conic-gradient(#d9fff3 0 20deg,#7fe0c4 20deg 40deg) border-box;}
 @keyframes legendSweep{0%{background-position:130% 0;}45%,100%{background-position:-30% 0;}}
 @media (prefers-reduced-motion: reduce){.name-tag.border-legend::after{animation:none;opacity:0;}}
+/* Border motion without heat: glows pulse as an opacity layer (.tag-glow) and light streaks
+   slide as a transform layer (.tag-shine), so neither repaints; flowing rims tick at ~12fps.
+   Every name tag carries both layers (playerTagHTML). */
+.tag-glow,.tag-shine{position:absolute;inset:0;border-radius:inherit;pointer-events:none;}
+.tag-glow{box-shadow:0 0 10px var(--tag-glow,transparent),0 0 3px var(--tag-glow,transparent);opacity:0;}
+.tag-shine{overflow:hidden;z-index:1;}
+.tag-shine::before{content:"";position:absolute;inset:0;transform:translateX(-110%);}
+@keyframes glowPulse{0%,100%{opacity:.2;}50%{opacity:1;}}
+@keyframes shineSweep{0%{transform:translateX(-110%);}50%,100%{transform:translateX(110%);}}
+@keyframes shineSweepLong{0%{transform:translateX(-110%);}45%,100%{transform:translateX(110%);}}
+.name-tag.border-legend::after,.name-tag.border-chrome::after,.name-tag.border-blackgold::after,.name-tag.border-dragon::after,.name-tag.border-trophy::after{content:none !important;}
+.name-tag.border-chrome .tag-shine::before,.name-tag.border-trophy .tag-shine::before{background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);animation:shineSweep 3s ease-in-out infinite;}
+.name-tag.border-blackgold .tag-shine::before{background:linear-gradient(105deg,transparent 30%,rgba(255,215,120,.5) 50%,transparent 70%);animation:shineSweep 3.6s ease-in-out infinite;}
+.name-tag.border-dragon .tag-shine::before{background:linear-gradient(105deg,transparent 32%,rgba(255,240,120,.55) 50%,transparent 68%);animation:shineSweep 2.4s ease-in-out infinite;}
+.name-tag.border-legend .tag-shine::before{background:linear-gradient(105deg,transparent 30%,rgba(255,255,255,.4) 50%,transparent 70%);animation:shineSweepLong 3.4s ease-in-out infinite;}
+.name-tag.border-flame{--tag-glow:rgba(255,140,40,.9);}
+.name-tag.border-flame .tag-glow{animation:glowPulse 1.6s ease-in-out infinite;}
+.name-tag.border-sprout .tag-glow{animation:glowPulse 2.8s ease-in-out infinite;}
+.name-tag.border-flame .tag-glow{animation:glowPulse 1.6s ease-in-out infinite;}
+.name-tag.border-legend .tag-glow{animation:glowPulse 3s ease-in-out infinite;}
+.name-tag.border-blackgold .tag-glow{animation:glowPulse 3s ease-in-out infinite;}
+.name-tag.border-stars .tag-glow{animation:glowPulse 2.2s ease-in-out infinite;}
+.name-tag.border-heart .tag-glow{animation:glowPulse 1.4s ease-in-out infinite;}
+.name-tag.border-trophy .tag-glow{animation:glowPulse 2.6s ease-in-out infinite;}
+.name-tag.border-mint .tag-glow{animation:glowPulse 2.6s ease-in-out infinite;}
+.name-tag.border-owlmoon .tag-glow{animation:glowPulse 3.2s ease-in-out infinite;}
+.name-tag.border-mane .tag-glow{animation:glowPulse 2.4s ease-in-out infinite;}
+.name-tag.border-dragon .tag-glow{animation:glowPulse 2s ease-in-out infinite;}
+.name-tag.border-shell .tag-glow{animation:glowPulse 3.6s ease-in-out infinite;}
+.name-tag.border-wave .tag-glow{animation:glowPulse 4.5s ease-in-out infinite;}
+@media (prefers-reduced-motion: reduce){.tag-glow,.tag-shine::before{animation:none !important;}}
+
 .border-ring.border-legend{border:4px solid transparent;background:linear-gradient(var(--panel2),var(--panel2)) padding-box,linear-gradient(115deg,#fff3c4,#e9b949 28%,#a8761f 52%,#ffe08a 74%,#c8922e) border-box;}@media (prefers-reduced-motion: reduce){.name-tag{animation:none !important;}}
 
 /* count select */
@@ -422,9 +454,6 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 /* Performance (phones ran hot): on the game screen nothing may repaint every frame.
    Name tags hold their look but stop pulsing; theme layers move by transform/opacity only;
    the floor glow is static. The collection still shows the full effects. */
-#screen-game .name-tag,#screen-game .name-tag::after{animation:none !important;}
-#screen-game .name-tag::after{opacity:0;}
-#screen-game .name-tag.border-crystal::before{animation:none;}
 #screen-game[class*="board-skin-"] .floor-board{animation:none;}
 #screen-game.board-skin-gold::after{display:none;}
 #screen-game[class*="board-skin-"]::before,#screen-game[class*="board-skin-"]::after{will-change:opacity,transform;}
@@ -438,13 +467,13 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 /* Every border/pattern, including ones added later, is still in the game: the classes are
    matched by prefix so new items need no extra rule. Cards keep their state effects
    (selected, joker armed, winning glow). */
-#screen-game [class*="border-"],#screen-game [class*="border-"]::before,#screen-game [class*="border-"]::after,#screen-game .card[class*="pattern-"]:not(.joker-armed)::after{animation:none !important;}
+#screen-game .card[class*="pattern-"]:not(.joker-armed)::after{animation:none !important;}
 /* Low-power mode (set automatically when the device can't keep a smooth frame rate, see
    watchFrameRate): every decorative animation stops, everywhere. */
-.low-power [class*="border-"],.low-power [class*="border-"]::before,.low-power [class*="border-"]::after,.low-power [class*="board-skin-"]::before,.low-power [class*="board-skin-"]::after,.low-power [class*="board-skin-"] .floor-board,.low-power .coll-stage-floor,.low-power .start-fan .card,.low-power .title-main span{animation:none !important;}
+.low-power .tag-glow,.low-power .tag-shine::before,.low-power [class*="border-"],.low-power [class*="border-"]::before,.low-power [class*="border-"]::after,.low-power [class*="board-skin-"]::before,.low-power [class*="board-skin-"]::after,.low-power [class*="board-skin-"] .floor-board,.low-power .coll-stage-floor,.low-power .start-fan .card,.low-power .title-main span{animation:none !important;}
 /* Idle rest: ~10s after the last touch the decorative loops pause, so a phone left on a menu
    stops redrawing; the next touch starts them again (see idleRest). */
-html.fx-rest [class*="border-"],html.fx-rest [class*="border-"]::before,html.fx-rest [class*="border-"]::after,html.fx-rest .fx-sheen,html.fx-rest .fx-stars i,html.fx-rest .fx-bursts i,html.fx-rest .card[class*="pattern-"]::before,html.fx-rest .card[class*="pattern-"]::after,html.fx-rest [class*="board-skin-"]::before,html.fx-rest [class*="board-skin-"]::after,html.fx-rest [class*="board-skin-"] .floor-board,html.fx-rest .coll-stage-floor,html.fx-rest .title-main span{animation-play-state:paused !important;}
+html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest [class*="border-"],html.fx-rest [class*="border-"]::before,html.fx-rest [class*="border-"]::after,html.fx-rest .fx-sheen,html.fx-rest .fx-stars i,html.fx-rest .fx-bursts i,html.fx-rest .card[class*="pattern-"]::before,html.fx-rest .card[class*="pattern-"]::after,html.fx-rest [class*="board-skin-"]::before,html.fx-rest [class*="board-skin-"]::after,html.fx-rest [class*="board-skin-"] .floor-board,html.fx-rest .coll-stage-floor,html.fx-rest .title-main span{animation-play-state:paused !important;}
 @media (prefers-reduced-motion: reduce){[class*="board-skin-"]::before,[class*="board-skin-"]::after,[class*="board-skin-"] .floor-board,.coll-stage-floor{animation:none !important;}}
 /* Let the table show through: theme-colored panels would clash with wood/marble. */
 #screen-game[class*="board-skin-"] .opponent-card,#screen-game[class*="board-skin-"] .status-panel,#screen-game[class*="board-skin-"] .log-emoji-btn{background:rgba(0,0,0,.32);}
@@ -2049,7 +2078,7 @@ function playerTagHTML(p, extraCls){
   var titleHTML = p.title ? ("<span class=\"name-tag-title\">"+p.title+"</span>") : "";
   var crownHTML = p.vip ? "<span class=\"vip-crown\" title=\"멤버십\">👑</span>" : "";
   var medalHTML = p.medal ? "<span class=\"season-medal\" title=\"지난달 챌린지 "+p.medal+"위\">"+(["","🥇","🥈","🥉"][p.medal]||"")+"</span>" : "";
-  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"name-tag-avatar\">"+p.avatar+crownHTML+"</span>"+
+  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"tag-glow\"></span><span class=\"tag-shine\"></span><span class=\"name-tag-avatar\">"+p.avatar+crownHTML+"</span>"+
     "<span class=\"name-tag-label\">"+titleHTML+"<span class=\"name-tag-text\">"+medalHTML+p.name+"</span></span></span>";
 }
 
@@ -5706,7 +5735,7 @@ function collectionItemsFor(kind){
     return sortCollectionItems(themeItems, "theme");
   }
   var borderItems = BORDER_PRESETS.map(function(b){
-    var tag = "<span class=\"name-tag compact coll-tag "+b.cls+"\"></span>";
+    var tag = "<span class=\"name-tag compact coll-tag "+b.cls+"\"><span class=\"tag-glow\"></span><span class=\"tag-shine\"></span></span>";
     return { id:b.id, name:b.name, unlocked:isBorderUnlocked(b.id, straightUnlocks), preview:tag };
   });
   return sortCollectionItems(borderItems, "border");
