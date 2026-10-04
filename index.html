@@ -718,12 +718,14 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .coin-pill{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:calc(env(safe-area-inset-right) + 14px);z-index:5;display:inline-flex;align-items:center;gap:5px;padding:4px 12px 4px 5px;border-radius:999px;background:var(--panel);border:1.5px solid rgba(239,159,39,.6);color:var(--text);font-size:14px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .coin-pill{font-size:15px;padding:0;background:none !important;border:none !important;box-shadow:none !important;height:34px;}
 .coin-pill .coin-ico{width:28px;height:28px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
-.coin-modal{max-width:340px;text-align:center;}
+.coin-modal{width:min(340px,88vw);box-sizing:border-box;padding:22px 20px;text-align:center;}
+.coin-modal h2{font-size:21px;margin-bottom:12px;}
+.coin-modal-actions .btn{font-size:15px;}
 .coin-modal h2 .coin-ico{width:22px;height:22px;vertical-align:-4px;}
 .coin-balance{display:flex;align-items:center;justify-content:center;gap:8px;font-size:30px;font-weight:900;margin:4px 0 10px;}
 .coin-balance .coin-ico{width:36px;height:36px;}
-.coin-note{font-size:13px;margin:6px 0;line-height:1.55;}
-.coin-note.muted{color:var(--muted);font-size:12px;}
+.coin-note{font-size:15px;margin:8px 0;line-height:1.6;}
+.coin-note.muted{color:var(--muted);font-size:13.5px;}
 .coin-note .coin-ico,.unlock-popup .coin-ico{vertical-align:-3px;}
 .attend-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:6px 0 10px;}
 .attend-day{display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 2px 6px;border-radius:11px;background:rgba(var(--line-rgb),.06);border:1.5px solid rgba(var(--line-rgb),.14);}
@@ -737,15 +739,15 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .attend-gain .coin-ico{width:13px;height:13px;}
 @keyframes attendPop{0%{transform:scale(0) rotate(-30deg);}100%{transform:scale(1) rotate(0);}}
 .coin-perks b{color:var(--accent);}
-.wallet-member-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;padding:8px 10px;border-radius:12px;background:var(--panel2);font-size:13px;font-weight:700;}
+.wallet-member-row{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:10px;padding:8px 10px;border-radius:12px;background:var(--panel2);font-size:14.5px;font-weight:700;}
 .nick-change-row{display:flex;gap:6px;margin:8px 0 2px;}
 .nick-change-row .nickname-input{flex:1;min-width:0;}
-.nick-check-msg{font-size:12px;margin:4px 0;color:var(--muted);min-height:16px;}
+.nick-check-msg{font-size:13.5px;margin:4px 0;color:var(--muted);min-height:16px;}
 .nick-check-msg.ok{color:#5fe0a6;font-weight:700;}
 .nick-check-msg.bad{color:#ff6b7f;font-weight:700;}
 .wallet-price{display:inline-flex;align-items:center;gap:4px;font-size:15px;}
 .wallet-price .coin-ico{width:20px;height:20px;}
-.wallet-member-row .btn{padding:6px 14px;min-height:0;font-size:13px;}
+.wallet-member-row .btn{padding:7px 14px;min-height:0;font-size:14.5px;}
 .bgm-mode{display:flex;justify-content:center;gap:8px;margin-top:6px;}
 .bgm-mode .btn{padding:6px 14px;font-size:13px;min-height:0;}
 .bgm-picker{display:flex;align-items:center;justify-content:center;gap:10px;}
@@ -753,6 +755,7 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .bgm-arrow{min-width:40px;padding:6px 0;font-size:20px;line-height:1;}
 .coin-price{display:flex;align-items:center;justify-content:center;gap:6px;font-size:24px;font-weight:900;margin:8px 0 2px;}
 .coin-price .coin-ico{width:26px;height:26px;}
+.coin-per{font-size:15px;font-weight:700;color:var(--muted);}
 .charge-list{display:flex;flex-direction:column;gap:7px;margin-top:8px;}
 .charge-pack{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:10px;padding:10px 14px;border-radius:12px;border:1.5px solid rgba(var(--line-rgb),.18);background:var(--panel2);color:var(--text);font:inherit;cursor:pointer;text-align:left;}
 .charge-pack:active{transform:scale(.98);}
@@ -761,7 +764,11 @@ p.sub{color:var(--muted);font-size:13px;margin:0;}
 .charge-coins .coin-ico{width:28px;height:28px;}
 .charge-bonus{font-size:11px;font-weight:900;padding:2px 7px;border-radius:999px;background:linear-gradient(135deg,#ff5c8a,#ffb03a);color:#fff;}
 .charge-won{font-weight:800;color:var(--accent);}
-.coin-perks{text-align:left;font-size:13px;line-height:1.75;margin:4px 0 8px;padding-left:20px;}
+.coin-perks{text-align:left;font-size:15.5px;line-height:1.9;margin:4px 0 8px;padding-left:20px;}
+.member-perks{list-style:none;padding:0;margin:4px 0 12px;display:flex;flex-direction:column;gap:8px;text-align:left;}
+.member-perks li{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;background:var(--panel2);font-size:16px;}
+.member-perks .mp-ico{font-size:24px;line-height:1;}
+.member-perks b{color:var(--accent);}
 .coin-modal-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
 .coin-buy-preview{display:flex;justify-content:center;padding:14px 0;transform:scale(1.35);}
 .daily-payout{font-size:12.5px;}
@@ -4608,8 +4615,8 @@ function openNicknameChangeModal(){
 // 멤버십 혜택: what membership gives; only a way back.
 function openMembershipModal(back){
   coinModal("👑 멤버십 혜택",
-    "<ul class=\"coin-perks\"><li><b>모든 유료 아이템</b> 사용 가능</li><li><b>멤버십 전용 아이템</b> 사용 가능</li><li>멤버십 전용 <b>VIP 배지</b></li></ul>"+
-    "<p class=\"coin-note\">30일 "+COIN_SVG+"<b>"+MEMBERSHIP_COINS+"</b></p>",
+    "<ul class=\"member-perks\"><li><span class=\"mp-ico\">🛍️</span><span><b>모든 유료 아이템</b> 사용</span></li><li><span class=\"mp-ico\">💎</span><span><b>멤버십 전용 아이템</b> 사용</span></li><li><span class=\"mp-ico\">👑</span><span>멤버십 전용 <b>VIP 배지</b></span></li></ul>"+
+    "<div class=\"coin-price\">"+COIN_SVG+MEMBERSHIP_COINS+"<span class=\"coin-per\"> / 30일</span></div>",
     [{ label:"← 뒤로", onClick:function(){ if(back) back(); else closeModal(); } }]);
 }
 function openBuyItemModal(kind, it, onDone){
