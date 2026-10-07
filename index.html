@@ -1925,6 +1925,11 @@ function accountRole(){
   if(previewAsPlayer()) return null;
   return account ? account.role : null;
 }
+// Test period (until the official launch): every item is free to use. Achievement and paid
+// designations stay as they are; set this to false at launch.
+var OPEN_TEST = true;
+// Items handed out by mail (e.g. the alpha-tester title) stay locked even in the test period.
+function preset_isMailOnly(p){ return !!(p && p.mail); }
 function isDevAccount(){ return accountRole()==="dev"; }
 // Developer and tester accounts both get every item, VIP and Grand Master.
 function isSpecialAccount(){ var r = accountRole(); return r==="dev" || r==="tester"; }
@@ -1942,6 +1947,7 @@ function ownsItem(kind, id){
 }
 function isThemeOwned(theme){
   if(!theme) return false;
+  if(OPEN_TEST) return true;
   if(isSpecialAccount()) return true;
   var special = specialItemOwned("theme", theme);
   return special===null ? true : special;
@@ -2182,6 +2188,7 @@ function sortCollectionItems(items, kind){
 function isAvatarUnlocked(name, unlocks){
   var ch = presetByName("avatar", name);
   if(!ch) return false;
+  if(OPEN_TEST && !preset_isMailOnly(ch)) return true;
   if(isSpecialAccount()) return true;
   var special = specialItemOwned("avatar", ch);
   if(special!==null) return special;
@@ -2193,6 +2200,7 @@ function isPatternUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<CARD_BACK_PRESETS.length;i++){ if(CARD_BACK_PRESETS[i].id===id){ preset=CARD_BACK_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(OPEN_TEST && !preset_isMailOnly(preset)) return true;
   if(isSpecialAccount()) return true;
   var special = specialItemOwned("pattern", preset);
   if(special!==null) return special;
@@ -2205,6 +2213,7 @@ function isTitleUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<TITLE_PRESETS.length;i++){ if(TITLE_PRESETS[i].id===id){ preset=TITLE_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(OPEN_TEST && !preset_isMailOnly(preset)) return true;
   if(isSpecialAccount()) return true;
   if(preset.gm) return isGrandMaster(unlocks);
   var m = findMilestoneByLabel("title", preset.name);
@@ -2214,6 +2223,7 @@ function isBorderUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<BORDER_PRESETS.length;i++){ if(BORDER_PRESETS[i].id===id){ preset=BORDER_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(OPEN_TEST && !preset_isMailOnly(preset)) return true;
   if(isSpecialAccount()) return true;
   var special = specialItemOwned("border", preset);
   if(special!==null) return special;
@@ -2778,7 +2788,7 @@ function josa(word, withJong, withoutJong){ return word + (jongOf(word) ? withJo
 function josaRo(word){ var j = jongOf(word); return word + (j && j!==8 ? "으로" : "로"); }
 function logName(p){ return bareName(p && p.name ? p.name : "플레이어"); }
 function coinLabel(coin){
-  if(coin.isReset) return "리셋 카드";
+  if(coin.isReset) return "폭탄 카드";
   if(coin.isJoker) return "조커";
   var v = rankLabel(coin.value);
   if(coin.isPrism) return "프리즘 "+v;
@@ -3129,13 +3139,14 @@ function recordFx(ev){
   state.fx = list.concat([ev]).slice(-6);
 }
 function playRemoteFx(fx){
+  var bomb = false;
   var newest = fx.length ? fx[fx.length-1].n : 0;
-  if(lastFxSeen===null || newest < lastFxSeen){ lastFxSeen = newest; return; }
+  if(lastFxSeen===null || newest < lastFxSeen){ lastFxSeen = newest; return false; }
   fx.forEach(function(e){
     if(e.n <= lastFxSeen) return;
     lastFxSeen = e.n;
     if(e.by===myClientId) return;
-    if(e.k==="bomb"){ playBombBlast(); return; }
+    if(e.k==="bomb"){ playBombBlast(); bomb = true; return; }
     var slot = document.querySelectorAll("#floor-board .floor-slot")[e.f];
     var from = slot && slot.querySelector(".card");
     var dest = document.querySelector('.opponent-card[data-player-idx="'+e.p+'"]');
@@ -3145,6 +3156,28 @@ function playRemoteFx(fx){
     sfxCapture();
     setTimeout(function(){ slot.classList.remove("impact"); }, 220);
     animateFly(rect, dest.getBoundingClientRect(), e.c, 420);
+  });
+  return bomb;
+}
+// Someone else's bomb: the old floor flies into the deck, then the new 8 are dealt.
+function remoteBombSweep(newFloorCount, done){
+  var deckEl = $("deck-visual");
+  var deckRect = deckEl ? deckEl.getBoundingClientRect() : null;
+  var floorEls = document.querySelectorAll("#floor-board .card");
+  var pending = floorEls.length;
+  var deal = function(){
+    state.floor = [];
+    render();
+    animateDrawFromDeck(newFloorCount, $("floor-board"), done);
+  };
+  if(!deckRect || !pending){ deal(); return; }
+  Array.prototype.forEach.call(floorEls, function(fe, k){
+    var rect = fe.getBoundingClientRect();
+    var coin = state.floor[k];
+    setTimeout(function(){
+      fe.style.visibility = "hidden";
+      animateFly(rect, deckRect, coin, 280, function(){ if(--pending===0) deal(); });
+    }, k*45);
   });
 }
 // The bomb going off over the floor: a flash, a shaking board and the boom.
@@ -3173,7 +3206,14 @@ function applyRemoteRoomState(data){
     }, 120);
     return;
   }
-  playRemoteFx(data.fx || []);
+  if(playRemoteFx(data.fx || [])){
+    state.animating = true;
+    remoteBombSweep((data.floor||[]).length, function(){
+      state.animating = false;
+      applyRemoteRoomState(data);   // the fx are marked seen, so this applies the new board
+    });
+    return;
+  }
   state.fx = data.fx || [];
   var wasOver = state.gameOver;
   // Hand order (정렬) and the current selection are local-only. Remember them by card id
@@ -3295,6 +3335,21 @@ function localTestFlag(name){
 }
 var TURN_TIME_SCALE = localTestFlag("fast") ? 1/6 : 1;
 var STALL_GRACE_MS = 5000 * TURN_TIME_SCALE;
+// Turn deadlines are compared across phones, so they use the server's clock (read from the
+// Date header of our own page), not each phone's own clock, which can be off by seconds.
+var clockOffset = 0;
+function serverNow(){ return Date.now() + clockOffset; }
+function syncClock(){
+  var t0 = Date.now();
+  fetch(location.pathname+"?clock="+t0, { method:"HEAD", cache:"no-store" }).then(function(r){
+    var d = Date.parse(r.headers.get("date")||"");
+    if(!d) return;
+    var t1 = Date.now();
+    clockOffset = d + 500 - (t0 + t1)/2;   // the header is whole seconds: aim mid-second
+  }).catch(function(){});
+}
+syncClock();
+document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="visible") syncClock(); });
 function turnLimitMs(p){
   if(p && p.isAI) return 20000 * TURN_TIME_SCALE;
   var t = p ? (p.timeouts||0) : 0;
@@ -3373,7 +3428,7 @@ setInterval(function(){
   if(cur===state.myIndex && !p.isAI) return;
   var k = handlerOrder(cur).indexOf(state.myIndex);
   if(k<0) return;
-  if(Date.now() < state.turnDeadline + STALL_GRACE_MS*(k+1)) return;
+  if(serverNow() < state.turnDeadline + STALL_GRACE_MS*(k+1)) return;
   claimStalledTurn(cur);
 }, 1000);
 
@@ -3399,7 +3454,7 @@ function reclaimMySeat(){
   me.timeoutStreak = 0;
   me.timeouts = 0;
   // Back on my own turn: the full 60 seconds, not what was left for the AI.
-  if(currentPlayerIdx()===state.myIndex) state.turnDeadline = Date.now() + turnLimitMs(me);
+  if(currentPlayerIdx()===state.myIndex) state.turnDeadline = serverNow() + turnLimitMs(me);
   pushLog("✋ "+bareName(me.name)+"님이 돌아왔습니다!");
   render();
   pushRoomState();
@@ -3418,7 +3473,7 @@ function forfeitOnline(){
     var next = handlerOrder(state.myIndex)[0];
     if(next!==undefined) state.hostIndex = next;
   }
-  if(currentPlayerIdx()===state.myIndex) state.turnDeadline = Date.now();
+  if(currentPlayerIdx()===state.myIndex) state.turnDeadline = serverNow();
   if(!state.statsRecorded){
     state.statsRecorded = true;
     recordAccountResult("loss", true, true);
@@ -3622,7 +3677,7 @@ function dealOnlineGame(lobbyPlayers, maxPlayers){
   state.hostIndex = 0;
   state.claimSeq = -1;
   state.fx = [];
-  state.turnDeadline = Date.now() + turnLimitMs(lobbyPlayers[turnOrder[0]]);
+  state.turnDeadline = serverNow() + turnLimitMs(lobbyPlayers[turnOrder[0]]);
   aiDriveGuard = {};
   // Newest first: Grand Master announcements sit on top of the start lines.
   state.log = [].concat([
@@ -4015,7 +4070,7 @@ function stopLobbyTimers(){
 // Quick-match rooms start on their own: 30 s after the last change in who's there, the
 // host starts with AI in the empty seats. The host also keeps the room fresh so it stays
 // findable.
-var QUICK_START_SECONDS = 30;
+var QUICK_START_SECONDS = 180;
 var quickMergeBusy = false;
 setInterval(function(){
   var d = lastRoomData;
@@ -4056,7 +4111,7 @@ function updateLobbyAutoStart(data, isHost, allPicked){
   lobbyAutoKey = key;
   var left = QUICK_START_SECONDS;
   msg.classList.remove("hidden");
-  var paint = function(){ msg.textContent = "⚡ 빠른 매칭: "+left+"초 뒤 시작해요 (빈 자리는 AI)"; };
+  var paint = function(){ msg.textContent = "⚡ 빠른 매칭: "+Math.floor(left/60)+":"+("0"+(left%60)).slice(-2)+" 뒤 시작해요 (빈 자리는 AI)"; };
   paint();
   lobbyAutoTimer = setInterval(function(){
     left--;
@@ -4261,7 +4316,7 @@ function endTurn(){
   }
   state.currentTurnPos = (state.currentTurnPos+1) % state.turnOrder.length;
   state.turnSeq++;
-  state.turnDeadline = Date.now() + turnLimitMs(state.players[currentPlayerIdx()]);
+  state.turnDeadline = serverNow() + turnLimitMs(state.players[currentPlayerIdx()]);
   render();
   pushRoomState();
   if(state.gameOver) return;
@@ -4288,7 +4343,10 @@ function renderTurnTimer(remaining){
       return;
     }
     chip.classList.add("other");
-    chip.innerHTML = "<span class=\"tt-avatar\">"+cur.avatar+"</span><span class=\"tt-name\">"+cur.name+" 차례</span>";
+    var left = (isMultiplayer() && state.turnDeadline) ? Math.max(0, Math.ceil((state.turnDeadline - serverNow())/1000)) : null;
+    chip.classList.toggle("warn", left!==null && left<=10);
+    chip.innerHTML = "<span class=\"tt-avatar\">"+cur.avatar+"</span><span class=\"tt-name\">"+cur.name+" 차례</span>"+
+      (left!==null ? "<span class=\"tt-num\">"+left+"</span>" : "");
     return;
   }
   chip.classList.add("mine");
@@ -4296,6 +4354,13 @@ function renderTurnTimer(remaining){
   chip.innerHTML = "<span>내 차례</span><span class=\"tt-num\">"+remaining+"</span>";
 }
 
+// While someone else is playing online, keep their countdown on the chip current.
+setInterval(function(){
+  if(!isMultiplayer() || turnTimerId || state.gameOver || !state.turnDeadline) return;
+  if($("screen-game").classList.contains("hidden")) return;
+  if(currentPlayerIdx()===state.myIndex) return;
+  renderTurnTimer(null);
+}, 500);
 function clearTurnTimer(){
   if(turnTimerId){ clearInterval(turnTimerId); turnTimerId=null; }
   renderTurnTimer(null);
@@ -4305,13 +4370,34 @@ function startTurnTimer(){
   clearTurnTimer();
   if(state.daily) return;
   if(state.gameOver || !isHumanTurn()) return;
-  var remaining = (isMultiplayer() && state.turnDeadline) ? Math.max(1, Math.ceil((state.turnDeadline-Date.now())/1000)) : 60;
-  renderTurnTimer(remaining);
+  var deadline;
+  if(isMultiplayer() && state.turnDeadline){
+    deadline = state.turnDeadline;
+    if(state.timerSeq!==state.turnSeq){
+      state.timerSeq = state.turnSeq;
+      var limit = turnLimitMs(state.players[state.myIndex]);
+      if(deadline - serverNow() < limit - 3000){
+        deadline = state.turnDeadline = serverNow() + limit;
+        pushRoomState();
+      }
+    }
+  } else {
+    deadline = serverNow() + 60000;
+  }
+  var lastShown = null;
+  var tick = function(){
+    var remaining = Math.max(0, Math.ceil((deadline - serverNow())/1000));
+    if(remaining!==lastShown){
+      lastShown = remaining;
+      renderTurnTimer(remaining);
+      if(remaining>0 && remaining<=5 && !state.animating) sfxTick();
+    }
+    return remaining;
+  };
+  tick();
   turnTimerId = setInterval(function(){
+    var remaining = tick();
     if(state.animating) return;
-    remaining--;
-    renderTurnTimer(remaining);
-    if(remaining>0 && remaining<=5) sfxTick();
     if(remaining<=0){
       clearTurnTimer();
       var player = state.players[state.myIndex];
@@ -4320,7 +4406,7 @@ function startTurnTimer(){
       sfxTimeout();
       drawTwoAndEndTurn();
     }
-  }, 1000);
+  }, 250);
 }
 
 // A full rotation with no captures means every floor card is currently stuck (nobody
@@ -5163,7 +5249,7 @@ function useResetCard(playerIdx, handIdx, cb){
     render();
     animateDrawFromDeck(n, $("floor-board"), function(){
       state.floor = fresh;
-      pushLog(josa(logName(player),"이","가")+" 💣 리셋 카드를 사용해 바닥 카드를 전부 새로 깔았습니다!");
+      pushLog(josa(logName(player),"이","가")+" 💣 폭탄 카드를 사용해 바닥 카드를 전부 새로 깔았습니다!");
       state.animating = false;
       render();
       pushRoomState();
@@ -5392,7 +5478,7 @@ function cardEl(coin, opts){
   if(coin.isReset){
     d.classList.add("reset");
     d.insertAdjacentHTML("beforeend", BOMB_SVG);
-    if(!/tiny|opp/.test(opts.cls||"")) d.appendChild(el("span","reset-label","리셋"));
+    if(!/tiny|opp/.test(opts.cls||"")) d.appendChild(el("span","reset-label","폭탄"));
   } else if(coin.isJoker){
     d.classList.add("joker");
     if(opts.wild) d.classList.add("wildfloor");
@@ -5589,7 +5675,7 @@ function renderFloor(){
   area.onclick = hintMode==="reset-choice" ? function(){ onFloorTargetClick(0); } : null;
   var hint = null;
   if(hintMode==="joker-choice") hint = el("div","floor-hint joker","★ 아무 카드나 가져오기");
-  else if(hintMode==="reset-choice") hint = el("div","floor-hint reset","💣 바닥판을 누르면 리셋");
+  else if(hintMode==="reset-choice") hint = el("div","floor-hint reset","💣 바닥판을 누르면 폭발");
   if(hint) area.appendChild(hint);
 }
 
@@ -5779,7 +5865,7 @@ function buildRulebookPanel(){
     "<li><b>오늘의 프리즘</b>: 매 게임 무작위로 숫자 2개가 뽑혀, 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 프리즘이 됩니다(카드 수는 그대로). 프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다. 이번 게임의 프리즘 숫자는 게임 시작 시 안내됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
     "<li><b>손패 조커</b>: 조커를 누르면 발동! 바닥 카드 아무거나 하나를 가져오거나, 점수덱에 내려놓을 수 있습니다(내려놓기는 턴을 소모하지 않음). 점수덱의 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
-    "<li><b>리셋 카드</b>: (인원수−1)장 등장 (2인 1장 · 3인 2장 · 4인 3장). 손패에서 누른 뒤 바닥판을 누르면 바닥 카드 전부가 중앙 덱으로 돌아가 섞이고 새 8장이 깔립니다. 사용한 리셋 카드는 중앙 덱에 다시 섞이며, 턴은 소모하지 않습니다. 바닥에 놓인 리셋 카드는 어떤 카드로든 가져올 수 있고, 가져오면 손패로 들어옵니다.</li>"+
+    "<li><b>폭탄 카드</b>: (인원수−1)장 등장 (2인 1장 · 3인 2장 · 4인 3장). 손패에서 누른 뒤 바닥판을 누르면 바닥 카드 전부가 중앙 덱으로 돌아가 섞이고 새 8장이 깔립니다. 사용한 폭탄 카드는 중앙 덱에 다시 섞이며, 턴은 소모하지 않습니다. 바닥에 놓인 폭탄 카드는 어떤 카드로든 가져올 수 있고, 가져오면 손패로 들어옵니다.</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
     "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
