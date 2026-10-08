@@ -94,6 +94,7 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .ms-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:5px;margin-bottom:8px;}
 .ms-tab{position:relative;padding:7px 2px;min-height:0;font-size:13px;white-space:nowrap;letter-spacing:-.2px;}
 .ms-tab i{position:absolute;top:-6px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ff4d6d;color:#fff;font-size:10.5px;font-style:normal;font-weight:800;line-height:16px;box-sizing:border-box;}
+.settings-tutorial{display:block;width:100%;margin:6px 0 2px;}
 /* Missions */
 .ms-body{display:flex;flex-direction:column;gap:6px;text-align:left;max-height:62vh;overflow-y:auto;margin-bottom:6px;}
 .ms-head{display:flex;flex-direction:column;gap:1px;margin:6px 2px 2px;}
@@ -8285,10 +8286,9 @@ function openSettingsModal(){
   box.appendChild(trackRow);
   box.appendChild(modeRow);
   if(!inGame){
-    var tutRow = el("div","settings-row");
-    tutRow.appendChild(el("span","","📖 게임 방법"));
-    tutRow.appendChild(smallBtn("튜토리얼 보기", false, function(){ closeModal(); openTutorialFromMenu(); }));
-    box.appendChild(tutRow);
+    var tutBtn = el("button","btn settings-tutorial","📖 튜토리얼");
+    tutBtn.addEventListener("click", function(){ closeModal(); openTutorialFromMenu(); });
+    box.appendChild(tutBtn);
   }
   if(!inGame && account) box.appendChild(logoutRow);
   if(quitRow) box.appendChild(quitRow);
