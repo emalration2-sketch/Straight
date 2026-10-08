@@ -817,6 +817,13 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
 .coin-pill{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:calc(env(safe-area-inset-right) + 14px);z-index:5;display:inline-flex;align-items:center;gap:5px;padding:4px 12px 4px 5px;border-radius:999px;background:var(--panel);border:1.5px solid rgba(239,159,39,.6);color:var(--text);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .coin-pill{font-size:16px;padding:0;background:none !important;border:none !important;box-shadow:none !important;height:34px;}
+.top-cluster{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:calc(env(safe-area-inset-right) + 12px);z-index:5;display:flex;align-items:center;gap:2px;padding:3px 12px 3px 4px;border-radius:999px;background:var(--panel2);border:1.5px solid rgba(var(--line-rgb),.16);box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.top-cluster.hidden{display:none;}
+.cluster-btn{position:relative;width:36px;height:36px;border-radius:50%;border:none;background:transparent;font-size:19px;line-height:1;cursor:pointer;color:var(--text);}
+.cluster-btn:active{background:rgba(var(--line-rgb),.12);}
+.cluster-sep{width:1px;height:20px;margin:0 6px 0 4px;background:rgba(var(--line-rgb),.22);}
+.top-cluster .coin-pill{position:static;height:36px;}
+.top-cluster .side-badge{top:-2px;right:-2px;}
 .start-side{position:absolute;top:calc(env(safe-area-inset-top) + 56px);right:calc(env(safe-area-inset-right) + 12px);z-index:5;display:flex;flex-direction:column;gap:8px;}
 .side-btn{position:relative;width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(var(--line-rgb),.16);background:var(--panel2);font-size:20px;line-height:1;cursor:pointer;color:var(--text);}
 .side-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#ff4d6d;color:#fff;font-size:11.5px;font-weight:800;line-height:18px;box-sizing:border-box;}
@@ -984,10 +991,11 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 
   <div class="screen" id="screen-start">
     <div class="start-me" id="start-me"></div>
-    <button class="coin-pill hidden" aria-label="내 코인"></button>
-    <div class="start-side hidden" id="start-side">
-      <button class="side-btn" id="friends-btn" aria-label="친구">👥<span class="side-badge hidden"></span></button>
-      <button class="side-btn" id="mail-btn" aria-label="우편함">📮<span class="side-badge hidden"></span></button>
+    <div class="top-cluster hidden" id="start-side">
+      <button class="cluster-btn" id="friends-btn" aria-label="친구">👥<span class="side-badge hidden"></span></button>
+      <button class="cluster-btn" id="mail-btn" aria-label="우편함">📮<span class="side-badge hidden"></span></button>
+      <span class="cluster-sep"></span>
+      <button class="coin-pill hidden" aria-label="내 코인"></button>
     </div>
     <div class="start-hero">
       <div class="start-fan" id="start-fan" aria-hidden="true"></div>
@@ -1378,7 +1386,7 @@ function loadAccount(user){
 // Each write is one action — attendance, buying one item, buying membership, or a developer
 // grant — and the security rules recompute it (server clock, fixed prices), so the client
 // can't mint coins. Prices must match paidItems()/itemPrice() in firestore.rules.
-var COIN_PRICES = { pattern:220, border:220, theme:330, avatar:330 };
+var COIN_PRICES = { pattern:220, border:220, theme:330, avatar:220 };
 var MEMBERSHIP_COINS = 330;
 var NICK_CHANGE_COINS = 490;
 var MEMBERSHIP_MS = 30*86400000;
@@ -2140,7 +2148,7 @@ var CHARACTERS = [
   { emoji:"🐢", name:"아이언 쉘", event:true },
   { emoji:"🦊", name:"폭스트릭" },
   { emoji:"🦖", name:"렉스 버서커" },
-  // Shop characters (330 coins).
+  // Shop characters (220 coins).
   { emoji:"🐯", name:"블레이즈 타이거", paid:true },
   { emoji:"🦅", name:"스톰 호크", paid:true },
   // Member-only characters.
@@ -6458,7 +6466,7 @@ function openOperatorModal(){
     "<label id=\"op-coins-wrap\">코인 수량<input class=\"nickname-input\" type=\"number\" id=\"op-coins\" value=\"100\" min=\"1\" max=\"10000\"></label>"+
     dateHourField("기간 시작", "op-start", now)+
     dateHourField("기간 끝", "op-end", new Date(now.getTime()+7*864e5))+
-    "<label>끝난 뒤 받기 가능 (일)<input class=\"nickname-input\" type=\"number\" id=\"op-days\" value=\"30\" min=\"1\" max=\"365\"></label>";
+    "<label>우편함 보관 기간<select class=\"nickname-input\" id=\"op-days\"><option value=\"30\">30일 (일반 이벤트)</option><option value=\"14\">14일 (점검·오류 보상)</option></select></label>";
   box.appendChild(form);
   var fillItems = function(){
     var k = $("op-kind").value, coins = k==="coins";

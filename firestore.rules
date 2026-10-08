@@ -133,7 +133,7 @@ service cloud.firestore {
               'border:owlmoon','border:dragon','border:foxfire','border:bolt','border:wind','border:stars',
               'avatar:블레이즈 타이거','avatar:스톰 호크'];
     }
-    function itemPrice(key){ return key.split(':')[0] in ['theme','avatar'] ? 330 : 220; }
+    function itemPrice(key){ return key.split(':')[0] == 'theme' ? 330 : 220; }
     function walletShape(n){
       return n.keys().hasOnly(['coins','items','membershipUntil','attendDay','streak','lastBuy'])
         && n.keys().hasAll(['coins','items','membershipUntil','attendDay','streak'])
