@@ -1378,7 +1378,7 @@ function loadAccount(user){
 // Each write is one action — attendance, buying one item, buying membership, or a developer
 // grant — and the security rules recompute it (server clock, fixed prices), so the client
 // can't mint coins. Prices must match paidItems()/itemPrice() in firestore.rules.
-var COIN_PRICES = { pattern:220, border:220, theme:330 };
+var COIN_PRICES = { pattern:220, border:220, theme:330, avatar:330 };
 var MEMBERSHIP_COINS = 330;
 var NICK_CHANGE_COINS = 490;
 var MEMBERSHIP_MS = 30*86400000;
@@ -1438,7 +1438,7 @@ function buyItemWithCoins(kind, id){
 }
 // Nickname change: the new name is claimed (nicknames/{key}, create-only for others),
 // the old one released, and the coins taken — all in one transaction.
-function buyNicknameChange(nick){
+function buyNicknameChange(nick, ticket){
   var F = fbFs, key = nickKey(nick);
   var oldNick = ""; try{ oldNick = localStorage.getItem("straightNickname") || ""; }catch(e){}
   var walletRef = F.doc(fbDb,"wallets",account.uid), newRef = F.doc(fbDb,"nicknames",key);
@@ -1446,18 +1446,23 @@ function buyNicknameChange(nick){
   return F.runTransaction(fbDb, function(tx){
     return Promise.all([tx.get(walletRef), tx.get(newRef), oldRef ? tx.get(oldRef) : Promise.resolve(null)]).then(function(r){
       var w = r[0].exists() ? readWallet(r[0].data()) : null;
-      if(!w || w.coins < NICK_CHANGE_COINS) throw new Error("coins");
+      if(!ticket && (!w || w.coins < NICK_CHANGE_COINS)) throw new Error("coins");
       if(r[1].exists() && r[1].data().uid!==account.uid) throw new Error("taken");
-      var next = readWallet(w);
-      next.coins -= NICK_CHANGE_COINS;
-      next.lastBuy = "nick:"+Date.now();
-      tx.set(walletRef, next);
+      var next = w ? readWallet(w) : null;
+      if(ticket){
+        // A mailed ticket: the mail receipt is the payment (checked by the rules).
+        tx.set(F.doc(fbDb,"users",account.uid,"mail",ticket.campaignId), { reward:ticket.rewardId, at:F.serverTimestamp() });
+      } else {
+        next.coins -= NICK_CHANGE_COINS;
+        next.lastBuy = "nick:"+Date.now();
+        tx.set(walletRef, next);
+      }
       if(!r[1].exists()) tx.set(newRef, { uid:account.uid, nick:nick, at:F.serverTimestamp() });
       if(r[2] && r[2].exists() && r[2].data().uid===account.uid) tx.delete(oldRef);
       return next;
     });
   }).then(function(next){
-    account.wallet = next;
+    if(next) account.wallet = next;
     try{ localStorage.setItem("straightNickname", nick); }catch(e){}
     return saveProgressNow();
   });
@@ -2135,6 +2140,9 @@ var CHARACTERS = [
   { emoji:"🐢", name:"아이언 쉘", event:true },
   { emoji:"🦊", name:"폭스트릭" },
   { emoji:"🦖", name:"렉스 버서커" },
+  // Shop characters (330 coins).
+  { emoji:"🐯", name:"블레이즈 타이거", paid:true },
+  { emoji:"🦅", name:"스톰 호크", paid:true },
   // Member-only characters.
   { emoji:"🦄", name:"프리즘 혼", member:true },
   { emoji:"🐼", name:"판다 킹", member:true },
@@ -5073,9 +5081,9 @@ function openAttendanceModal(r){
     [{ label:"확인", primary:true }]);
 }
 // 닉네임 변경: type → 중복 확인 → 변경하기 (only once the check passed for exactly that name).
-function openNicknameChangeModal(){
+function openNicknameChangeModal(ticket){
   var w = account.wallet;
-  if(w.coins < NICK_CHANGE_COINS){
+  if(!ticket && w.coins < NICK_CHANGE_COINS){
     coinModal("코인이 부족해요",
       "<p class=\"coin-note\">닉네임 변경에 "+COIN_SVG+"<b>"+NICK_CHANGE_COINS+"</b>이 필요해요.<br>지금 "+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b> · <b>"+(NICK_CHANGE_COINS-w.coins)+"</b>코인 더 필요해요.</p>",
       [{ label:"💳 코인 충전", primary:true, onClick:function(){ openChargeModal(openWalletModal); } },
@@ -5086,13 +5094,14 @@ function openNicknameChangeModal(){
     "<p class=\"coin-note\">지금 닉네임 <b>"+cleanText(chosenNickname||"-", 16)+"</b></p>"+
     "<div class=\"nick-change-row\"><input type=\"text\" class=\"nickname-input\" id=\"nick-new\" maxlength=\"16\" placeholder=\"새 닉네임\"><button class=\"btn\" id=\"nick-check\">중복 확인</button></div>"+
     "<p class=\"nick-check-msg\" id=\"nick-msg\">한글 8자(영문 16자)까지 쓸 수 있어요.</p>"+
-    "<p class=\"coin-note\">가격 "+COIN_SVG+"<b>"+NICK_CHANGE_COINS+"</b></p>",
+    (ticket ? "<p class=\"coin-note\">🎟️ 닉네임 변경권을 사용해요</p>" : "<p class=\"coin-note\">가격 "+COIN_SVG+"<b>"+NICK_CHANGE_COINS+"</b></p>"),
     [{ label:"변경하기", primary:true, onClick:function(btn){
         var nick = cleanNick($("nick-new").value);
         if(!checked || checked!==nick){ $("nick-msg").textContent = "먼저 중복 확인을 해 주세요."; $("nick-msg").className = "nick-check-msg bad"; return; }
-        if(!confirm("닉네임을 '"+nick+"'(으)로 바꿀까요?\n"+NICK_CHANGE_COINS+"코인이 사용돼요.")) return;
+        if(!confirm("닉네임을 '"+nick+"'(으)로 바꿀까요?\n"+(ticket ? "닉네임 변경권이 사용돼요." : NICK_CHANGE_COINS+"코인이 사용돼요."))) return;
         btn.disabled = true;
-        buyNicknameChange(nick).then(function(){
+        (ticket ? buyNicknameChange(nick, ticket) : buyNicknameChange(nick)).then(function(){
+          if(ticket && ticket.onDone) ticket.onDone();
           chosenNickname = nick; closeModal(); renderCoinPills(); renderStartMe(); sfxCapture();
           coinToast("✏️ 닉네임이 <b>"+cleanText(nick,16)+"</b>(으)로 바뀌었어요");
         }).catch(function(e){
@@ -5102,7 +5111,7 @@ function openNicknameChangeModal(){
           console.error("닉네임 변경 실패", e);
         });
       } },
-     { label:"← 뒤로", onClick:openWalletModal }]);
+     { label:ticket ? "닫기" : "← 뒤로", onClick:ticket ? closeModal : openWalletModal }]);
   var checked = null;
   var input = $("nick-new");
   input.addEventListener("input", function(){
@@ -5133,7 +5142,7 @@ function openBuyItemModal(kind, it, onDone){
   if(!w) return;
   var price = COIN_PRICES[kind];
   var enough = w.coins >= price;
-  var kindLabel = { pattern:"패턴", border:"테두리", theme:"테마" }[kind];
+  var kindLabel = { pattern:"패턴", border:"테두리", theme:"테마", avatar:"캐릭터" }[kind];
   coinModal(it.name+"<div class=\"buy-kind\">"+kindLabel+"</div>",
     "<div class=\"coin-buy-preview\">"+it.preview+"</div>"+
     "<div class=\"buy-price\">"+COIN_SVG+price+"<span>(영구)</span></div>"+
@@ -6048,7 +6057,9 @@ var PRESENCE_FRESH_MS = 150000;
 var socialStarted = false, myFriends = {}, friendPresence = {}, friendUnsubs = {};
 var pendingRequests = [], pendingInvites = [], mailItems = [], shownInvites = {};
 // Event rewards: any collection item. rewardId is "<kind>:<id>" and unlocks as "mail:<kind>:<id>".
-var REWARD_KINDS = [["coins","코인"],["title","칭호"],["border","테두리"],["pattern","패턴"],["avatar","캐릭터"]];
+var REWARD_KINDS = [["coins","코인"],["membership","멤버십 30일권"],["nickchange","닉네임 변경권"],["title","칭호"],["border","테두리"],["pattern","패턴"],["avatar","캐릭터"]];
+// Rewards used up on the spot (no collection unlock): coins, membership, nickname ticket.
+function isConsumableReward(kind){ return kind==="coins" || kind==="membership" || kind==="nickchange"; }
 function rewardItems(kind){
   if(kind==="avatar") return CHARACTERS.map(function(c){ return { id:c.name, name:c.name }; });
   var list = kind==="title" ? TITLE_PRESETS : kind==="border" ? BORDER_PRESETS : CARD_BACK_PRESETS;
@@ -6328,7 +6339,7 @@ function grantMailReward(rewardId){
 // Mail rewards stay only while their event exists: deleting an event takes it back.
 function syncMailRewards(valid){
   var before = straightUnlocks.length;
-  valid = valid.filter(function(r){ return !/^coins:/.test(r); });
+  valid = valid.filter(function(r){ return !/^(coins|membership|nickchange):/.test(r); });
   straightUnlocks = straightUnlocks.filter(function(id){ return !/^mail:/.test(id) || valid.indexOf(id.slice(5))!==-1; });
   valid.forEach(function(r){ if(straightUnlocks.indexOf("mail:"+r)===-1) straightUnlocks.push("mail:"+r); });
   if(straightUnlocks.length!==before || valid.length){ saveUnlocks(straightUnlocks); saveProgressSoon(); }
@@ -6366,7 +6377,8 @@ function renderMailBox(){
   mailItems.forEach(function(c){
     var until = new Date(tsMillis(c.claimUntil));
     var who = "<b>🎁 "+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+(until.getMonth()+1)+"/"+until.getDate()+"까지</small>";
-    box.appendChild(socialRow(who, [ smallBtn("받기", true, function(b){ claimMail(c, b); }) ]));
+    var useNow = c.rewardKind==="membership" || c.rewardKind==="nickchange";
+    box.appendChild(socialRow(who, [ smallBtn(useNow ? "사용" : "받기", true, function(b){ claimMail(c, b); }) ]));
   });
   var close = el("div","coin-modal-actions");
   close.appendChild(smallBtn("닫기", false, closeModal));
@@ -6377,7 +6389,24 @@ function claimMail(c, btn){
   btn.disabled = true;
   var mailRef = F.doc(fbDb,"users",account.uid,"mail",c.id);
   var write;
-  if(c.rewardKind==="coins"){
+  if(c.rewardKind==="nickchange"){
+    // The ticket is used when the new name is saved (or kept if the window is closed).
+    btn.disabled = false;
+    openNicknameChangeModal({ campaignId:c.id, rewardId:c.rewardId, onDone:function(){
+      mailItems = mailItems.filter(function(m){ return m.id!==c.id; });
+      refreshSocialUI();
+    } });
+    return;
+  }
+  if(c.rewardKind==="membership"){
+    var wm = account.wallet;
+    if(!wm){ btn.disabled = false; alert("지갑을 불러오는 중이에요. 잠시 후 다시 눌러 주세요."); return; }
+    var until = Math.max(wm.membershipUntil, serverNow()) + MEMBERSHIP_MS;
+    var mb = F.writeBatch(fbDb);
+    mb.set(mailRef, { reward:c.rewardId, at:F.serverTimestamp() });
+    mb.update(F.doc(fbDb,"wallets",account.uid), { membershipUntil:until, lastBuy:"mail:"+c.id });
+    write = mb.commit().then(function(){ wm.membershipUntil = until; wm.lastBuy = "mail:"+c.id; renderCoinPills(); if(typeof renderStartMe==="function") renderStartMe(); });
+  } else if(c.rewardKind==="coins"){
     var w = account.wallet;
     if(!w){ btn.disabled = false; alert("코인 지갑을 불러오는 중이에요. 잠시 후 다시 눌러 주세요."); return; }
     var batch = F.writeBatch(fbDb);
@@ -6388,10 +6417,10 @@ function claimMail(c, btn){
     write = F.setDoc(mailRef, { reward:c.rewardId, at:F.serverTimestamp() });
   }
   write.then(function(){
-    if(c.rewardKind!=="coins") grantMailReward(c.rewardId);
+    if(!isConsumableReward(c.rewardKind)) grantMailReward(c.rewardId);
     mailItems = mailItems.filter(function(m){ return m.id!==c.id; });
     refreshSocialUI();
-    coinToast("🎁 <b>"+cleanText(c.rewardName,20)+"</b> 받았어요!"+(c.rewardKind==="coins" ? "" : " 수집품에서 장착해 보세요."));
+    coinToast(c.rewardKind==="membership" ? "👑 멤버십 30일이 적용됐어요!" : "🎁 <b>"+cleanText(c.rewardName,20)+"</b> 받았어요!"+(isConsumableReward(c.rewardKind) ? "" : " 수집품에서 장착해 보세요."));
   }).catch(function(e){ console.error("우편 받기 실패", e); btn.disabled = false; alert("받지 못했어요. 수령 기간이 지났을 수 있어요."); });
 }
 
@@ -6432,10 +6461,10 @@ function openOperatorModal(){
     "<label>끝난 뒤 받기 가능 (일)<input class=\"nickname-input\" type=\"number\" id=\"op-days\" value=\"30\" min=\"1\" max=\"365\"></label>";
   box.appendChild(form);
   var fillItems = function(){
-    var coins = $("op-kind").value==="coins";
-    $("op-item-wrap").classList.toggle("hidden", coins);
+    var k = $("op-kind").value, coins = k==="coins";
+    $("op-item-wrap").classList.toggle("hidden", isConsumableReward(k));
     $("op-coins-wrap").classList.toggle("hidden", !coins);
-    if(coins) return;
+    if(isConsumableReward(k)) return;
     $("op-item").innerHTML = rewardItems($("op-kind").value).map(function(it, i){ return "<option value=\""+i+"\">"+cleanText(it.name,20)+"</option>"; }).join("");
   };
   $("op-kind").addEventListener("change", fillItems);
@@ -6446,7 +6475,10 @@ function openOperatorModal(){
     var kind = $("op-kind").value;
     var amount = Math.floor(Number($("op-coins").value)||0);
     if(kind==="coins" && (amount<1 || amount>10000)){ alert("코인은 1~10000개로 정해 주세요."); return; }
-    var item = kind==="coins" ? { id:String(amount), name:amount+"코인" } : rewardItems(kind)[Number($("op-item").value)];
+    var item = kind==="coins" ? { id:String(amount), name:amount+"코인" }
+      : kind==="membership" ? { id:"30d", name:"멤버십 30일권" }
+      : kind==="nickchange" ? { id:"1", name:"닉네임 변경권" }
+      : rewardItems(kind)[Number($("op-item").value)];
     var start = readDateHour("op-start"), end = readDateHour("op-end");
     var days = Math.max(1, Number($("op-days").value)||30);
     var title = cleanText($("op-title").value, 30).trim();
@@ -6484,7 +6516,7 @@ function loadOperatorList(){
       var c = d.data(), fmt = function(t){ var x = new Date(tsMillis(t)); return (x.getMonth()+1)+"/"+x.getDate(); };
       var who = c.targetNicks ? "대상 "+c.targetNicks.length+"명" : "전체";
       var row = socialRow("<b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+who+" · 기간 "+fmt(c.start)+"~"+fmt(c.end)+" · 받기 "+fmt(c.claimUntil)+"까지 · <span class=\"op-count\">참여 …</span></small>", [
-        smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요?\n"+(c.rewardKind==="coins" ? "이미 받은 코인은 회수되지 않아요." : "이미 받은 플레이어의 보상도 회수돼요."))) F.deleteDoc(d.ref).then(loadOperatorList); })
+        smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요?\n"+(isConsumableReward(c.rewardKind) ? "이미 받거나 사용한 보상은 회수되지 않아요." : "이미 받은 플레이어의 보상도 회수돼요."))) F.deleteDoc(d.ref).then(loadOperatorList); })
       ]);
       list.appendChild(row);
       F.getCountFromServer(F.collection(fbDb,"campaigns",d.id,"entries")).then(function(r){
