@@ -64,7 +64,7 @@ service cloud.firestore {
     }
     match /daily/{day}/scores/{uid} {
       allow read: if signedIn();
-      allow create: if signedIn() && request.auth.uid == uid
+      allow create: if signedIn() && request.auth.uid == uid && notBanned()
         && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
         && isKstToday(day)
         && request.resource.data.keys().hasOnly(['name','avatar','failed','at'])
@@ -83,6 +83,10 @@ service cloud.firestore {
     }
     // A season write must carry a finished daily result (lastDay) from that month, once per
     // day, and its best can only become that day's turns/time when it is actually better.
+    function notBanned(){
+      return !exists(/databases/$(database)/documents/bans/$(request.auth.uid))
+        || get(/databases/$(database)/documents/bans/$(request.auth.uid)).data.until < request.time;
+    }
     function dailyResult(day, uid){
       return get(/databases/$(database)/documents/daily/$(day)/scores/$(uid)).data;
     }
@@ -194,6 +198,11 @@ service cloud.firestore {
             && n.membershipUntil >= request.time.toMillis() + 2592000000 - 600000
             && n.membershipUntil <= request.time.toMillis() + 2592000000 + 600000));
     }
+    // Recall by the developer role: coins only down, bought items only removed, membership only shorter.
+    function isRecall(n, o){
+      return devRole() && sameExcept(n, o, ['coins','items','membershipUntil'])
+        && n.coins <= o.coins && o.items.hasAll(n.items) && n.membershipUntil <= o.membershipUntil;
+    }
     function isGrant(n, o){
       return devRole() && sameExcept(n, o, ['coins']) && n.coins > o.coins && n.coins <= o.coins + 100;
     }
@@ -218,7 +227,8 @@ service cloud.firestore {
           || isNickChange(request.resource.data, resource.data)
           || isMailCoins(request.resource.data, resource.data, uid)
           || isMailMembership(request.resource.data, resource.data, uid)))
-        || isGrant(request.resource.data, resource.data));
+        || isGrant(request.resource.data, resource.data)
+        || isRecall(request.resource.data, resource.data));
       allow delete: if false;
     }
     // Ledger for the developer-run season payout: one doc per season, written once.
@@ -282,6 +292,31 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/campaigns/$(cid)/entries/$(uid))
         && request.time <= get(/databases/$(database)/documents/campaigns/$(cid)).data.claimUntil
         && request.resource.data.reward == get(/databases/$(database)/documents/campaigns/$(cid)).data.rewardId;
+    }
+    // Bans: set by the developer role; a player can read their own to see why.
+    match /bans/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || devRole());
+      allow write: if devRole();
+    }
+    // Main-screen notice (config/notice): everyone reads, the developer role writes.
+    match /config/{id} {
+      allow read: if signedIn();
+      allow write: if devRole();
+    }
+    // Player reports: anyone signed in files one about someone else; the developer role reads and clears.
+    match /reports/{id} {
+      allow create: if signedIn() && request.resource.data.from == request.auth.uid
+        && request.resource.data.target is string && request.resource.data.target != request.auth.uid
+        && request.resource.data.keys().hasOnly(['from','fromNick','target','targetNick','reason','memo','room','at'])
+        && request.resource.data.memo is string && request.resource.data.memo.size() <= 100;
+      allow read, delete: if devRole();
+      allow update: if false;
+    }
+    // A player's own anomaly self-check; read by the developer role.
+    match /suspicious/{uid} {
+      allow create, update, delete: if signedIn() && request.auth.uid == uid
+        && (request.method == 'delete' || request.resource.data.keys().hasOnly(['nick','flags','at']));
+      allow read: if devRole();
     }
     // Errors on players' screens (a few per session), read and cleared by the developer role.
     match /errorLogs/{id} {
