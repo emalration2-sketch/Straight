@@ -900,6 +900,8 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .op-err .op-steps .btn{align-self:auto;}
 .cluster-sep{width:1px;height:20px;margin:0 6px 0 4px;background:rgba(var(--line-rgb),.22);}
 .top-cluster .coin-pill{position:static;height:36px;}
+/* Alone (수집품) the coins sit exactly where they do inside the main-screen capsule: capsule top 10 + border 1.5 + padding 3, right 12 + 1.5 + 12. */
+.coin-pill:not(.top-cluster .coin-pill){top:calc(env(safe-area-inset-top) + 14.5px);right:calc(env(safe-area-inset-right) + 25.5px);height:36px;}
 .top-cluster .side-badge{top:-2px;right:-2px;}
 .start-side{position:absolute;top:calc(env(safe-area-inset-top) + 56px);right:calc(env(safe-area-inset-right) + 12px);z-index:5;display:flex;flex-direction:column;gap:8px;}
 .side-btn{position:relative;width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(var(--line-rgb),.16);background:var(--panel2);font-size:20px;line-height:1;cursor:pointer;color:var(--text);}
