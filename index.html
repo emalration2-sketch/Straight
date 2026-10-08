@@ -879,6 +879,8 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .op-err-top small,.op-err-meta{color:var(--muted);font-size:12px;}
 .op-err-msg{font-size:13.5px;word-break:break-all;}
 .op-err .btn{align-self:flex-end;padding:5px 10px;min-height:0;font-size:12.5px;}
+.op-mode{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:4px;}
+.op-mode .btn{padding:8px 4px;min-height:0;font-size:14px;}
 .op-ev{border-radius:10px;background:var(--panel2);margin-bottom:5px;overflow:hidden;}
 .op-ev-head{display:flex;align-items:center;gap:7px;width:100%;padding:8px 10px;border:none;background:none;color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer;}
 .op-ev-head b{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -7203,13 +7205,14 @@ function renderOpEvents(box){
   form.innerHTML =
     "<label>우편 제목<input class=\"nickname-input\" id=\"op-title\" placeholder=\"예: 알파 테스트 감사 선물\"></label>"+
     "<label>우편 내용<textarea class=\"nickname-input op-msg\" id=\"op-msg\" maxlength=\"200\" rows=\"3\" placeholder=\"예: 알파 테스트에 참여해 주셔서 고마워요! 작은 선물을 보내드려요.\"></textarea></label>"+
+    "<div class=\"op-mode\"><button type=\"button\" class=\"btn primary\" data-mode=\"now\">⚡ 즉시 지급</button><button type=\"button\" class=\"btn\" data-mode=\"period\">📅 기간 이벤트</button></div>"+
     "<label>받는 사람<select class=\"nickname-input\" id=\"op-target\"><option value=\"all\">기간 중 접속한 모든 플레이어</option><option value=\"list\">지정한 플레이어만 (기간 중 접속 시)</option><option value=\"past\">기간 끝 전에 가입한 모든 플레이어 (지난 기간 OK)</option></select></label>"+
     "<label class=\"hidden\" id=\"op-nicks-wrap\">닉네임 (쉼표로 구분)<input class=\"nickname-input\" id=\"op-nicks\" placeholder=\"예: 허니뱅, 수달과빙어\"></label>"+
     "<label>보상 종류<select class=\"nickname-input\" id=\"op-kind\">"+REWARD_KINDS.map(function(k){ return "<option value=\""+k[0]+"\">"+k[1]+"</option>"; }).join("")+"</select></label>"+
     "<label id=\"op-item-wrap\">보상 아이템<select class=\"nickname-input\" id=\"op-item\"></select></label>"+
     "<label id=\"op-coins-wrap\">코인 수량<input class=\"nickname-input\" type=\"number\" id=\"op-coins\" value=\"100\" min=\"1\" max=\"10000\"></label>"+
-    dateHourField("기간 시작", "op-start", now)+
-    dateHourField("기간 끝", "op-end", new Date(now.getTime()+7*864e5))+
+    "<div id=\"op-period\">"+dateHourField("기간 시작", "op-start", now)+
+    dateHourField("기간 끝", "op-end", new Date(now.getTime()+7*864e5))+"</div>"+
     "<label>우편함 보관 기간<select class=\"nickname-input\" id=\"op-days\"><option value=\"30\">30일 (일반 이벤트)</option><option value=\"14\">14일 (점검·오류 보상)</option></select></label>";
   box.appendChild(form);
   var fillItems = function(){
@@ -7221,9 +7224,24 @@ function renderOpEvents(box){
   };
   $("op-kind").addEventListener("change", fillItems);
   $("op-target").addEventListener("change", function(){ $("op-nicks-wrap").classList.toggle("hidden", $("op-target").value!=="list"); });
+  var opMode = "now";
+  var setMode = function(m){
+    opMode = m;
+    form.querySelectorAll(".op-mode .btn").forEach(function(x){ x.classList.toggle("primary", x.getAttribute("data-mode")===m); });
+    $("op-period").classList.toggle("hidden", m==="now");
+    var sel = $("op-target"), opts = m==="now"
+      ? [["all","가입한 모든 플레이어"],["list","지정한 플레이어만"]]
+      : [["all","기간 중 접속한 모든 플레이어"],["list","지정한 플레이어만 (기간 중 접속 시)"],["past","기간 끝 전에 가입한 모든 플레이어 (지난 기간 OK)"]];
+    var keep = sel.value;
+    sel.innerHTML = opts.map(function(o){ return "<option value=\""+o[0]+"\">"+o[1]+"</option>"; }).join("");
+    if(opts.some(function(o){ return o[0]===keep; })) sel.value = keep;
+    $("op-nicks-wrap").classList.toggle("hidden", sel.value!=="list");
+  };
+  form.querySelectorAll(".op-mode .btn").forEach(function(x){ x.addEventListener("click", function(){ setMode(x.getAttribute("data-mode")); }); });
+  setMode("now");
   fillItems();
   var actions = el("div","coin-modal-actions");
-  actions.appendChild(smallBtn("이벤트 만들기", true, function(b){
+  actions.appendChild(smallBtn("보내기", true, function(b){
     var kind = $("op-kind").value;
     var amount = Math.floor(Number($("op-coins").value)||0);
     if(kind==="coins" && (amount<1 || amount>10000)){ alert("코인은 1~10000개로 정해 주세요."); return; }
@@ -7231,7 +7249,9 @@ function renderOpEvents(box){
       : kind==="membership" ? { id:"30d", name:"멤버십 30일권" }
       : kind==="nickchange" ? { id:"1", name:"닉네임 변경권" }
       : rewardItems(kind)[Number($("op-item").value)];
-    var start = readDateHour("op-start"), end = readDateHour("op-end");
+    var instant = opMode==="now";
+    // 즉시 지급: the mail opens now; "all" means every account that exists right now.
+    var start = instant ? new Date(serverNow() - 60000) : readDateHour("op-start"), end = instant ? new Date(serverNow()) : readDateHour("op-end");
     var days = Math.max(1, Number($("op-days").value)||30);
     var title = cleanText($("op-title").value, 30).trim();
     var message = cleanText($("op-msg").value, 200).trim();
@@ -7239,8 +7259,8 @@ function renderOpEvents(box){
     if(!title || !item || isNaN(start) || isNaN(end) || end<=start){ alert("제목, 보상, 기간을 확인해 주세요."); return; }
     if(nicks && !nicks.length){ alert("받을 플레이어 닉네임을 입력해 주세요."); return; }
     // "기간 중 접속" only counts sign-ins while the event runs, so a period already over reaches no one.
-    var past = $("op-target").value==="past";
-    if(!past && end.getTime() <= Date.now()){ alert("기간 끝이 이미 지났어요. 그 기간에 접속하는 사람이 없어서 아무도 못 받아요.\n지난 기간 플레이어에게 보내려면 받는 사람을 '기간 끝 전에 가입한 모든 플레이어'로 골라 주세요."); return; }
+    var past = $("op-target").value==="past" || (instant && $("op-target").value==="all");
+    if(!past && !instant && end.getTime() <= Date.now()){ alert("기간 끝이 이미 지났어요. 그 기간에 접속하는 사람이 없어서 아무도 못 받아요.\n지난 기간 플레이어에게 보내려면 받는 사람을 '기간 끝 전에 가입한 모든 플레이어'로 골라 주세요."); return; }
     var kindName = REWARD_KINDS.filter(function(k){ return k[0]===kind; })[0][1];
     var md = function(ms){ var d = new Date(ms); return (d.getMonth()+1)+"/"+d.getDate(); };
     b.disabled = true;
@@ -7260,19 +7280,19 @@ function renderOpEvents(box){
       return list;
     }) : Promise.resolve(null);
     lookup.then(function(found){
-      var who = past ? md(end.getTime())+" "+end.getHours()+"시 전 가입자 "+found.length+"명\n"+found.slice(0,15).map(function(f){ return cleanText(f.nick,16); }).join(", ")+(found.length>15 ? " 외 "+(found.length-15)+"명" : "")+"\n(지금부터 "+days+"일 안에 접속하면 받아요)"
+      var who = past ? (instant ? "지금 가입된 플레이어 " : md(end.getTime())+" "+end.getHours()+"시 전 가입자 ")+found.length+"명\n"+found.slice(0,15).map(function(f){ return cleanText(f.nick,16); }).join(", ")+(found.length>15 ? " 외 "+(found.length-15)+"명" : "")+"\n(지금부터 "+days+"일 안에 접속하면 받아요)"
         : found ? "\n"+found.map(function(f){ return f.line; }).join("\n") : "기간 중 접속한 모든 플레이어";
-      if(!confirm("이 이벤트를 만들까요?\n\n"+title+"\n보상: "+item.name+" ("+kindName+")\n받는 사람: "+who)) throw new Error("cancel");
+      if(!confirm((instant ? "⚡ 지금 바로 우편함으로 보낼까요?" : "이 이벤트를 만들까요?")+"\n\n"+title+"\n보상: "+item.name+" ("+kindName+")\n받는 사람: "+who)) throw new Error("cancel");
       return found ? found.map(function(f){ return f.uid; }) : null;
     }).then(function(uids){
       var data = { title:title, message:message, cond:"login", rewardKind:kind, rewardId:kind+":"+item.id, rewardName:item.name,
         start:start, end:end, claimUntil:new Date(end.getTime()+days*864e5), createdAt:F.serverTimestamp() };
       if(uids) data.targets = uids;
       // Past players: the mail opens now and stays for the keep period.
-      if(past){ data.start = new Date(serverNow() - 60000); data.end = new Date(serverNow() + days*864e5); data.claimUntil = data.end; }
+      if(past || instant){ data.start = new Date(serverNow() - 60000); data.end = new Date(serverNow() + days*864e5); data.claimUntil = data.end; }
       if(kind==="coins") data.rewardCoins = amount;
       return F.addDoc(F.collection(fbDb,"campaigns"), data);
-    }).then(function(){ coinToast("✅ 보상 이벤트를 만들었어요."); loadOperatorList(); refreshMail(); })
+    }).then(function(){ coinToast(instant ? "⚡ 우편함으로 보냈어요." : "✅ 보상 이벤트를 만들었어요."); loadOperatorList(); refreshMail(); })
       .catch(function(e){ if(e && e.message==="cancel") return; console.error("이벤트 생성 실패", e); alert(e && e.message && /닉네임|플레이어가 없어요/.test(e.message) ? e.message : "만들지 못했어요."); })
       .then(function(){ b.disabled = false; });
   }));
