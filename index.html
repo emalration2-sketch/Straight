@@ -862,7 +862,10 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .op-form input,.op-form select{width:100%;box-sizing:border-box;text-align:left;}
 /* iPhone Safari gives date inputs a fixed native width; let them fit the column like the rest. */
 .op-form label{min-width:0;}
-.op-form input[type="datetime-local"]{display:block;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;min-height:40px;line-height:normal;}
+.op-dh{display:flex;gap:6px;min-width:0;}
+.op-dh input{flex:1 1 auto;}
+.op-dh select{flex:0 0 84px;width:84px !important;}
+.op-form input[type="date"],.op-form input[type="datetime-local"]{display:block;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;min-height:40px;line-height:normal;}
 .op-form input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;}
 .coin-pill .coin-ico{width:28px;height:28px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
 .coin-modal{width:min(340px,88vw);box-sizing:border-box;padding:22px 20px;text-align:center;}
@@ -6395,6 +6398,20 @@ function claimMail(c, btn){
 // 🛠 운영자 도구 (developer accounts only — the rules refuse event writes from anyone else):
 // 보상 이벤트 = a reward item sent to every player who signs in during a period, or only to
 // the players listed by nickname. Deleting an event takes its reward back.
+// Event periods are picked by day and hour (no minutes).
+function dateHourField(label, id, d){
+  var pad = function(n){ return ("0"+n).slice(-2); };
+  var day = d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+  var hours = "";
+  for(var h=0;h<24;h++) hours += "<option value=\""+h+"\""+(h===d.getHours()?" selected":"")+">"+pad(h)+"시</option>";
+  return "<label>"+label+"<span class=\"op-dh\"><input class=\"nickname-input\" type=\"date\" id=\""+id+"-day\" value=\""+day+"\"><select class=\"nickname-input\" id=\""+id+"-hour\">"+hours+"</select></span></label>";
+}
+function readDateHour(id){
+  var day = $(id+"-day").value;
+  if(!day) return new Date(NaN);
+  var p = day.split("-").map(Number);
+  return new Date(p[0], p[1]-1, p[2], Number($(id+"-hour").value)||0, 0, 0);
+}
 function openOperatorModal(){
   var box = socialModal("operator-box", "🛠 운영자 도구");
   box.innerHTML = "<h2>🛠 운영자 도구</h2><div class=\"social-head\">보상 이벤트 목록</div><div id=\"op-list\"><p class=\"coin-note muted\">불러오는 중...</p></div>"+
@@ -6402,7 +6419,6 @@ function openOperatorModal(){
   var F = fbFs;
   var form = el("div","op-form");
   var pad = function(n){ return ("0"+n).slice(-2); };
-  var local = function(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes()); };
   var now = new Date();
   form.innerHTML =
     "<label>우편 제목<input class=\"nickname-input\" id=\"op-title\" placeholder=\"예: 알파 테스트 감사 선물\"></label>"+
@@ -6411,8 +6427,8 @@ function openOperatorModal(){
     "<label>보상 종류<select class=\"nickname-input\" id=\"op-kind\">"+REWARD_KINDS.map(function(k){ return "<option value=\""+k[0]+"\">"+k[1]+"</option>"; }).join("")+"</select></label>"+
     "<label id=\"op-item-wrap\">보상 아이템<select class=\"nickname-input\" id=\"op-item\"></select></label>"+
     "<label id=\"op-coins-wrap\">코인 수량<input class=\"nickname-input\" type=\"number\" id=\"op-coins\" value=\"100\" min=\"1\" max=\"10000\"></label>"+
-    "<label>기간 시작<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-start\" value=\""+local(now)+"\"></label>"+
-    "<label>기간 끝<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-end\" value=\""+local(new Date(now.getTime()+7*864e5))+"\"></label>"+
+    dateHourField("기간 시작", "op-start", now)+
+    dateHourField("기간 끝", "op-end", new Date(now.getTime()+7*864e5))+
     "<label>끝난 뒤 받기 가능 (일)<input class=\"nickname-input\" type=\"number\" id=\"op-days\" value=\"30\" min=\"1\" max=\"365\"></label>";
   box.appendChild(form);
   var fillItems = function(){
@@ -6431,7 +6447,7 @@ function openOperatorModal(){
     var amount = Math.floor(Number($("op-coins").value)||0);
     if(kind==="coins" && (amount<1 || amount>10000)){ alert("코인은 1~10000개로 정해 주세요."); return; }
     var item = kind==="coins" ? { id:String(amount), name:amount+"코인" } : rewardItems(kind)[Number($("op-item").value)];
-    var start = new Date($("op-start").value), end = new Date($("op-end").value);
+    var start = readDateHour("op-start"), end = readDateHour("op-end");
     var days = Math.max(1, Number($("op-days").value)||30);
     var title = cleanText($("op-title").value, 30).trim();
     var nicks = $("op-target").value==="list" ? $("op-nicks").value.split(",").map(function(n){ return cleanNick(n); }).filter(Boolean) : null;
