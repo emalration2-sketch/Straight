@@ -95,6 +95,28 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .ms-tab{position:relative;padding:7px 2px;min-height:0;font-size:13px;white-space:nowrap;letter-spacing:-.2px;}
 .ms-tab i{position:absolute;top:-6px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ff4d6d;color:#fff;font-size:10.5px;font-style:normal;font-weight:800;line-height:16px;box-sizing:border-box;}
 .settings-tutorial{display:block;width:100%;margin:6px 0 2px;}
+/* Level text in the name tag (H3-2): plain text, color by band. */
+.name-tag-lv{flex:none;font-family:'Fredoka',-apple-system,sans-serif;font-weight:600;font-size:12.5px;letter-spacing:.1px;line-height:1;cursor:pointer;}
+.name-tag .name-tag-lv{margin-left:6px;margin-right:-1px;}
+.rk-silver{color:#c9c3df;}.rk-mint{color:#6fe3c2;}.rk-sky{color:#7cc4ff;}.rk-violet{color:#c29bff;}.rk-ace{color:#ffcc33;}
+.rk-prism{background:linear-gradient(90deg,#ff7ac8,#ffd76a,#7af0b0,#7ac8ff,#b07cff);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.theme-light .rk-silver{color:#6f6890;}.theme-light .rk-mint{color:#16936f;}.theme-light .rk-sky{color:#2a74c4;}.theme-light .rk-violet{color:#7646c9;}.theme-light .rk-ace{color:#b07a00;}
+.theme-light .rk-prism{background:linear-gradient(90deg,#d6338a,#c98a00,#13976a,#2a74c4,#7646c9);-webkit-background-clip:text;background-clip:text;}
+/* 계급 window */
+.rk-me{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:8px;}
+.rk-me .name-tag-lv{font-size:22px;cursor:default;}
+.rk-me b{font-size:18px;}
+.rk-me small{color:var(--muted);font-size:12.5px;}
+.rk-help{font-size:12.5px;line-height:1.5;text-align:left;}
+.rk-list{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:8px 0;}
+.rk-row{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:10px;background:var(--panel2);}
+.rk-row:last-child{grid-column:1/-1;}
+.rk-row.me{outline:2px solid var(--accent);}
+.rk-row small{font-size:11px;color:var(--muted);}
+.rk-row .name-tag-lv{cursor:default;font-size:13.5px;}
+.rk-tops{display:flex;flex-direction:column;gap:4px;max-height:28vh;overflow-y:auto;}
+.rk-top{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:6px 10px;border-radius:10px;background:var(--panel2);font-size:14px;text-align:left;}
+.rk-top small{color:var(--muted);font-size:12px;}
 /* Missions */
 .ms-body{display:flex;flex-direction:column;gap:6px;text-align:left;max-height:62vh;overflow-y:auto;margin-bottom:6px;}
 .ms-head{display:flex;flex-direction:column;gap:1px;margin:6px 2px 2px;}
@@ -2177,16 +2199,18 @@ function maybeRecordLocalGameResult(outcome, meta){
       showUnlockPopup(cr.newly);
       saveProgressNow();
     }
+    if(outcome==="win") applyRankResult({ kind:"daily", outcome:"win" });
     finishDaily(outcome);
     return;
   }
   // 탈주 패배: the AI played 3+ turns for this seat — a loss whatever the result, and no
   // achievement progress.
   var me = state.players[state.myIndex];
-  if(isMultiplayer() && me && (me.aiTurns||0)>=3) recordAccountResult("loss", true, true);
+  if(isMultiplayer() && me && (me.aiTurns||0)>=3){ recordAccountResult("loss", true, true); applyRankResult({ kind:"leave" }); }
   else {
     recordGameResult(outcome, meta);
     recordAccountResult(outcome, isMultiplayer());
+    applyRankResult({ kind:isMultiplayer() ? "online" : "solo", outcome:outcome, players:state.turnOrder.length, difficulty:state.aiDifficulty, streak:loadStats().winStreak });
   }
   if(iAmHost()) logBalanceGame();
   saveProgressNow();
@@ -2499,7 +2523,7 @@ function playerTagHTML(p, extraCls){
   var titleHTML = p.title ? ("<span class=\"name-tag-title\">"+p.title+"</span>") : "";
   var crownHTML = p.vip ? "<span class=\"vip-crown\" title=\"멤버십\">👑</span>" : "";
   var medalHTML = p.medal ? "<span class=\"season-medal\" title=\"지난달 챌린지 "+p.medal+"위\">"+(["","🥇","🥈","🥉"][p.medal]||"")+"</span>" : "";
-  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"tag-glow\"></span><span class=\"tag-rim\"></span><span class=\"tag-shine\"></span><span class=\"name-tag-avatar\">"+p.avatar+crownHTML+"</span>"+
+  return "<span class=\"name-tag "+(p.border||"")+" "+(extraCls||"")+"\"><span class=\"tag-glow\"></span><span class=\"tag-rim\"></span><span class=\"tag-shine\"></span>"+rankTagHTML(p.lv)+"<span class=\"name-tag-avatar\">"+p.avatar+crownHTML+"</span>"+
     "<span class=\"name-tag-label\">"+titleHTML+"<span class=\"name-tag-text\">"+medalHTML+p.name+"</span></span></span>";
 }
 
@@ -2618,6 +2642,7 @@ function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.classN
 
 function switchScreen(name){
   if(name==="game" && typeof missionBase==="function" && MISSION_PERIODS) missionBase();
+  if(name==="game") state.lastRank = null;
   if(name==="start" && typeof refreshMissionBadge==="function") refreshMissionBadge();
   if(name==="win" && typeof renderWinProgress==="function") setTimeout(renderWinProgress, 0);
   // 수집품 shows every effect live: lift idle rest and low-power while it is open.
@@ -3401,6 +3426,7 @@ function cleanPlayer(p){
   out.aiTakeover = !!p.aiTakeover;
   out.ready = !!p.ready;
   out.medal = [1,2,3].indexOf(Number(p.medal))!==-1 ? Number(p.medal) : 0;
+  out.lv = /^(Lv\.([1-9]|10|Ace)|PRISM)$/.test(p.lv) ? p.lv : null;
   out.isAI = !!p.isAI;
   out.hand = cleanCards(p.hand);
   out.score = cleanCards(p.score);
@@ -3925,7 +3951,7 @@ function lobbySeatPlayer(){
   var mf = myMemberFields();
   return { clientId: myClientId, uid: account ? account.uid : null, name: chosenNickname || ch.name, characterName: ch.name,
     avatar: avatarIconHTML(ch), avatarPicked: true, title: activeTitleLabel(), border: activeBorderCls(),
-    vip: mf.vip, master: mf.master, medal: mf.medal, ready: false, isAI: false, hand: [], score: [] };
+    vip: mf.vip, master: mf.master, medal: mf.medal, lv: myRankLabel(), ready: false, isAI: false, hand: [], score: [] };
 }
 function createRoom(maxPlayers, cb, opts){
   opts = opts || {};
@@ -4640,7 +4666,7 @@ function runOrderCutscene(){
   $("order-start-btn").classList.add("hidden");
 
   var players = [];
-  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), title:activeTitleLabel(), border:activeBorderCls(), vip:myMemberFields().vip, master:myMemberFields().master, medal:myMemberFields().medal, isAI:false, hand:[], score:[] });
+  players.push({ idx:0, name:(chosenNickname||chosenCharacter.name)+" (나)", characterName:chosenCharacter.name, avatar:avatarIconHTML(chosenCharacter), title:activeTitleLabel(), border:activeBorderCls(), vip:myMemberFields().vip, master:myMemberFields().master, medal:myMemberFields().medal, lv:myRankLabel(), isAI:false, hand:[], score:[] });
   var used = {}; used[chosenCharacter.name]=true;
   for(var i=1;i<chosenCount;i++){
     var ch;
@@ -5231,7 +5257,7 @@ function startDailyGame(key, ch){
   gameRng = seededRng("straight-season-"+seasonKey());
   state.daily = { key:key, startedAt:Date.now() };
   var mf = myMemberFields();
-  var me = { idx:0, name:(chosenNickname||ch.name)+" (나)", characterName:ch.name, avatar:avatarIconHTML(ch), title:activeTitleLabel(), border:activeBorderCls(), vip:mf.vip, master:mf.master, medal:mf.medal, isAI:false, hand:[], score:[] };
+  var me = { idx:0, name:(chosenNickname||ch.name)+" (나)", characterName:ch.name, avatar:avatarIconHTML(ch), title:activeTitleLabel(), border:activeBorderCls(), vip:mf.vip, master:mf.master, medal:mf.medal, lv:myRankLabel(), isAI:false, hand:[], score:[] };
   startGame([me], [0]);
   pushLog("🏆 오늘의 챌린지 — 가장 빠른 턴에 스트레이트를 완성하세요!");
 }
@@ -5268,6 +5294,97 @@ function finishDaily(outcome){
 // the security rules (see wallets/{uid} in firestore.rules), so no server is needed until
 // coins can be bought with money.
 function coinCount(){ return account && account.wallet ? account.wallet.coins : 0; }
+// ---------- 🏅 계급: Lv.1~10 · ACE · PRISM ----------
+// RP per season (ranks/{season}/players/{uid}: {rp, name, avatar, at}); the level comes from RP,
+// and PRISM is ACE inside the season's top 10. A new season starts two levels lower. RP never
+// drops below the current level's floor. Solo RP stops at Lv.4 on 쉬움 and Lv.7 on 보통; 어려움,
+// multiplayer and the challenge go all the way (tuned with a 30-day simulation of player types).
+var RANK_FLOORS = [0, 40, 100, 180, 280, 420, 600, 850, 1150, 1700, 2500]; // Lv.1..10, Lv.Ace
+var RANK_SOLO_CAP = { easy:279, normal:849 };
+var RANK_PRISM_TOP = 10;
+var myRank = { season:"", rp:0, prism:false, loaded:false };
+var prismTop = [];          // [{ id, name, rp }] for this season
+function rankIndex(rp){ var i = 0; while(i+1<RANK_FLOORS.length && rp>=RANK_FLOORS[i+1]) i++; return i; }
+function rankLabelOf(rp, prism){ var i = rankIndex(rp); return prism ? "PRISM" : i===10 ? "Lv.Ace" : "Lv."+(i+1); }
+function rankBand(label){
+  if(label==="PRISM") return "rk-prism";
+  if(label==="Lv.Ace") return "rk-ace";
+  var n = Number(String(label).replace("Lv.",""))||1;
+  return n<=3 ? "rk-silver" : n<=6 ? "rk-mint" : n<=9 ? "rk-sky" : "rk-violet";
+}
+function myRankLabel(){ return myRank && myRank.loaded ? rankLabelOf(myRank.rp, myRank.prism) : null; }
+function rankRef(season){ return fbFs.doc(fbDb, "ranks", season, "players", account.uid); }
+function loadMyRank(){
+  if(!account || !fbDb) return Promise.resolve();
+  var F = fbFs, season = seasonKey();
+  return F.getDoc(rankRef(season)).then(function(d){
+    if(d.exists()){ myRank = { season:season, rp:Number(d.data().rp)||0, prism:false, loaded:true }; return; }
+    // New season: carry over two levels lower.
+    return F.getDoc(rankRef(prevSeasonKey())).then(function(p){
+      var prev = p.exists() ? Number(p.data().rp)||0 : 0;
+      var start = RANK_FLOORS[Math.max(0, rankIndex(prev) - 2)];
+      myRank = { season:season, rp:start, prism:false, loaded:true };
+      return saveMyRank();
+    });
+  }).then(loadPrismTop).catch(function(e){ console.warn("계급 불러오기 실패", e); });
+}
+function saveMyRank(){
+  var me = dailyIdentity();
+  return fbFs.setDoc(rankRef(myRank.season), { rp:myRank.rp, name:me.name, avatar:me.avatar, at:fbFs.serverTimestamp() });
+}
+function loadPrismTop(){
+  var F = fbFs;
+  return F.getDocs(F.query(F.collection(fbDb, "ranks", seasonKey(), "players"), F.orderBy("rp","desc"), F.limit(RANK_PRISM_TOP))).then(function(s){
+    prismTop = s.docs.filter(function(d){ return (Number(d.data().rp)||0) >= RANK_FLOORS[10]; })
+      .map(function(d){ return { id:d.id, name:d.data().name, avatar:d.data().avatar, rp:Number(d.data().rp)||0 }; });
+    myRank.prism = !!account && prismTop.some(function(p){ return p.id===account.uid; });
+    if(typeof renderStartMe==="function") renderStartMe();
+  }).catch(function(){});
+}
+// RP for one finished game. kind: "solo" | "online" | "daily" | "leave".
+function rankDeltaFor(r){
+  if(r.kind==="leave") return -30;
+  if(r.kind==="daily") return r.outcome==="win" ? 15 : 0;
+  if(r.outcome==="draw") return 0;
+  var d;
+  if(r.kind==="online") d = r.outcome==="win" ? (r.players>=3 ? 30 : 20) : (r.players>=3 ? -8 : -12);
+  else d = r.outcome==="win" ? ({ easy:6, normal:10, hard:16 }[r.difficulty]||10) : ({ easy:-8, normal:-6, hard:-4 }[r.difficulty]||-6);
+  if(r.outcome==="win" && r.streak>=3) d += Math.min(10, (r.streak-2)*2);
+  if(d<0 && rankIndex(myRank.rp)>=7) d = Math.round(d*1.5);
+  return d;
+}
+function applyRankResult(r){
+  if(!account || !myRank.loaded || myRank.season!==seasonKey()) return null;
+  var before = myRank.rp, beforeLabel = myRankLabel(), d = rankDeltaFor(r);
+  var next = before + d;
+  var cap = r.kind==="solo" ? RANK_SOLO_CAP[r.difficulty] : undefined;
+  if(d>0 && cap!==undefined) next = Math.max(before, Math.min(next, cap));
+  next = Math.max(next, RANK_FLOORS[rankIndex(before)]);
+  myRank.rp = next;
+  var res = { delta:next-before, before:before, after:next, up:rankIndex(next)>rankIndex(before), label:rankLabelOf(next, myRank.prism), beforeLabel:beforeLabel };
+  state.lastRank = res;
+  if(fbDb) saveMyRank().then(loadPrismTop).catch(function(e){ console.warn("계급 저장 실패", e); });
+  if(res.up) setTimeout(function(){ coinToast("🎉 <b>"+res.label+"</b> 달성!"); sfxCapture(); }, 1200);
+  return res;
+}
+function rankTagHTML(label){ return label ? "<span class=\"name-tag-lv "+rankBand(label)+"\">"+label+"</span>" : ""; }
+function openRankModal(){
+  var rp = myRank.rp, i = rankIndex(rp), label = myRankLabel() || "Lv.1";
+  var nextFloor = RANK_FLOORS[i+1];
+  var rows = RANK_FLOORS.map(function(f, k){
+    var l = k===10 ? "Lv.Ace" : "Lv."+(k+1);
+    return "<div class=\"rk-row"+(k===i && !myRank.prism ? " me" : "")+"\"><span class=\"name-tag-lv "+rankBand(l)+"\">"+l+"</span><small>"+f.toLocaleString()+" RP</small></div>";
+  }).join("") + "<div class=\"rk-row"+(myRank.prism ? " me" : "")+"\"><span class=\"name-tag-lv rk-prism\">PRISM</span><small>Lv.Ace 중 시즌 상위 "+RANK_PRISM_TOP+"명</small></div>";
+  var top = prismTop.length ? prismTop.map(function(p, k){ return "<div class=\"rk-top\"><b>"+(k+1)+"</b><span>"+cleanText(p.name,16)+"</span><small>"+p.rp.toLocaleString()+" RP</small></div>"; }).join("")
+    : "<p class=\"coin-note muted\">아직 Lv.Ace에 오른 플레이어가 없어요.</p>";
+  coinModal("🏅 계급",
+    "<div class=\"rk-me\"><span class=\"name-tag-lv "+rankBand(label)+"\">"+label+"</span><b>"+rp.toLocaleString()+" RP</b><small>"+
+      (nextFloor!==undefined ? "다음 단계까지 "+(nextFloor-rp).toLocaleString()+" RP" : "PRISM은 이번 시즌 Lv.Ace 상위 "+RANK_PRISM_TOP+"명")+"</small></div>"+
+    "<p class=\"coin-note rk-help\">이기면 오르고 지면 조금 내려가요 (단계 아래로는 안 떨어져요). 혼자하기는 어려움일수록 많이 올라요 (쉬움은 Lv.4, 보통은 Lv.7까지). 챌린지를 완성해도 올라요. 매달 새 시즌에 두 단계 아래에서 다시 시작해요.</p>"+
+    "<div class=\"rk-list\">"+rows+"</div><div class=\"ms-head\"><span>🌈 이번 시즌 PRISM</span></div><div class=\"rk-tops\">"+top+"</div>",
+    [{ label:"닫기" }]);
+}
+
 // ---------- 📋 미션: 일일 · 주간 · 월간 + 첫걸음 보상 ----------
 // Each period has three missions (one per slot, the same for everyone), measured as stat gains
 // since the period's first look (straightMission:<period>). A claim is a wallet action the
@@ -5458,7 +5575,7 @@ function nextGoalLines(){
   });
   // e.g. "🎁 승리 100회 달성하면 새 아바타 '용씨'"
   if(best) lines.push({ t:"🎁 "+best.goal+" 달성하면 "+(UNLOCK_KIND_LABELS[best.m.kind]||"보상")+" '"+best.m.label+"'", p:best.a, n:best.b });
-  return lines.slice(0, 3);
+  return lines.slice(0, 2);
 }
 function renderWinProgress(){
   var host = $("win-progress");
@@ -5466,10 +5583,15 @@ function renderWinProgress(){
   host.innerHTML = "";
   if(state.daily || !account){ host.classList.add("hidden"); return; }
   var lines = nextGoalLines();
+  var lr = state.lastRank;
+  if(lr){
+    var ri = rankIndex(lr.after), lo = RANK_FLOORS[ri], hi = RANK_FLOORS[ri+1];
+    lines.unshift({ t:"🏅 "+lr.label+" · "+(lr.delta>=0 ? "+" : "")+lr.delta+" RP"+(hi!==undefined ? " (다음까지 "+(hi-lr.after)+")" : ""), p:hi!==undefined ? lr.after-lo : 1, n:hi!==undefined ? hi-lo : 1, rank:true });
+  }
   host.classList.toggle("hidden", !lines.length);
   lines.forEach(function(x){
     var row = el(x.ready ? "button" : "div", "wp-row"+(x.ready ? " ready" : ""),
-      "<span>"+x.t+"</span>"+(x.n ? "<small>"+x.p+"/"+x.n+"</small><div class=\"ms-bar\"><i style=\"transform:scaleX("+(x.p/x.n)+")\"></i></div>" : ""));
+      "<span>"+x.t+"</span>"+(x.n && !x.rank ? "<small>"+x.p+"/"+x.n+"</small><div class=\"ms-bar\"><i style=\"transform:scaleX("+(x.p/x.n)+")\"></i></div>" : ""));
     if(x.ready) row.addEventListener("click", function(){ sfxSelect(); openMissionModal(); });
     host.appendChild(row);
   });
@@ -5723,7 +5845,7 @@ Array.prototype.forEach.call(document.querySelectorAll(".coin-pill"), function(p
 });
 renderCoinPills();
 // Friends, invites and mail start once the account is in (after this script has run).
-setTimeout(function(){ startSocial(); startNoticeBanner(); selfCheckReport(); $("start-side").classList.toggle("hidden", !account); $("op-btn").classList.toggle("hidden", !isDevAccount()); }, 0);
+setTimeout(function(){ startSocial(); startNoticeBanner(); selfCheckReport(); loadMyRank().then(function(){ if(typeof renderStartMe==="function") renderStartMe(); }); $("start-side").classList.toggle("hidden", !account); $("op-btn").classList.toggle("hidden", !isDevAccount()); }, 0);
 $("op-btn").addEventListener("click", function(){ sfxSelect(); openOperatorModal(); });
 claimAttendance().then(function(r){
   renderCoinPills();
@@ -7835,7 +7957,7 @@ function renderCollectionStage(){
   var borderId = collPartValue("border"), border = "";
   BORDER_PRESETS.forEach(function(b){ if(b.id===borderId) border = b.cls; });
   var mf = myMemberFields();
-  var tag = playerTagHTML({ avatar:avatarIconHTML(ch), name:cleanNick(chosenNickname || ch.name), title:title, border:border, vip:mf.vip, medal:mf.medal });
+  var tag = playerTagHTML({ avatar:avatarIconHTML(ch), name:cleanNick(chosenNickname || ch.name), title:title, border:border, vip:mf.vip, medal:mf.medal, lv:myRankLabel() });
   var cards = "";
   [["PINK",3],["BLUE",4],["YELLOW",5],["GREEN",6]].forEach(function(cv){
     var base = theme.colors[cv[0]];
@@ -8311,7 +8433,11 @@ function openTutorialFromMenu(){
   sfxSelect();
   openTutorialModal();
 }
-$("start-me").addEventListener("click", function(){ if(account) $("collection-btn").click(); });
+$("start-me").addEventListener("click", function(e){
+  if(!account) return;
+  if(e.target.closest && e.target.closest(".name-tag-lv")){ sfxSelect(); openRankModal(); return; }
+  $("collection-btn").click();
+});
 $("mission-btn").addEventListener("click", function(){ sfxSelect(); openMissionModal(); });
 $("collection-btn").addEventListener("click", function(){
   sfxSelect();
