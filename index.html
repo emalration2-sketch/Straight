@@ -1393,6 +1393,15 @@ var IS_LOCAL_DEV = /^(localhost|127.0.0.1)$/.test(location.hostname);
 // Local dev uses App Check only with a debug token registered in the Firebase console. The
 // token stays in this browser (localStorage "straightAppCheckDebug"), never in the code.
 var LOCAL_APPCHECK_TOKEN = null;
+// Local only: opening localhost/#appcheck=<token> saves the token here and wipes it from the
+// address bar (a # part is never sent to the server).
+try{
+  var appcheckHash = IS_LOCAL_DEV && /^#appcheck=([A-Za-z0-9-]{20,64})$/.exec(location.hash);
+  if(appcheckHash){
+    localStorage.setItem("straightAppCheckDebug", appcheckHash[1]);
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+}catch(e){}
 try{ if(IS_LOCAL_DEV) LOCAL_APPCHECK_TOKEN = localStorage.getItem("straightAppCheckDebug"); }catch(e){}
 // Fraud Defense (reCAPTCHA Enterprise) site key — public; registered in Firebase App Check.
 var APP_CHECK_SITE_KEY = "6Lcq19wtAAAAALXhtiGYmavBSpqBaE5jI_XWDyEe";
