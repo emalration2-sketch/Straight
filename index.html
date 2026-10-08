@@ -369,6 +369,7 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .turn-chip:empty{visibility:hidden;}
 .turn-chip .tt-avatar{font-size:17px;line-height:1;}
 .turn-chip .tt-name{overflow:hidden;text-overflow:ellipsis;min-width:0;}
+.turn-chip{background-origin:border-box;}
 .turn-chip.other{color:var(--muted);}
 .prism-intro{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:60;display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 26px 16px;border-radius:20px;background:rgba(10,14,32,.96);border:1.5px solid rgba(255,255,255,.22);box-shadow:0 12px 40px rgba(0,0,0,.6);color:#fff;text-align:center;animation:introIn .35s cubic-bezier(.2,1.4,.4,1) both;pointer-events:none;}
 .prism-intro.out{animation:introOut .3s ease-in forwards;}
@@ -378,6 +379,9 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .prism-intro-sub{white-space:nowrap;font-size:13px;color:rgba(255,255,255,.75);}
 @keyframes introIn{from{opacity:0;transform:translate(-50%,-50%) scale(.8);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
 @keyframes introOut{to{opacity:0;transform:translate(-50%,-50%) scale(.92);}}
+.surrender-pop{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:70;display:flex;flex-direction:column;align-items:center;gap:6px;padding:18px 30px;border-radius:20px;background:rgba(10,14,32,.94);color:#fff;font-size:22px;font-weight:800;box-shadow:0 12px 40px rgba(0,0,0,.6);animation:introIn .35s cubic-bezier(.2,1.4,.4,1) both;pointer-events:none;}
+.surrender-flag{font-size:64px;line-height:1;transform-origin:20% 90%;animation:flagWave .5s ease-in-out infinite alternate;}
+@keyframes flagWave{from{transform:rotate(-8deg);}to{transform:rotate(8deg);}}
 .turn-chip.notice{background:linear-gradient(135deg,#7f77dd,#33d6c0);border-color:transparent;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);overflow:hidden;text-overflow:ellipsis;}
 .turn-chip.mine{background:linear-gradient(135deg,var(--pink),#ff8fb8);border-color:transparent;color:#1a0510;padding:4px 6px 4px 14px;}
 .turn-chip .tt-num{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:26px;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.88);color:#1a0510;font-family:var(--font-display);font-size:17px;font-weight:400;letter-spacing:.5px;}
@@ -643,6 +647,16 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .card:not(.back)::before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);pointer-events:none;z-index:1;}
 .card-num{position:relative;z-index:2;font-family:'Fredoka',-apple-system,'Malgun Gothic',sans-serif;font-weight:600;}
 .pattern-stripe::after,.pattern-argyle::after,.pattern-honeycomb::after,.pattern-diagonal::after,.pattern-ripple::after,.pattern-scale::after,.pattern-goldfoil::after,.pattern-hologram::after,.pattern-cosmic::after,.pattern-sakura::after,.pattern-snowflake::after,.pattern-onyx::after,.pattern-stained::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-tiger::after,.pattern-bone::after,.pattern-bamboo::after,.pattern-pawprint::after,.pattern-barcode::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;}
+.pattern-tiger::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2728%27%20height%3D%2728%27%20viewBox%3D%270%200%2028%2028%27%3E%3Cpath%20d%3D%27M-2%205%20C6%2011%2010%200%2018%207%20S26%203%2030%205%27%20stroke%3D%27rgba(0%2C0%2C0%2C.28)%27%20stroke-width%3D%273.2%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3Cpath%20d%3D%27M-2%2019%20C5%2024%2011%2014%2017%2020%20S25%2017%2030%2019%27%20stroke%3D%27rgba(0%2C0%2C0%2C.28)%27%20stroke-width%3D%272.4%27%20fill%3D%27none%27%20stroke-linecap%3D%27round%27%2F%3E%3C%2Fsvg%3E") 0 0/28px 28px repeat;}
+.pattern-bone::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2730%27%20height%3D%2726%27%20viewBox%3D%270%200%2030%2026%27%3E%3Cg%20fill%3D%27rgba(255%2C255%2C255%2C.28)%27%20transform%3D%27rotate(-25%2015%2013)%27%3E%3Crect%20x%3D%278%27%20y%3D%2711%27%20width%3D%2714%27%20height%3D%274%27%20rx%3D%272%27%2F%3E%3Ccircle%20cx%3D%278%27%20cy%3D%2711%27%20r%3D%272.6%27%2F%3E%3Ccircle%20cx%3D%278%27%20cy%3D%2715%27%20r%3D%272.6%27%2F%3E%3Ccircle%20cx%3D%2722%27%20cy%3D%2711%27%20r%3D%272.6%27%2F%3E%3Ccircle%20cx%3D%2722%27%20cy%3D%2715%27%20r%3D%272.6%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 0 0/30px 26px repeat;}
+.pattern-bamboo::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2722%27%20height%3D%2730%27%20viewBox%3D%270%200%2022%2030%27%3E%3Crect%20x%3D%274%27%20width%3D%275%27%20height%3D%2730%27%20rx%3D%272%27%20fill%3D%27rgba(255%2C255%2C255%2C.28)%27%2F%3E%3Crect%20x%3D%273%27%20y%3D%2710%27%20width%3D%277%27%20height%3D%271.6%27%20fill%3D%27rgba(255%2C255%2C255%2C.4)%27%2F%3E%3Crect%20x%3D%273%27%20y%3D%2724%27%20width%3D%277%27%20height%3D%271.6%27%20fill%3D%27rgba(255%2C255%2C255%2C.4)%27%2F%3E%3Cpath%20d%3D%27M10%2011%20Q16%206%2020%208%20Q15%2011%2010%2012Z%27%20fill%3D%27rgba(255%2C255%2C255%2C.28)%27%2F%3E%3C%2Fsvg%3E") 0 0/22px 30px repeat;}
+.pattern-pawprint::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2728%27%20height%3D%2728%27%20viewBox%3D%270%200%2028%2028%27%3E%3Cg%20fill%3D%27rgba(255%2C255%2C255%2C.28)%27%20transform%3D%27translate(0%200)%20scale(1)%27%3E%3Cellipse%20cx%3D%279%27%20cy%3D%2712%27%20rx%3D%274%27%20ry%3D%273.4%27%2F%3E%3Ccircle%20cx%3D%274.5%27%20cy%3D%277%27%20r%3D%271.7%27%2F%3E%3Ccircle%20cx%3D%278%27%20cy%3D%274.5%27%20r%3D%271.7%27%2F%3E%3Ccircle%20cx%3D%2711.5%27%20cy%3D%275%27%20r%3D%271.7%27%2F%3E%3Ccircle%20cx%3D%2714%27%20cy%3D%278%27%20r%3D%271.6%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27rgba(255%2C255%2C255%2C.28)%27%20transform%3D%27translate(14%2014)%20scale(0.8)%27%3E%3Cellipse%20cx%3D%279%27%20cy%3D%2712%27%20rx%3D%274%27%20ry%3D%273.4%27%2F%3E%3Ccircle%20cx%3D%274.5%27%20cy%3D%277%27%20r%3D%271.7%27%2F%3E%3Ccircle%20cx%3D%278%27%20cy%3D%274.5%27%20r%3D%271.7%27%2F%3E%3Ccircle%20cx%3D%2711.5%27%20cy%3D%275%27%20r%3D%271.7%27%2F%3E%3Ccircle%20cx%3D%2714%27%20cy%3D%278%27%20r%3D%271.6%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 0 0/28px 28px repeat;}
+.pattern-barcode::after{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2722%27%20height%3D%2722%27%20viewBox%3D%270%200%2022%2022%27%3E%3Cg%20fill%3D%27rgba(255%2C255%2C255%2C.28)%27%3E%3Crect%20x%3D%271%27%20width%3D%272.4%27%20height%3D%2722%27%2F%3E%3Crect%20x%3D%275%27%20width%3D%271%27%20height%3D%2722%27%2F%3E%3Crect%20x%3D%278%27%20width%3D%273.2%27%20height%3D%2722%27%2F%3E%3Crect%20x%3D%2713.5%27%20width%3D%271%27%20height%3D%2722%27%2F%3E%3Crect%20x%3D%2716.5%27%20width%3D%272%27%20height%3D%2722%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E") 0 0/22px 22px repeat;}
+.card.pattern-tiger .fx-sheen::before{background-image:linear-gradient(105deg,transparent 28%,rgba(255,196,90,.55) 50%,transparent 72%);}
+.card.pattern-bamboo .fx-sheen::before{background-image:linear-gradient(105deg,transparent 28%,rgba(190,255,190,.45) 50%,transparent 72%);}
+.card.pattern-pawprint .fx-sheen::before{background-image:linear-gradient(105deg,transparent 28%,rgba(255,190,220,.5) 50%,transparent 72%);}
+.card.pattern-barcode .fx-sheen::before{background-image:linear-gradient(105deg,transparent 40%,rgba(255,255,255,.6) 50%,transparent 60%);}
 .pattern-stripe::after{background:repeating-linear-gradient(45deg,rgba(0,0,0,.1) 0 3px,transparent 3px 8px);}
 .pattern-argyle::after{background-image:linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%),linear-gradient(45deg,rgba(0,0,0,.1) 25%,transparent 25%,transparent 75%,rgba(0,0,0,.1) 75%);background-size:25% 17.857%;background-position:0 0,16.667% 10.87%;}
 .pattern-honeycomb::after{background-image:linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(30deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(150deg,rgba(0,0,0,.1) 12%,transparent 12.5%,transparent 87%,rgba(0,0,0,.1) 87.5%,rgba(0,0,0,.1)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08)),linear-gradient(60deg,rgba(0,0,0,.08) 25%,transparent 25.5%,transparent 75%,rgba(0,0,0,.08) 75%,rgba(0,0,0,.08));background-size:16px 28px;background-position:0 0,0 0,8px 14px,8px 14px,0 0,8px 14px;}
@@ -1060,9 +1074,9 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
     <p class="sub" style="margin:0;" id="lobby-share-hint">친구에게 초대를 보내거나 방 코드를 알려 주세요</p>
     <div style="font-family:var(--font-display);font-weight:400;font-size:32px;letter-spacing:8px;color:var(--accent);" id="lobby-code"></div>
     <div class="lobby-invite-row" id="lobby-copy-btn">
-      <button class="btn primary" id="lobby-invite-btn">💌 친구 초대하기</button>
+      <button class="btn primary" id="lobby-invite-btn">💌 초대 링크 보내기</button>
       <button class="btn" id="lobby-code-btn">📋 코드 복사</button>
-      <button class="btn" id="lobby-friends-btn">👥 친구 초대</button>
+      <button class="btn" id="lobby-friends-btn">👥 친구 목록에서 초대</button>
     </div>
     <div class="order-list" id="lobby-players" style="min-width:280px;"></div>
     <button class="btn primary big hidden" id="lobby-start-btn">게임 시작 (부족 인원 AI 채움)</button>
@@ -1639,17 +1653,22 @@ var CARD_BACK_PRESETS = [
   { id:"harlequin", name:"할리퀸", cls:"pattern-harlequin", paid:true },
   { id:"neon", name:"네온", cls:"pattern-neon", paid:true },
   { id:"aurora", name:"오로라", cls:"pattern-aurora", paid:true },
+  { id:"tiger", name:"타이거 스킨", cls:"pattern-tiger", paid:true },
+  { id:"bone", name:"뼈다귀", cls:"pattern-bone", paid:true },
+  { id:"bamboo", name:"대나무", cls:"pattern-bamboo", paid:true },
   { id:"framecut", name:"프레임컷", cls:"pattern-framecut", event:true },
   { id:"crystal", name:"샤드", cls:"pattern-crystal", event:true },
   { id:"fireworks", name:"폭죽", cls:"pattern-fireworks" },
   { id:"sakura", name:"벚꽃", cls:"pattern-sakura", event:true },
-  { id:"snowflake", name:"눈송이", cls:"pattern-snowflake", event:true }
+  { id:"snowflake", name:"눈송이", cls:"pattern-snowflake", event:true },
+  { id:"pawprint", name:"고양이 발자국", cls:"pattern-pawprint", event:true },
+  { id:"barcode", name:"바코드", cls:"pattern-barcode", event:true }
 ];
 
 /* ---------------- progress / unlocks ---------------- */
 
-var UNLOCK_STARTER_AVATARS = ["허니뱅","바코드 라이언","매드독","크러셔 루"];
-var SHINE_PATTERNS = ["hologram","cosmic","nebula","goldfoil","fireworks"];
+var UNLOCK_STARTER_AVATARS = ["허니뱅","백수","멍아지","캥"];
+var SHINE_PATTERNS = ["hologram","cosmic","nebula","goldfoil","fireworks","pawprint","barcode"];
 function patternShines(p){ return !!p && (p.paid || p.member || SHINE_PATTERNS.indexOf(p.id)!==-1); }
 // Extra layers a pattern card carries: the finish, and 네뷸라's twinkling stars.
 function patternFinishHTML(p){
@@ -1664,14 +1683,14 @@ var UNLOCK_STARTER_BORDERS = ["basic"];
 var UNLOCK_MILESTONES = [
   { id:"win:20",   kind:"title",   label:"초보",          check:function(s){ return s.wins>=20; },   detail:function(s){ return "승리 "+Math.min(s.wins,20)+"/20회"; } },
   { id:"win:10",   kind:"avatar",  label:"아울 렛",   check:function(s){ return s.wins>=50; },   detail:function(s){ return "승리 "+Math.min(s.wins,50)+"/50회"; } },
-  { id:"win:50",   kind:"avatar",  label:"볼트 드라코",    check:function(s){ return s.wins>=100; },   detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
+  { id:"win:50",   kind:"avatar",  label:"용씨",    check:function(s){ return s.wins>=100; },   detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
   // 100 wins rewards both a character and a title, so ids carry the reward kind.
-  { id:"win:100:avatar", kind:"avatar", label:"폭스트릭",  check:function(s){ return s.wins>=200; }, detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
+  { id:"win:100:avatar", kind:"avatar", label:"꾀돌이",  check:function(s){ return s.wins>=200; }, detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
   { id:"win:100",  kind:"title",   label:"승부사",          check:function(s){ return s.wins>=200; },  detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
   { id:"win:400",  kind:"title",   label:"카드의 신",        check:function(s){ return s.wins>=400; },  detail:function(s){ return "승리 "+Math.min(s.wins,400)+"/400회"; } },
-  { id:"win:200",  kind:"avatar",  label:"쉐도우 캣",  check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
-  { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=1000; },  detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
-  { id:"win:1000", kind:"avatar",  label:"렉스 버서커",    check:function(s){ return s.wins>=2000; }, detail:function(s){ return "승리 "+Math.min(s.wins,2000)+"/2000회"; } },
+  { id:"win:200",  kind:"avatar",  label:"츄르줘",  check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
+  { id:"win:500",  kind:"avatar",  label:"어어어중심",      check:function(s){ return s.wins>=1000; },  detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
+  { id:"win:1000", kind:"avatar",  label:"화석연료",    check:function(s){ return s.wins>=2000; }, detail:function(s){ return "승리 "+Math.min(s.wins,2000)+"/2000회"; } },
 
   { id:"misc:tutorial:pattern", kind:"pattern", label:"다이애그널", check:function(s){ return s.tutorialDone; }, boolCond:true, detail:function(s){ return "튜토리얼 완료"; } },
   { id:"games:10",   kind:"pattern", label:"리플",     check:function(s){ return s.games>=50; },   detail:function(s){ return "플레이 "+Math.min(s.games,50)+"/50판"; } },
@@ -2136,30 +2155,30 @@ function setCardTheme(idx){
 }
 
 // Characters that were renamed: saved picks and older clients' names map to the new ones.
-var RENAMED_CHARACTERS = {"스파크 렉스":"볼트 드라코","고양이 예언자":"쉐도우 캣","나이트올빼미":"아울 렛","슬로우모":"아이언 쉘","유니콘":"프리즘 혼","섀도우 캣":"쉐도우 캣","미드나잇 아울":"아울 렛"};
+var RENAMED_CHARACTERS = {"스파크 렉스":"용씨","고양이 예언자":"츄르줘","나이트올빼미":"아울 렛","슬로우모":"느려","유니콘":"뿔말","섀도우 캣":"츄르줘","미드나잇 아울":"아울 렛","매드독":"멍아지","프리즘 혼":"뿔말","아이언 쉘":"느려","썬더 죠스":"이빨부자","블랙 스콜피온":"독한놈","바코드 라이언":"백수","크러셔 루":"캥","볼트 드라코":"용씨","쉐도우 캣":"츄르줘","폭스트릭":"꾀돌이","카이저 핑":"어어어중심","렉스 버서커":"화석연료","판다 킹":"뒹굴","메가블록":"밥","블레이즈 타이거":"이거타"};
 function currentCharacterName(name){ return RENAMED_CHARACTERS[name] || name; }
 var CHARACTERS = [
   { emoji:"🦡", name:"허니뱅" },
-  { emoji:"🐈‍⬛", name:"쉐도우 캣" },
-  { emoji:"🦁", name:"바코드 라이언" },
-  { emoji:"🐳", name:"메가블록", event:true },
-  { emoji:"🐧", name:"카이저 핑" },
-  { emoji:"🐕", name:"매드독" },
-  { emoji:"🦘", name:"크러셔 루" },
-  { emoji:"🐉", name:"볼트 드라코" },
+  { emoji:"🐈‍⬛", name:"츄르줘" },
+  { emoji:"🦁", name:"백수" },
+  { emoji:"🐳", name:"밥", event:true },
+  { emoji:"🐧", name:"어어어중심" },
+  { emoji:"🐕", name:"멍아지" },
+  { emoji:"🦘", name:"캥" },
+  { emoji:"🐉", name:"용씨" },
   { emoji:"🦉", name:"아울 렛" },
-  { emoji:"🐢", name:"아이언 쉘", event:true },
-  { emoji:"🦊", name:"폭스트릭" },
-  { emoji:"🦖", name:"렉스 버서커" },
+  { emoji:"🐢", name:"느려", event:true },
+  { emoji:"🦊", name:"꾀돌이" },
+  { emoji:"🦖", name:"화석연료" },
   // Shop characters (220 coins).
-  { emoji:"🐯", name:"블레이즈 타이거", paid:true },
-  { emoji:"🦅", name:"스톰 호크", paid:true },
+  { emoji:"🐯", name:"이거타", id:"tiger", paid:true },
+  { emoji:"🦅", name:"스톰 호크", id:"hawk", paid:true },
   // Member-only characters.
-  { emoji:"🦄", name:"프리즘 혼", member:true },
-  { emoji:"🐼", name:"판다 킹", member:true },
-  // Event characters (아이언 쉘 and 메가블록 above too): locked until an event hands them out.
-  { emoji:"🦈", name:"썬더 죠스", event:true },
-  { emoji:"🦂", name:"블랙 스콜피온", event:true }
+  { emoji:"🦄", name:"뿔말", member:true },
+  { emoji:"🐼", name:"뒹굴", member:true },
+  // Event characters (느려 and 밥 above too): locked until an event hands them out.
+  { emoji:"🦈", name:"이빨부자", event:true },
+  { emoji:"🦂", name:"독한놈", event:true }
 ];
 
 var TITLE_PRESETS = [
@@ -2188,7 +2207,7 @@ var BORDER_PRESETS = [
   { id:"sprout", name:"새싹", cls:"border-sprout" },
   { id:"flame", name:"불꽃", cls:"border-flame" },
   { id:"chrome", name:"크롬", cls:"border-chrome" },
-  // Avatar sets: each matches a character (🦁 바코드 라이언, 🐈‍⬛ 쉐도우 캣; 🦉 달밤 is in the shop).
+  // Avatar sets: each matches a character (🦁 백수, 🐈‍⬛ 츄르줘; 🦉 달밤 is in the shop).
   { id:"mane", name:"사자 갈기", cls:"border-mane" },
   { id:"crystal", name:"수정구", cls:"border-crystal" },
   { id:"trophy", name:"트로피", cls:"border-trophy" },
@@ -3341,7 +3360,11 @@ function applyRemoteRoomState(data){
     }, 120);
     return;
   }
-  if(playRemoteFx(data.fx || [])){
+  var bombByFx = playRemoteFx(data.fx || []);
+  var bombByCount = !!(data.balance && state.balance && (Number(data.balance.bombs)||0) > (Number(state.balance.bombs)||0));
+  if(bombByCount && !bombByFx) playBombBlast();
+  if(bombByFx || bombByCount){
+    state.balance = data.balance;   // counted once
     state.animating = true;
     remoteBombSweep((data.floor||[]).length, function(){
       state.animating = false;
@@ -3432,6 +3455,12 @@ function applyRemoteRoomState(data){
         playWinCeremony(state.winnerIndex, state.winnerStraight, function(){
           showWinScreen(winner, state.winnerStraight);
         });
+      } else if(winner){
+        // Won because the other player surrendered.
+        if(state.winnerIndex===state.myIndex) maybeRecordLocalGameResult("win", { isOnline:true, playerCount: state.turnOrder.length });
+        else maybeRecordLocalGameResult("loss");
+        clearTurnTimer();
+        playSurrenderCeremony(function(){ showWinScreen(winner, null, "🏳️ 상대가 항복했어요"); });
       }
     }
   }
@@ -3630,7 +3659,17 @@ function forfeitOnline(){
   me.isAI = true;
   me.aiTakeover = true;
   me.aiTurns = Math.max(me.aiTurns||0, 3);
-  pushLog("🏳️ "+bareName(me.name)+"님이 항복했습니다. AI(쉬움)가 이어서 둡니다.");
+  if(state.turnOrder.length===2){
+    // One on one: the other player wins on the spot.
+    var other = state.turnOrder.filter(function(i){ return i!==state.myIndex; })[0];
+    state.gameOver = true;
+    state.isDraw = false;
+    state.winnerIndex = other;
+    state.winnerStraight = null;
+    pushLog("🏳️ "+bareName(me.name)+"님이 항복했습니다. "+bareName(state.players[other].name)+"님의 승리!");
+  } else {
+    pushLog("🏳️ "+bareName(me.name)+"님이 항복했습니다. AI(쉬움)가 이어서 둡니다.");
+  }
   if(iAmHost()){
     var next = handlerOrder(state.myIndex)[0];
     if(next!==undefined) state.hostIndex = next;
@@ -4755,14 +4794,22 @@ function spawnRain(){
   }
 }
 
-function showWinScreen(player, straight){
+// 🏳️ The surrender flag waves over the table, then the result screen.
+function playSurrenderCeremony(done){
+  var host = $("screen-game");
+  var flag = el("div","surrender-pop","<div class=\"surrender-flag\">🏳️</div><div>항복!</div>");
+  host.appendChild(flag);
+  sfxSelect();
+  setTimeout(function(){ flag.remove(); done(); }, 1800);
+}
+function showWinScreen(player, straight, reason){
   var isMe = player===state.players[state.myIndex];
   $("screen-win").classList.toggle("lose", !isMe);
   var tag = "<span class=\"win-tag\">"+playerTagHTML(player)+"</span>";
   var myTag = "<span class=\"win-tag\">"+playerTagHTML(state.players[state.myIndex])+"</span>";
   if(isMe){
     $("win-title").innerHTML = tag+"<span class=\"win-word\">"+(state.daily ? "완성!" : "승리!")+"</span>";
-    $("win-reason").innerHTML = state.daily ? ("🏆 "+(state.turnSeq+1)+"턴 만에 완성! ("+fmtPlayTime(state.daily.ms)+")") : "";
+    $("win-reason").innerHTML = reason ? reason : state.daily ? ("🏆 "+(state.turnSeq+1)+"턴 만에 완성! ("+fmtPlayTime(state.daily.ms)+")") : "";
   } else {
     $("win-title").innerHTML = myTag+"<span class=\"win-word\">패배!</span>";
     $("win-reason").innerHTML = tag+"<span>님이 먼저 스트레이트를 완성했어요</span>";
@@ -6387,8 +6434,19 @@ function syncMailRewards(valid){
   valid.forEach(function(r){ if(straightUnlocks.indexOf("mail:"+r)===-1) straightUnlocks.push("mail:"+r); });
   if(straightUnlocks.length!==before || valid.length){ saveUnlocks(straightUnlocks); saveProgressSoon(); }
 }
+var mailUnsub = null;
 function refreshMail(){
   if(!account || !fbDb) return;
+  var F = fbFs;
+  if(!mailUnsub){
+    // Live: an event created or deleted by the operator shows up / disappears right away.
+    mailUnsub = F.onSnapshot(F.query(F.collection(fbDb,"campaigns"), F.where("claimUntil",">=", new Date(serverNow()))),
+      function(){ loadMail(); }, function(e){ console.warn("우편함 구독 실패", e); });
+    return;
+  }
+  loadMail();
+}
+function loadMail(){
   var F = fbFs, uid = account.uid, now = serverNow();
   // Rewards claimed on any device are unlocked here too — if their event still exists.
   F.getDocs(F.collection(fbDb,"users",uid,"mail")).then(function(snap){
@@ -6616,7 +6674,7 @@ var collectionActiveTab = "avatar";
 function collectionItemsFor(kind){
   if(kind==="avatar"){
     var avatarItems = CHARACTERS.map(function(ch){
-      return { id:"avatar:"+ch.name, name:ch.name, unlocked:isAvatarUnlocked(ch.name, straightUnlocks), preview:"<span class=\"achv-preview\">"+avatarIconHTML(ch)+"</span>" };
+      return { id:"avatar:"+(ch.id||ch.name), name:ch.name, unlocked:isAvatarUnlocked(ch.name, straightUnlocks), preview:"<span class=\"achv-preview\">"+avatarIconHTML(ch)+"</span>" };
     });
     return sortCollectionItems(avatarItems, "avatar");
   }

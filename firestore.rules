@@ -129,9 +129,10 @@ service cloud.firestore {
     function kstToday(){ return math.floor((request.time.toMillis() + 32400000) / 86400000); }
     function paidItems(){
       return ['pattern:onyx','pattern:stained','pattern:harlequin','pattern:neon','pattern:aurora',
+              'pattern:tiger','pattern:bone','pattern:bamboo',
               'theme:neon','theme:ocean','theme:felt',
               'border:owlmoon','border:dragon','border:foxfire','border:bolt','border:wind','border:stars',
-              'avatar:블레이즈 타이거','avatar:스톰 호크'];
+              'avatar:tiger','avatar:hawk'];
     }
     function itemPrice(key){ return key.split(':')[0] == 'theme' ? 330 : 220; }
     function walletShape(n){
