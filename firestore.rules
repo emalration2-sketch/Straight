@@ -310,7 +310,12 @@ service cloud.firestore {
         && request.resource.data.keys().hasOnly(['from','fromNick','target','targetNick','reason','memo','room','at'])
         && request.resource.data.memo is string && request.resource.data.memo.size() <= 100;
       allow read, delete: if devRole();
-      allow update: if false;
+      // Handled by the developer role: the report stays with its result.
+      allow update: if devRole() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','result','doneAt']);
+    }
+    // Sanction history (warnings, bans, cleared reports): developer role only.
+    match /sanctions/{id} {
+      allow read, write: if devRole();
     }
     // A player's own anomaly self-check; read by the developer role.
     match /suspicious/{uid} {

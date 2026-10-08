@@ -876,6 +876,15 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .op-err-top small,.op-err-meta{color:var(--muted);font-size:12px;}
 .op-err-msg{font-size:13.5px;word-break:break-all;}
 .op-err .btn{align-self:flex-end;padding:5px 10px;min-height:0;font-size:12.5px;}
+.op-guide{margin:0 0 8px;padding:8px 11px;border-radius:12px;background:var(--panel2);font-size:13px;}
+.op-guide summary{cursor:pointer;font-weight:700;}
+.op-guide table{width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:12.5px;}
+.op-guide th,.op-guide td{padding:4px 3px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08);}
+.op-guide p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.5;}
+.op-toggle{display:block;margin:0 0 8px auto;}
+.op-pick{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+.op-steps{display:flex;flex-wrap:wrap;gap:4px;}
+.op-err .op-steps .btn{align-self:auto;}
 .cluster-sep{width:1px;height:20px;margin:0 6px 0 4px;background:rgba(var(--line-rgb),.22);}
 .top-cluster .coin-pill{position:static;height:36px;}
 .top-cluster .side-badge{top:-2px;right:-2px;}
@@ -6181,7 +6190,7 @@ var pendingRequests = [], pendingInvites = [], mailItems = [], shownInvites = {}
 // Event rewards: any collection item. rewardId is "<kind>:<id>" and unlocks as "mail:<kind>:<id>".
 var REWARD_KINDS = [["coins","코인"],["membership","멤버십 30일권"],["nickchange","닉네임 변경권"],["title","칭호"],["border","테두리"],["pattern","패턴"],["avatar","캐릭터"]];
 // Rewards used up on the spot (no collection unlock): coins, membership, nickname ticket.
-function isConsumableReward(kind){ return kind==="coins" || kind==="membership" || kind==="nickchange"; }
+function isConsumableReward(kind){ return kind==="coins" || kind==="membership" || kind==="nickchange" || kind==="notice"; }
 function rewardItems(kind){
   if(kind==="avatar") return CHARACTERS.map(function(c){ return { id:c.name, name:c.name }; });
   var list = kind==="title" ? TITLE_PRESETS : kind==="border" ? BORDER_PRESETS : CARD_BACK_PRESETS;
@@ -6490,7 +6499,7 @@ function grantMailReward(rewardId){
 // Mail rewards stay only while their event exists: deleting an event takes it back.
 function syncMailRewards(valid){
   var before = straightUnlocks.length;
-  valid = valid.filter(function(r){ return !/^(coins|membership|nickchange):/.test(r); });
+  valid = valid.filter(function(r){ return !/^(coins|membership|nickchange|notice):/.test(r); });
   straightUnlocks = straightUnlocks.filter(function(id){ return !/^mail:/.test(id) || valid.indexOf(id.slice(5))!==-1; });
   valid.forEach(function(r){ if(straightUnlocks.indexOf("mail:"+r)===-1) straightUnlocks.push("mail:"+r); });
   if(straightUnlocks.length!==before || valid.length){ saveUnlocks(straightUnlocks); saveProgressSoon(); }
@@ -6538,10 +6547,11 @@ function renderMailBox(){
   if(!mailItems.length) box.appendChild(el("p","coin-note muted","받은 편지가 없어요."));
   mailItems.forEach(function(c){
     var until = new Date(tsMillis(c.claimUntil));
-    var who = "<b>🎁 "+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+(until.getMonth()+1)+"/"+until.getDate()+"까지</small>";
+    var isNote = c.rewardKind==="notice";
+    var who = "<b>"+(isNote || c.sanction ? "⚠️ " : "🎁 ")+cleanText(c.title,30)+"</b><small>"+(isNote ? "" : cleanText(c.rewardName,20)+" · ")+(until.getMonth()+1)+"/"+until.getDate()+"까지</small>";
     var useNow = c.rewardKind==="membership" || c.rewardKind==="nickchange";
     var card = el("div","mail-item");
-    card.appendChild(socialRow(who, [ smallBtn(useNow ? "사용" : "받기", true, function(b){ claimMail(c, b); }) ]));
+    card.appendChild(socialRow(who, [ smallBtn(isNote ? "확인" : useNow ? "사용" : "받기", true, function(b){ claimMail(c, b); }) ]));
     if(c.message) card.appendChild(el("p","mail-msg", cleanText(c.message, 200)));
     box.appendChild(card);
   });
@@ -6585,6 +6595,7 @@ function claimMail(c, btn){
     if(!isConsumableReward(c.rewardKind)) grantMailReward(c.rewardId);
     mailItems = mailItems.filter(function(m){ return m.id!==c.id; });
     refreshSocialUI();
+    if(c.rewardKind==="notice") return;
     coinToast(c.rewardKind==="membership" ? "👑 멤버십 30일이 적용됐어요!" : "🎁 <b>"+cleanText(c.rewardName,20)+"</b> 받았어요!"+(isConsumableReward(c.rewardKind) ? "" : " 수집품에서 장착해 보세요."));
   }).catch(function(e){ console.error("우편 받기 실패", e); btn.disabled = false; alert("받지 못했어요. 수령 기간이 지났을 수 있어요."); });
 }
@@ -6687,21 +6698,132 @@ function openReportModal(target){
       } },
      { label:"취소" }]);
 }
+// ---------- ⚖️ Sanctions: guide, report handling and history (sanctions/{id}) ----------
+// A challenge game banks at most one card per turn and a straight needs five, so fewer
+// than 5 turns can't happen.
+var CHALLENGE_MIN_TURNS = 5;
+function leaveRateWarn(o){
+  var g = Number(o.games)||0, l = Number(o.leaves)||0;
+  return g>=10 && l/g>=0.3 ? "온라인 탈주율 "+Math.round(l/g*100)+"% ("+l+"/"+g+"판)" : "";
+}
+// Steps per violation: 1st, 2nd, 3rd+ ("warn", days, or "forever").
+var SANCTION_STEPS = {
+  manner:{ name:"도배·불편한 닉네임", steps:["warn",1,7] },
+  leave:{ name:"고의 탈주", steps:["warn",1,7] },
+  bug:{ name:"버그 악용", steps:[7,30,"forever"] },
+  cheat:{ name:"조작", steps:["forever"] }
+};
+function reasonCategory(reason){ return /탈주/.test(reason) ? "leave" : /버그|조작/.test(reason) ? "bug" : "manner"; }
+function stepLabel(st){ return st==="clear" ? "무혐의" : st==="warn" ? "경고" : st==="forever" ? "영구 정지" : st+"일 정지"; }
+function sanctionLine(x){
+  var cat = SANCTION_STEPS[x.cat];
+  return (cat ? cat.name+" · " : "")+stepLabel(x.action==="ban" ? x.days : x.action)+(x.reason ? " ("+cleanText(x.reason,40)+")" : "");
+}
+function loadSanctions(uid){
+  var F = fbFs;
+  return F.getDocs(F.query(F.collection(fbDb,"sanctions"), F.where("uid","==",uid))).then(function(s){
+    return s.docs.map(function(d){ return d.data(); }).sort(function(a, b){ return tsMillis(b.at) - tsMillis(a.at); });
+  });
+}
+function recommendedStep(cat, history){
+  var steps = SANCTION_STEPS[cat].steps;
+  var prior = history.filter(function(x){ return x.cat===cat && x.action!=="clear"; }).length;
+  return { step:steps[Math.min(prior, steps.length-1)], prior:prior };
+}
+function recordSanction(x){
+  var F = fbFs;
+  var data = { uid:x.uid, nick:cleanText(x.nick||"",16), cat:x.cat||"", action:x.action, reason:cleanText(x.reason||"",60), by:account.uid, at:F.serverTimestamp() };
+  if(x.action==="ban") data.days = String(x.days);
+  if(x.reportId) data.reportId = x.reportId;
+  return F.addDoc(F.collection(fbDb,"sanctions"), data);
+}
+// A warning is a letter in the player's mailbox; an offensive nickname comes with a free
+// nickname change ticket.
+function sendWarning(uid, nick, cat, reason){
+  var F = fbFs, nickIssue = /닉네임/.test(reason||"");
+  var msg = nickIssue ? "다른 플레이어가 불편해할 수 있는 닉네임이라 변경을 부탁드려요. 함께 보낸 닉네임 변경권으로 바꿔 주세요. 바꾸지 않으면 이용이 제한될 수 있어요."
+    : cat==="leave" ? "게임 중 고의 탈주가 확인되어 경고드려요. 반복되면 이용이 제한될 수 있어요."
+    : cat==="bug" ? "버그를 이용한 플레이가 확인되어 경고드려요. 반복되면 이용이 제한될 수 있어요."
+    : "다른 플레이어를 불편하게 하는 행동(도배 등)이 확인되어 경고드려요. 반복되면 이용이 제한될 수 있어요.";
+  var start = new Date(serverNow() - 60000), end = new Date(serverNow() + 30*864e5);
+  var data = { title:"운영 경고", message:msg, cond:"login", sanction:true,
+    rewardKind: nickIssue ? "nickchange" : "notice", rewardId: nickIssue ? "nickchange:1" : "notice:warn", rewardName: nickIssue ? "닉네임 변경권" : "경고",
+    start:start, end:end, claimUntil:new Date(end.getTime() + 14*864e5), targets:[uid], targetNicks:[cleanText(nick||"",16)], createdAt:F.serverTimestamp() };
+  return F.addDoc(F.collection(fbDb,"campaigns"), data);
+}
+function applySanction(r, ref, cat, step){
+  var F = fbFs, why = SANCTION_STEPS[cat].name+(r.memo ? " — "+r.memo : "");
+  var act = step==="clear" ? Promise.resolve()
+    : step==="warn" ? sendWarning(r.target, r.targetNick, cat, r.reason)
+    : setBan(r.target, r.targetNick, step, SANCTION_STEPS[cat].name);
+  return act.then(function(){
+    return recordSanction({ uid:r.target, nick:r.targetNick, cat:cat, action: step==="clear" ? "clear" : step==="warn" ? "warn" : "ban", days:step, reason:why, reportId:ref.id });
+  }).then(function(){
+    return F.updateDoc(ref, { status:"done", result:stepLabel(step), doneAt:F.serverTimestamp() });
+  });
+}
+function sanctionGuideHTML(){
+  var row = function(c, extra){ var st = SANCTION_STEPS[c].steps; return "<tr><td>"+SANCTION_STEPS[c].name+"</td>"+[0,1,2].map(function(i){ return "<td>"+(st[i]!==undefined ? (i===0 && extra ? extra+" + " : "")+stepLabel(st[i]) : "")+"</td>"; }).join("")+"</tr>"; };
+  return "<details class=\"op-guide\"><summary>⚖️ 제재 기준</summary>"+
+    "<table><tr><th>위반</th><th>1회</th><th>2회</th><th>3회+</th></tr>"+
+    row("manner")+row("leave")+row("bug","이득 회수")+row("cheat","회수")+"</table>"+
+    "<p>• 증거(기록 이상 또는 서로 다른 신고 2건 이상)가 있을 때만 제재해요.<br>• 첫 위반은 경고부터 (조작은 예외).<br>"+
+    "• 불편한 닉네임 경고에는 닉네임 변경권이 함께 가요.<br>• 회수는 🔎 플레이어에서 따로 해요.</p></details>";
+}
+var opReportsDone = false;
 function renderOpReports(body){
   var F = fbFs;
   body.innerHTML = "<p class=\"coin-note muted\">불러오는 중...</p>";
-  F.getDocs(F.query(F.collection(fbDb,"reports"), F.orderBy("at","desc"), F.limit(50))).then(function(snap){
-    if(snap.empty){ body.innerHTML = "<p class=\"coin-note muted\">들어온 신고가 없어요.</p>"; return; }
-    body.innerHTML = "";
-    snap.forEach(function(d){
-      var r = d.data();
+  F.getDocs(F.query(F.collection(fbDb,"reports"), F.orderBy("at","desc"), F.limit(100))).then(function(snap){
+    var docs = snap.docs.filter(function(d){ return opReportsDone ? !!d.data().status : !d.data().status; });
+    var pendingBy = {};
+    snap.docs.forEach(function(d){ var x = d.data(); if(!x.status) pendingBy[x.target] = (pendingBy[x.target]||0) + 1; });
+    body.innerHTML = sanctionGuideHTML();
+    var tg = smallBtn(opReportsDone ? "← 대기 중인 신고" : "처리된 신고 보기", false, function(){ opReportsDone = !opReportsDone; renderOpReports(body); });
+    tg.classList.add("op-toggle");
+    body.appendChild(tg);
+    if(!docs.length){ body.appendChild(el("p","coin-note muted", opReportsDone ? "처리한 신고가 없어요." : "들어온 신고가 없어요.")); return; }
+    docs.forEach(function(d){
+      var r = d.data(), cat = reasonCategory(r.reason);
       var card = el("div","op-err");
       card.innerHTML = "<div class=\"op-err-top\"><b>"+cleanText(r.targetNick,16)+"</b><small>"+fmtWhen(tsMillis(r.at))+" · 신고자 "+cleanText(r.fromNick,16)+"</small></div>"+
-        "<div class=\"op-err-msg\">"+cleanText(r.reason,30)+(r.memo ? " — "+cleanText(r.memo,100) : "")+"</div>";
+        "<div class=\"op-err-msg\">"+cleanText(r.reason,30)+(r.memo ? " — "+cleanText(r.memo,100) : "")+"</div>"+
+        (r.status ? "<small class=\"op-err-meta\">처리: "+cleanText(r.result||"",20)+" · "+fmtWhen(tsMillis(r.doneAt))+"</small>"
+          : (pendingBy[r.target]>1 ? "<small class=\"op-err-meta\">이 플레이어 대기 중 신고 "+pendingBy[r.target]+"건</small>" : ""));
       var bt = el("div","fr-btns");
-      bt.appendChild(smallBtn("조회", true, function(){ opPlayerNick = r.targetNick; openOperatorModal("player"); }));
-      bt.appendChild(smallBtn("처리 완료", false, function(b){ b.disabled = true; F.deleteDoc(d.ref).then(function(){ card.remove(); }); }));
-      card.appendChild(bt);
+      bt.appendChild(smallBtn("조회", false, function(){ opPlayerNick = r.targetNick; openOperatorModal("player"); }));
+      if(!r.status){
+        var done = function(step, b){
+          if(!confirm(cleanText(r.targetNick,16)+"님 신고를 '"+stepLabel(step)+"'(으)로 처리할까요?")) return;
+          b.disabled = true;
+          applySanction(r, d.ref, cat, step).then(function(){ coinToast("⚖️ "+stepLabel(step)+" 처리했어요."); renderOpReports(body); })
+            .catch(function(e){ console.error("신고 처리 실패", e); b.disabled = false; alert("처리하지 못했어요."); });
+        };
+        bt.appendChild(smallBtn("무혐의", false, function(b){ done("clear", b); }));
+        bt.appendChild(smallBtn("제재", true, function(b){
+          b.disabled = true;
+          loadSanctions(r.target).catch(function(){ return []; }).then(function(hist){
+            b.remove();
+            var pick = el("div","op-pick");
+            var sel = el("select","nickname-input");
+            sel.innerHTML = Object.keys(SANCTION_STEPS).map(function(k){ return "<option value=\""+k+"\""+(k===cat?" selected":"")+">"+SANCTION_STEPS[k].name+"</option>"; }).join("");
+            var note = el("small","op-err-meta","");
+            var steps = el("div","op-steps");
+            var draw = function(){
+              cat = sel.value;
+              var rec = recommendedStep(cat, hist);
+              note.textContent = "이전 같은 위반 "+rec.prior+"회 · 권장: "+stepLabel(rec.step);
+              steps.innerHTML = "";
+              ["warn",1,7,30,"forever"].forEach(function(st){ steps.appendChild(smallBtn(stepLabel(st), st===rec.step, function(x){ done(st, x); })); });
+            };
+            sel.addEventListener("change", draw);
+            pick.appendChild(sel); pick.appendChild(note); pick.appendChild(steps);
+            card.appendChild(pick);
+            draw();
+          });
+        }));
+      }
+      card.insertBefore(bt, card.querySelector(".op-pick"));
       body.appendChild(card);
     });
   }).catch(function(e){ console.warn("신고 목록 실패", e); body.innerHTML = "<p class=\"coin-note muted\">불러오지 못했어요.</p>"; });
@@ -6738,9 +6860,16 @@ function renderOpSuspects(body){
   body.innerHTML = "<p class=\"coin-note muted\">확인하는 중...</p>";
   Promise.all([
     F.getDocs(F.collection(fbDb,"suspicious")).then(function(s){ s.forEach(function(d){ (d.data().flags||[]).forEach(function(x){ add(d.id, d.data().nick, x); }); }); }),
-    F.getDocs(F.query(F.collection(fbDb,"wallets"), F.where("coins",">=",3000))).then(function(s){ s.forEach(function(d){ add(d.id, "", "코인 "+d.data().coins+"개"); }); }),
-    F.getDocs(F.query(F.collection(fbDb,"seasons",seasonKey(),"players"), F.where("bestTurns","<=",4))).then(function(s){ s.forEach(function(d){ add(d.id, d.data().name, "챌린지 "+d.data().bestTurns+"턴"); }); }),
-    F.getDocs(F.query(F.collection(fbDb,"users"), F.where("record.leaves",">=",10))).then(function(s){ s.forEach(function(d){ var u = d.data(); add(d.id, u.progress && u.progress.straightNickname, "탈주 "+(u.record||{}).leaves+"회"); }); })
+    F.getDocs(F.query(F.collection(fbDb,"seasons",seasonKey(),"players"), F.where("bestTurns","<",CHALLENGE_MIN_TURNS))).then(function(s){ s.forEach(function(d){ add(d.id, d.data().name, "챌린지 "+d.data().bestTurns+"턴 (나올 수 없는 기록)"); }); }),
+    F.getDocs(F.query(F.collection(fbDb,"users"), F.where("record.online.leaves",">=",3))).then(function(s){ s.forEach(function(d){
+      var u = d.data(), o = (u.record||{}).online||{}, why = leaveRateWarn(o);
+      if(why) add(d.id, u.progress && u.progress.straightNickname, why);
+    }); }),
+    F.getDocs(F.query(F.collection(fbDb,"reports"), F.where("at",">=", new Date(Date.now()-7*864e5)))).then(function(s){
+      var by = {};
+      s.forEach(function(d){ var r = d.data(); by[r.target] = by[r.target] || { nick:r.targetNick, from:{} }; by[r.target].from[r.from] = true; });
+      Object.keys(by).forEach(function(uid){ var n = Object.keys(by[uid].from).length; if(n>=3) add(uid, by[uid].nick, "7일간 "+n+"명에게 신고받음"); });
+    })
   ].map(function(p){ return p.catch(function(e){ console.warn("의심 목록 일부 실패", e); }); })).then(function(){
     // Fill missing nicknames from the user docs.
     return Promise.all(order.filter(function(u){ return !rows[u].nick; }).map(function(uid){
@@ -6877,8 +7006,10 @@ function lookupPlayer(nick, out){
       F.getDoc(F.doc(fbDb,"wallets",uid)).catch(function(){ return null; }),
       F.getDoc(F.doc(fbDb,"presence",uid)).catch(function(){ return null; }),
       F.getDoc(F.doc(fbDb,"seasons",seasonKey(),"players",uid)).catch(function(){ return null; }),
-      F.getDoc(F.doc(fbDb,"bans",uid)).catch(function(){ return null; })
+      F.getDoc(F.doc(fbDb,"bans",uid)).catch(function(){ return null; }),
+      loadSanctions(uid).catch(function(){ return []; })
     ]).then(function(r){
+      var sanctions = r[5] || [];
       var ban = r[4] && r[4].exists() && tsMillis(r[4].data().until) > Date.now() ? r[4].data() : null;
       var u = r[0] && r[0].exists() ? r[0].data() : {};
       var w = r[1] && r[1].exists() ? r[1].data() : null;
@@ -6909,19 +7040,20 @@ function lookupPlayer(nick, out){
       var rg = (Number((rec.solo||{}).games)||0) + (Number((rec.online||{}).games)||0);
       html += opSection("서버 전적", [
         ["판수", rec.games!==undefined ? rec.games : rg, g > (Number(rec.games)||rg) + 20 ? "기기 기록이 서버 전적보다 많아요(조작 의심)" : ""],
-        ["탈주", (Number(rec.leaves)||0), (Number(rec.leaves)||0) >= 10 ? "탈주가 많아요" : ""]
+        ["온라인 판수 / 탈주", (Number((rec.online||{}).games)||0)+" / "+(Number((rec.online||{}).leaves)||0), leaveRateWarn(rec.online||{})]
       ]);
       html += opSection("지갑", w ? [
-        ["코인", (Number(w.coins)||0).toLocaleString(), (Number(w.coins)||0) >= 3000 ? "코인이 많아요(충전 없이 모으기 어려운 양)" : ""],
+        ["코인", (Number(w.coins)||0).toLocaleString()],
         ["멤버십", w.membershipUntil > Date.now() ? fmtWhen(w.membershipUntil)+"까지" : "없음"],
         ["산 아이템", (w.items||[]).length ? (w.items||[]).join(", ") : "없음"],
         ["마지막 지갑 사용", lastBuyText(w.lastBuy)]
       ] : [["지갑", "없음"]]);
       html += opSection("챌린지 (이번 시즌)", se ? [
-        ["최고 기록", se.bestTurns+"턴 · "+(se.bestMs ? fmtPlayTime(se.bestMs) : "-"), se.bestTurns<=4 ? "턴 수가 비정상적으로 적어요" : ""],
+        ["최고 기록", se.bestTurns+"턴 · "+(se.bestMs ? fmtPlayTime(se.bestMs) : "-"), se.bestTurns<CHALLENGE_MIN_TURNS ? CHALLENGE_MIN_TURNS+"턴 미만은 나올 수 없는 기록이에요" : ""],
         ["참여", (se.days||0)+"일 · 마지막 "+(se.lastDay||"-")]
       ] : [["기록", "없음"]]);
-      html += opSection("제재", [["상태", ban ? banText(ban) : "정상", ban ? "정지된 계정이에요" : ""]]);
+      html += opSection("제재", [["상태", ban ? banText(ban) : "정상", ban ? "정지된 계정이에요" : ""]].concat(
+        sanctions.length ? sanctions.map(function(x){ return [fmtWhen(tsMillis(x.at)), sanctionLine(x)]; }) : [["이력", "없음"]]));
       out.innerHTML = html;
       // Actions: ban / lift, and recall from the wallet.
       var acts = el("div","op-actions");
@@ -6935,7 +7067,9 @@ function lookupPlayer(nick, out){
         var banRow = el("div","op-row"); banRow.appendChild(days); banRow.appendChild(reason);
         banRow.appendChild(smallBtn("정지", true, function(){
           if(!confirm(n.nick+"님을 "+days.options[days.selectedIndex].text+" 정지할까요?")) return;
-          setBan(uid, n.nick, days.value, reason.value).then(function(){ coinToast("🚫 정지했어요."); lookupPlayer(nick, out); }).catch(function(e){ console.error("정지 실패", e); });
+          setBan(uid, n.nick, days.value, reason.value).then(function(){
+            return recordSanction({ uid:uid, nick:n.nick, cat:"", action:"ban", days:days.value, reason:cleanText(reason.value,60) });
+          }).then(function(){ coinToast("🚫 정지했어요."); lookupPlayer(nick, out); }).catch(function(e){ console.error("정지 실패", e); });
         }));
         acts.appendChild(banRow);
       }
@@ -7127,6 +7261,7 @@ function loadOperatorList(){
     if(snap.empty){ list.appendChild(el("p","coin-note muted","아직 이벤트가 없어요.")); return; }
     snap.forEach(function(d){
       var c = d.data(), fmt = function(t){ var x = new Date(tsMillis(t)); return (x.getMonth()+1)+"/"+x.getDate(); };
+      if(c.sanction) return;
       var who = c.targetNicks ? "대상 "+c.targetNicks.length+"명" : "전체";
       var row = socialRow("<b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+who+" · 기간 "+fmt(c.start)+"~"+fmt(c.end)+" · 받기 "+fmt(c.claimUntil)+"까지 · <span class=\"op-count\">참여 …</span></small>", [
         smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요?\n"+(isConsumableReward(c.rewardKind) ? "이미 받거나 사용한 보상은 회수되지 않아요." : "이미 받은 플레이어의 보상도 회수돼요."))) F.deleteDoc(d.ref).then(loadOperatorList); })
