@@ -1980,31 +1980,32 @@ function shadeColor(hex, percent){
   return "#"+(0x1000000+(r<<16)+(g<<8)+b).toString(16).slice(1);
 }
 
+// Card colours: one deep classic set (루비 레드 · 코발트 · 앰버 · 에메랄드) for every theme.
 var CARD_THEMES = [
   // Basic themes.
   { id:"midnight", name:"클라우드", isDark:false, bg:"#E8EBF2", panel:"#F6F7FA", panel2:"#DDE2EC",
     text:"#1B2340", muted:"#4A5178", lineRgb:"27,35,64",
-    colors:{ PINK:"#E0475F", BLUE:"#35528F", YELLOW:"#DE9A34", GREEN:"#2E7D6B" } },
+    colors:{ PINK:"#E0475F", BLUE:"#3A5FB0", YELLOW:"#DE9A34", GREEN:"#2E8C70" } },
   { id:"marble", name:"블랙 마블", skin:"board-skin-marble", isDark:true, bg:"#121217", panel:"#1B1B22", panel2:"#25252E",
     text:"#F2F2F6", muted:"#A7A9B8", lineRgb:"255,255,255",
-    colors:{ PINK:"#FF5C7A", BLUE:"#6EC1FF", YELLOW:"#FFC94D", GREEN:"#5FE0A6" } },
+    colors:{ PINK:"#E0475F", BLUE:"#3A5FB0", YELLOW:"#DE9A34", GREEN:"#2E8C70" } },
   // Paid themes (3,300원): a palette plus a textured table (skin), on your own screen only.
   { id:"neon", name:"네온 아케이드", paid:true, skin:"board-skin-neon", isDark:true, bg:"#06050B", panel:"#110F1B", panel2:"#1A1729",
     text:"#F5F3FF", muted:"#ABA6CC", lineRgb:"255,255,255",
-    colors:{ PINK:"#FF3DE6", BLUE:"#39F3FF", YELLOW:"#FFE53D", GREEN:"#3DFF8B" } },
+    colors:{ PINK:"#E0475F", BLUE:"#3A5FB0", YELLOW:"#DE9A34", GREEN:"#2E8C70" } },
   { id:"ocean", name:"오션 딥", paid:true, skin:"board-skin-ocean", isDark:true, bg:"#03192B", panel:"#06263F", panel2:"#0A3353",
     text:"#E6F6FF", muted:"#8FBCD8", lineRgb:"255,255,255",
-    colors:{ PINK:"#FF6F91", BLUE:"#4FC3F7", YELLOW:"#FFD54F", GREEN:"#4DE0B5" } },
+    colors:{ PINK:"#E0475F", BLUE:"#3A5FB0", YELLOW:"#DE9A34", GREEN:"#2E8C70" } },
   { id:"felt", name:"그린 펠트", paid:true, skin:"board-skin-felt", isDark:true, bg:"#0B3A29", panel:"#0F4733", panel2:"#155A41",
     text:"#EEF8F1", muted:"#A9CDB8", lineRgb:"255,255,255",
-    colors:{ PINK:"#FF6F8E", BLUE:"#5AB4FF", YELLOW:"#FFD24F", GREEN:"#7BE8A2" } },
+    colors:{ PINK:"#E0475F", BLUE:"#3A5FB0", YELLOW:"#DE9A34", GREEN:"#2E8C70" } },
   // Member-only themes.
   { id:"gold", name:"로얄 골드", member:true, skin:"board-skin-gold", isDark:true, bg:"#3A2708", panel:"#4A330C", panel2:"#5C4113",
     text:"#FFF8E6", muted:"#EAD3A0", lineRgb:"255,240,200",
-    colors:{ PINK:"#FF5C7A", BLUE:"#5AB4FF", YELLOW:"#FFC94D", GREEN:"#4FD69C" } },
+    colors:{ PINK:"#E0475F", BLUE:"#3A5FB0", YELLOW:"#DE9A34", GREEN:"#2E8C70" } },
   { id:"galaxy", name:"갤럭시", member:true, skin:"board-skin-galaxy", isDark:true, bg:"#040A1C", panel:"#0A1430", panel2:"#122049",
     text:"#EEF4FF", muted:"#A3B6E0", lineRgb:"255,255,255",
-    colors:{ PINK:"#FF5CA8", BLUE:"#5CC8FF", YELLOW:"#FFD65C", GREEN:"#5CF0B0" } }
+    colors:{ PINK:"#E0475F", BLUE:"#3A5FB0", YELLOW:"#DE9A34", GREEN:"#2E8C70" } }
 ];
 // Roles come from devAccounts/{gmail} (console-only); membership and bought items from
 // entitlements/{uid}. ?nodev previews the game as an ordinary player.
