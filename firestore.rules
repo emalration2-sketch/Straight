@@ -24,7 +24,8 @@ service cloud.firestore {
     match /nicknames/{key} {
       allow get: if signedIn();
       allow create: if signedIn() && request.resource.data.uid == request.auth.uid
-        && request.resource.data.keys().hasOnly(['uid','nick','at'])
+        && request.resource.data.keys().hasOnly(['uid','nick','at','history'])
+        && (!('history' in request.resource.data) || (request.resource.data.history is list && request.resource.data.history.size() <= 10))
         && key.size() >= 1 && key.size() <= 32;
       // The owner can release their old name when changing it.
       allow delete: if signedIn() && resource.data.uid == request.auth.uid;

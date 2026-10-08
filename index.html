@@ -1490,8 +1490,10 @@ function buyNicknameChange(nick, ticket){
         next.lastBuy = "nick:"+Date.now();
         tx.set(walletRef, next);
       }
-      if(!r[1].exists()) tx.set(newRef, { uid:account.uid, nick:nick, at:F.serverTimestamp() });
-      if(r[2] && r[2].exists() && r[2].data().uid===account.uid) tx.delete(oldRef);
+      var oldDoc = r[2] && r[2].exists() && r[2].data().uid===account.uid ? r[2].data() : null;
+      var history = (oldDoc && Array.isArray(oldDoc.history) ? oldDoc.history : []).concat(oldNick ? [{ nick:oldNick, until:Date.now() }] : []).slice(-10);
+      if(!r[1].exists()) tx.set(newRef, { uid:account.uid, nick:nick, at:F.serverTimestamp(), history:history });
+      if(oldDoc) tx.delete(oldRef);
       return next;
     });
   }).then(function(next){
@@ -6598,20 +6600,29 @@ function openOperatorModal(){
     if(!title || !item || isNaN(start) || isNaN(end) || end<=start){ alert("제목, 보상, 기간을 확인해 주세요."); return; }
     if(nicks && !nicks.length){ alert("받을 플레이어 닉네임을 입력해 주세요."); return; }
     var kindName = REWARD_KINDS.filter(function(k){ return k[0]===kind; })[0][1];
-    var who = nicks ? nicks.join(", ")+" ("+nicks.length+"명)" : "기간 중 접속한 모든 플레이어";
-    if(!confirm("이 이벤트를 만들까요?\n\n"+title+"\n보상: "+item.name+" ("+kindName+")\n받는 사람: "+who)) return;
+    var md = function(ms){ var d = new Date(ms); return (d.getMonth()+1)+"/"+d.getDate(); };
     b.disabled = true;
-    var resolve = nicks ? Promise.all(nicks.map(function(n){
-      return F.getDoc(F.doc(fbDb,"nicknames",nickKey(n))).then(function(d){ if(!d.exists()) throw new Error("닉네임을 찾지 못했어요: "+n); return d.data().uid; });
+    var lookup = nicks ? Promise.all(nicks.map(function(n){
+      return F.getDoc(F.doc(fbDb,"nicknames",nickKey(n))).then(function(d){
+        if(!d.exists()) throw new Error("닉네임을 찾지 못했어요: "+n);
+        var v = d.data(), hist = Array.isArray(v.history) ? v.history : [];
+        var line = "• "+n+" — "+(v.at ? md(tsMillis(v.at))+"부터 사용" : "사용 시작일 모름")+
+          (hist.length ? " · 이전 닉네임: "+hist.map(function(h){ return cleanText(h.nick,16)+"(~"+md(h.until)+")"; }).join(", ") : " · 변경 이력 없음");
+        return { uid:v.uid, line:line };
+      });
     })) : Promise.resolve(null);
-    resolve.then(function(uids){
+    lookup.then(function(found){
+      var who = found ? "\n"+found.map(function(f){ return f.line; }).join("\n") : "기간 중 접속한 모든 플레이어";
+      if(!confirm("이 이벤트를 만들까요?\n\n"+title+"\n보상: "+item.name+" ("+kindName+")\n받는 사람: "+who)) throw new Error("cancel");
+      return found ? found.map(function(f){ return f.uid; }) : null;
+    }).then(function(uids){
       var data = { title:title, message:message, cond:"login", rewardKind:kind, rewardId:kind+":"+item.id, rewardName:item.name,
         start:start, end:end, claimUntil:new Date(end.getTime()+days*864e5), createdAt:F.serverTimestamp() };
       if(uids){ data.targets = uids; data.targetNicks = nicks; }
       if(kind==="coins") data.rewardCoins = amount;
       return F.addDoc(F.collection(fbDb,"campaigns"), data);
     }).then(function(){ coinToast("✅ 보상 이벤트를 만들었어요."); loadOperatorList(); refreshMail(); })
-      .catch(function(e){ console.error("이벤트 생성 실패", e); alert(e && e.message && /닉네임/.test(e.message) ? e.message : "만들지 못했어요."); })
+      .catch(function(e){ if(e && e.message==="cancel") return; console.error("이벤트 생성 실패", e); alert(e && e.message && /닉네임/.test(e.message) ? e.message : "만들지 못했어요."); })
       .then(function(){ b.disabled = false; });
   }));
   actions.appendChild(smallBtn("닫기", false, closeModal));
