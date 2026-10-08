@@ -842,7 +842,10 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .fr-search input{flex:1;min-width:0;border:none;background:transparent;color:var(--text);font:inherit;font-size:15px;outline:none;}
 .fr-search-ico{font-size:15px;opacity:.7;}
 .fr-search .btn{padding:7px 12px;min-height:0;font-size:13.5px;white-space:nowrap;}
-.fr-list{display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow-y:auto;}
+.fr-list{display:flex;flex-direction:column;gap:6px;max-height:min(46vh,380px);overflow-y:auto;overscroll-behavior:contain;padding-right:2px;}
+.fr-group{position:sticky;top:0;z-index:1;padding:4px 6px;font-size:12.5px;font-weight:800;color:var(--muted);background:var(--panel);}
+.fr-group.on{color:#3ddc84;}
+.fr-filter{width:100%;box-sizing:border-box;margin:2px 0 8px;padding:8px 12px;border-radius:12px;border:1.5px solid rgba(var(--line-rgb),.14);background:var(--panel2);color:var(--text);font:inherit;font-size:14px;outline:none;}
 .fr-row,.fr-card{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:var(--panel2);}
 .fr-row.on{background:linear-gradient(90deg,rgba(61,220,132,.12),transparent 70%),var(--panel2);}
 .fr-card{margin-bottom:6px;border:1.5px solid rgba(255,122,168,.55);background:linear-gradient(90deg,rgba(255,122,168,.16),transparent 75%),var(--panel2);}
@@ -6062,6 +6065,9 @@ document.addEventListener("click", function(e){
 // signing in shows up on their list within a second or two. Invites don't depend on it:
 // any friend can be invited, online or not.
 var PRESENCE_FRESH_MS = 150000;
+// Up to 50 friends: each one is a live presence listener, and the list stays easy to scan.
+var FRIEND_LIMIT = 50;
+var friendFilter = "";
 var socialStarted = false, myFriends = {}, friendPresence = {}, friendUnsubs = {};
 var pendingRequests = [], pendingInvites = [], mailItems = [], shownInvites = {};
 // Event rewards: any collection item. rewardId is "<kind>:<id>" and unlocks as "mail:<kind>:<id>".
@@ -6206,9 +6212,11 @@ function renderFriendsBox(){
   var keepInput = box.querySelector("#friend-nick-input");
   var typed = keepInput ? keepInput.value : "";
   var msgText = box.querySelector(".social-msg") ? box.querySelector(".social-msg").textContent : "";
+  var oldList = box.querySelector(".fr-list"), keepScroll = oldList ? oldList.scrollTop : 0;
+  var filterFocused = document.activeElement && document.activeElement.classList.contains("fr-filter");
   var ids = sortedFriendIds();
   var onCount = ids.filter(friendOnline).length;
-  box.innerHTML = "<h2>👥 친구</h2><p class=\"fr-sub\"><span class=\"presence-dot on\"></span>온라인 <b>"+onCount+"</b> · 전체 "+ids.length+"명</p>";
+  box.innerHTML = "<h2>👥 친구</h2><p class=\"fr-sub\"><span class=\"presence-dot on\"></span>온라인 <b>"+onCount+"</b> · 친구 "+ids.length+"/"+FRIEND_LIMIT+"</p>";
   var addRow = el("div","fr-search");
   var input = el("input","");
   input.id = "friend-nick-input"; input.placeholder = "닉네임 입력"; input.maxLength = 16; input.value = typed;
@@ -6237,18 +6245,43 @@ function renderFriendsBox(){
   if(!ids.length){
     box.appendChild(el("div","fr-empty","<div class=\"fr-empty-ico\">👋</div><b>아직 친구가 없어요</b><small>닉네임으로 친구를 찾아 함께 플레이해 보세요</small>"));
   } else {
+    // Many friends: a filter box, online and offline groups with sticky headers, and the list scrolls.
+    if(ids.length >= 8){
+      var filter = el("input","fr-filter");
+      filter.placeholder = "🔎 친구 목록에서 찾기";
+      filter.value = friendFilter;
+      filter.addEventListener("input", function(){ friendFilter = filter.value; applyFriendFilter(); });
+      box.appendChild(filter);
+    }
     var list = el("div","fr-list");
-    ids.forEach(function(id){
-      var x = el("button","fr-x","✕");
-      x.title = "친구 삭제";
-      x.addEventListener("click", function(){ if(confirm("친구를 삭제할까요?")) removeFriend(id); });
-      list.appendChild(friendRowEl(id, [x]));
+    var groups = [["on","온라인", ids.filter(friendOnline)], ["off","오프라인", ids.filter(function(id){ return !friendOnline(id); })]];
+    groups.forEach(function(g){
+      if(!g[2].length) return;
+      list.appendChild(el("div","fr-group"+(g[0]==="on"?" on":""), g[1]+" "+g[2].length));
+      g[2].forEach(function(id){
+        var x = el("button","fr-x","✕");
+        x.title = "친구 삭제";
+        x.addEventListener("click", function(){ if(confirm("친구를 삭제할까요?")) removeFriend(id); });
+        var row = friendRowEl(id, [x]);
+        row.setAttribute("data-nick", String((friendPresence[id] && friendPresence[id].nick) || myFriends[id].nick || "").toLowerCase());
+        list.appendChild(row);
+      });
     });
     box.appendChild(list);
+    applyFriendFilter();
   }
   var close = el("div","coin-modal-actions");
   close.appendChild(smallBtn("닫기", false, closeModal));
   box.appendChild(close);
+  var newList = box.querySelector(".fr-list");
+  if(newList) newList.scrollTop = keepScroll;
+  if(filterFocused && box.querySelector(".fr-filter")){ var f = box.querySelector(".fr-filter"); f.focus(); f.setSelectionRange(f.value.length, f.value.length); }
+}
+function applyFriendFilter(){
+  var q = friendFilter.trim().toLowerCase();
+  Array.prototype.forEach.call(document.querySelectorAll("#friends-box .fr-list .fr-row"), function(r){
+    r.classList.toggle("hidden", !!q && (r.getAttribute("data-nick")||"").indexOf(q)===-1);
+  });
 }
 function setSocialMsg(text){ var m = document.querySelector("#friends-box .social-msg"); if(m) m.textContent = text; }
 function sendFriendRequest(raw, btn){
@@ -6261,6 +6294,7 @@ function sendFriendRequest(raw, btn){
     var to = snap.data().uid;
     if(to===uid){ setSocialMsg("내 닉네임이에요."); return; }
     if(myFriends[to]){ setSocialMsg("이미 친구예요."); return; }
+    if(Object.keys(myFriends).length >= FRIEND_LIMIT){ setSocialMsg("친구는 최대 "+FRIEND_LIMIT+"명까지 추가할 수 있어요."); return; }
     var theirs = pendingRequests.filter(function(r){ return r.data.from===to; })[0];
     if(theirs) return acceptFriendRequest(theirs, btn);
     return F.setDoc(F.doc(fbDb,"friendRequests",uid+"_"+to), { from:uid, to:to, fromNick:myNick(), at:serverNow() }).then(function(){
@@ -6272,6 +6306,7 @@ function sendFriendRequest(raw, btn){
 }
 function acceptFriendRequest(r, btn){
   var F = fbFs, uid = account.uid, from = r.data.from;
+  if(Object.keys(myFriends).length >= FRIEND_LIMIT){ setSocialMsg("친구가 "+FRIEND_LIMIT+"명이라 더 받을 수 없어요. 정리 후 다시 수락해 주세요."); return Promise.resolve(); }
   if(btn) btn.disabled = true;
   var batch = F.writeBatch(fbDb);
   batch.set(F.doc(fbDb,"users",uid,"friends",from), { nick:cleanText(r.data.fromNick,16), at:serverNow() });
