@@ -153,7 +153,9 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .name-tag.border-blackgold::before{content:"♛";color:#e9b949;font-size:12px;}
 /* Motion: flame glows, neon flickers, aurora drifts. */
 .name-tag.border-flame{}
-.name-tag.border-neon{animation:neonFlicker 3s linear infinite;}
+.name-tag.border-neon{--tag-glow:rgba(57,243,255,.85);}
+.name-tag.border-neon .tag-glow{animation:glowFlicker 3s linear infinite;}
+@keyframes glowFlicker{0%,18%,22%,62%,64%,100%{opacity:1;}20%,63%{opacity:0;}}
 @keyframes flameGlow{0%,100%{box-shadow:0 0 3px rgba(255,120,40,.45);}50%{box-shadow:0 0 9px rgba(255,140,40,.9);}}
 @keyframes neonFlicker{0%,18%,22%,62%,64%,100%{box-shadow:0 0 6px rgba(57,243,255,.8),0 0 12px rgba(255,61,230,.45);}20%,63%{box-shadow:none;}}
 @keyframes decoTwinkle{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.45;transform:scale(.8);}}
@@ -243,6 +245,7 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 /* Border motion without heat: glows pulse as an opacity layer (.tag-glow) and light streaks
    slide as a transform layer (.tag-shine), so neither repaints; flowing rims tick at ~12fps.
    Every name tag carries both layers (playerTagHTML). */
+.name-tag.border-chrome::after,.name-tag.border-blackgold::after,.name-tag.border-dragon::after,.name-tag.border-trophy::after,.name-tag.border-legend::after{content:none;animation:none;}
 .tag-glow,.tag-shine{position:absolute;inset:0;border-radius:inherit;pointer-events:none;}
 .tag-glow{box-shadow:0 0 10px var(--tag-glow,transparent),0 0 3px var(--tag-glow,transparent);opacity:0;}
 .tag-shine{overflow:hidden;z-index:1;}
@@ -1334,6 +1337,7 @@ var account = null;
 function kstDate(){ return new Date(Date.now() + 9*3600*1000); }
 function dailyKey(){ return kstDate().toISOString().slice(0,10); }
 function seasonKey(){ return kstDate().toISOString().slice(0,7); }
+function seasonRecordKey(){ return "s"+seasonKey().replace("-",""); }
 function prevSeasonKey(){
   var d = kstDate(); var y = d.getUTCFullYear(), m = d.getUTCMonth();
   if(m===0){ y--; m = 12; }
@@ -1985,6 +1989,8 @@ function recordAccountResult(outcome, online, left){
   var record = { games:inc }; record[field] = inc;
   if(left){ bucket.leaves = inc; record.leaves = inc; }
   record[online ? "online" : "solo"] = bucket;
+  // Online games and quits per season (record.ss.s202610) for the quit-rate check.
+  if(online){ var ss = { games:inc }; if(left) ss.leaves = inc; record.ss = {}; record.ss[seasonRecordKey()] = ss; }
   F.setDoc(F.doc(fbDb,"users",account.uid), { record:record }, { merge:true })
     .catch(function(e){ console.error("전적 저장 실패", e); });
 }
@@ -6704,7 +6710,7 @@ function openReportModal(target){
 var CHALLENGE_MIN_TURNS = 5;
 function leaveRateWarn(o){
   var g = Number(o.games)||0, l = Number(o.leaves)||0;
-  return g>=10 && l/g>=0.3 ? "온라인 탈주율 "+Math.round(l/g*100)+"% ("+l+"/"+g+"판)" : "";
+  return g>=10 && l/g>=0.3 ? "이번 시즌 탈주율 "+Math.round(l/g*100)+"% ("+l+"/"+g+"판)" : "";
 }
 // Steps per violation: 1st, 2nd, 3rd+ ("warn", days, or "forever").
 var SANCTION_STEPS = {
@@ -6748,7 +6754,7 @@ function sendWarning(uid, nick, cat, reason){
   var start = new Date(serverNow() - 60000), end = new Date(serverNow() + 30*864e5);
   var data = { title:"운영 경고", message:msg, cond:"login", sanction:true,
     rewardKind: nickIssue ? "nickchange" : "notice", rewardId: nickIssue ? "nickchange:1" : "notice:warn", rewardName: nickIssue ? "닉네임 변경권" : "경고",
-    start:start, end:end, claimUntil:new Date(end.getTime() + 14*864e5), targets:[uid], targetNicks:[cleanText(nick||"",16)], createdAt:F.serverTimestamp() };
+    start:start, end:end, claimUntil:new Date(end.getTime() + 14*864e5), targets:[uid], createdAt:F.serverTimestamp() };
   return F.addDoc(F.collection(fbDb,"campaigns"), data);
 }
 function applySanction(r, ref, cat, step){
@@ -6861,8 +6867,8 @@ function renderOpSuspects(body){
   Promise.all([
     F.getDocs(F.collection(fbDb,"suspicious")).then(function(s){ s.forEach(function(d){ (d.data().flags||[]).forEach(function(x){ add(d.id, d.data().nick, x); }); }); }),
     F.getDocs(F.query(F.collection(fbDb,"seasons",seasonKey(),"players"), F.where("bestTurns","<",CHALLENGE_MIN_TURNS))).then(function(s){ s.forEach(function(d){ add(d.id, d.data().name, "챌린지 "+d.data().bestTurns+"턴 (나올 수 없는 기록)"); }); }),
-    F.getDocs(F.query(F.collection(fbDb,"users"), F.where("record.online.leaves",">=",3))).then(function(s){ s.forEach(function(d){
-      var u = d.data(), o = (u.record||{}).online||{}, why = leaveRateWarn(o);
+    F.getDocs(F.query(F.collection(fbDb,"users"), F.where("record.ss."+seasonRecordKey()+".leaves",">=",3))).then(function(s){ s.forEach(function(d){
+      var u = d.data(), o = ((u.record||{}).ss||{})[seasonRecordKey()]||{}, why = leaveRateWarn(o);
       if(why) add(d.id, u.progress && u.progress.straightNickname, why);
     }); }),
     F.getDocs(F.query(F.collection(fbDb,"reports"), F.where("at",">=", new Date(Date.now()-7*864e5)))).then(function(s){
@@ -7040,7 +7046,8 @@ function lookupPlayer(nick, out){
       var rg = (Number((rec.solo||{}).games)||0) + (Number((rec.online||{}).games)||0);
       html += opSection("서버 전적", [
         ["판수", rec.games!==undefined ? rec.games : rg, g > (Number(rec.games)||rg) + 20 ? "기기 기록이 서버 전적보다 많아요(조작 의심)" : ""],
-        ["온라인 판수 / 탈주", (Number((rec.online||{}).games)||0)+" / "+(Number((rec.online||{}).leaves)||0), leaveRateWarn(rec.online||{})]
+        ["이번 시즌 온라인 / 탈주", (function(o){ return (Number(o.games)||0)+"판 / "+(Number(o.leaves)||0)+"회"; })(((rec.ss||{})[seasonRecordKey()])||{}), leaveRateWarn(((rec.ss||{})[seasonRecordKey()])||{})],
+        ["누적 탈주", (Number(rec.leaves)||0)+"회"]
       ]);
       html += opSection("지갑", w ? [
         ["코인", (Number(w.coins)||0).toLocaleString()],
@@ -7242,7 +7249,7 @@ function renderOpEvents(box){
     }).then(function(uids){
       var data = { title:title, message:message, cond:"login", rewardKind:kind, rewardId:kind+":"+item.id, rewardName:item.name,
         start:start, end:end, claimUntil:new Date(end.getTime()+days*864e5), createdAt:F.serverTimestamp() };
-      if(uids){ data.targets = uids; data.targetNicks = nicks; }
+      if(uids) data.targets = uids;
       if(kind==="coins") data.rewardCoins = amount;
       return F.addDoc(F.collection(fbDb,"campaigns"), data);
     }).then(function(){ coinToast("✅ 보상 이벤트를 만들었어요."); loadOperatorList(); refreshMail(); })
@@ -7262,7 +7269,7 @@ function loadOperatorList(){
     snap.forEach(function(d){
       var c = d.data(), fmt = function(t){ var x = new Date(tsMillis(t)); return (x.getMonth()+1)+"/"+x.getDate(); };
       if(c.sanction) return;
-      var who = c.targetNicks ? "대상 "+c.targetNicks.length+"명" : "전체";
+      var who = c.targets ? "대상 "+c.targets.length+"명" : "전체";
       var row = socialRow("<b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+who+" · 기간 "+fmt(c.start)+"~"+fmt(c.end)+" · 받기 "+fmt(c.claimUntil)+"까지 · <span class=\"op-count\">참여 …</span></small>", [
         smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요?\n"+(isConsumableReward(c.rewardKind) ? "이미 받거나 사용한 보상은 회수되지 않아요." : "이미 받은 플레이어의 보상도 회수돼요."))) F.deleteDoc(d.ref).then(loadOperatorList); })
       ]);
