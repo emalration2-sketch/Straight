@@ -1618,21 +1618,21 @@ var UNLOCK_MILESTONES = [
 
   { id:"misc:tutorial",   kind:"border", label:"새싹",      check:function(s){ return s.tutorialDone; },       boolCond:true, detail:function(s){ return "튜토리얼 완료"; } },
   { id:"misc:online10",   kind:"border", label:"크롬",      check:function(s){ return s.onlineWins>=50; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,50)+"/50회"; } },
-  { id:"misc:streak10",   kind:"border", label:"불꽃",      check:function(s){ return s.winStreak>=15; },      detail:function(s){ return "연승 "+Math.min(s.winStreak,15)+"/15회"; } },
+  { id:"misc:streak10",   kind:"border", label:"불꽃",      check:function(s){ return s.bestStreak>=10; },      detail:function(s){ return "연승 "+Math.min(s.bestStreak,10)+"/10회"; } },
   { id:"misc:kstraight",  kind:"border", label:"사자 갈기", check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "7-8-9-10-A 스트레이트"; } },
-  { id:"misc:prism50",    kind:"border", label:"수정구",    check:function(s){ return s.prismBanked>=200; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,200)+"/200개"; } },
+  { id:"misc:prism50",    kind:"border", label:"수정구",    check:function(s){ return s.prismBanked>=300; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,300)+"/300개"; } },
 
-  { id:"misc:streak5",    kind:"title",  label:"연승 머신",  check:function(s){ return s.winStreak>=5; },       detail:function(s){ return "연승 "+Math.min(s.winStreak,5)+"/5회"; } },
+  { id:"misc:streak5",    kind:"title",  label:"연승 머신",  check:function(s){ return s.bestStreak>=10; },       detail:function(s){ return "연승 "+Math.min(s.bestStreak,10)+"/10회"; } },
   { id:"misc:draws10",    kind:"title",  label:"평화주의자", check:function(s){ return s.draws>=10; },          detail:function(s){ return "무승부 "+Math.min(s.draws,10)+"/10회"; } },
   { id:"misc:jokers50",   kind:"title",  label:"조커 마니아", check:function(s){ return s.jokersBanked>=200; },   detail:function(s){ return "조커 사용 "+Math.min(s.jokersBanked,200)+"/200개"; } },
   { id:"misc:bombs15",    kind:"pattern", label:"폭죽",     check:function(s){ return s.bombsUsed>=100; },      detail:function(s){ return "폭탄 카드 사용 "+Math.min(s.bombsUsed,100)+"/100회"; } },
   { id:"misc:bombs30",    kind:"title",  label:"폭탄마",    check:function(s){ return s.bombsUsed>=200; },      detail:function(s){ return "폭탄 카드 사용 "+Math.min(s.bombsUsed,200)+"/200회"; } },
   { id:"misc:online1",    kind:"title",  label:"인싸 등극", check:function(s){ return s.onlineWins>=1; },      boolCond:true, detail:function(s){ return "온라인 승리"; } },
-  { id:"misc:prism100",   kind:"title",  label:"프리즘 헌터", check:function(s){ return s.prismBanked>=400; },   detail:function(s){ return "프리즘 카드 획득 "+Math.min(s.prismBanked,400)+"/400개"; } },
+  { id:"misc:prism100",   kind:"title",  label:"프리즘 헌터", check:function(s){ return s.prismBanked>=500; },   detail:function(s){ return "프리즘 카드 획득 "+Math.min(s.prismBanked,500)+"/500개"; } },
   { id:"misc:hard30",     kind:"title",  label:"고수",      check:function(s){ return s.hardWins>=100; },       detail:function(s){ return "어려움 AI 승리 "+Math.min(s.hardWins,100)+"/100회"; } },
   { id:"misc:podium",     kind:"title",  label:"챌린저",    check:function(s){ return s.seasonPodium; },       boolCond:true, detail:function(s){ return "챌린지 시즌 1~3위 달성"; } },
   { id:"misc:champion",   kind:"border", label:"트로피",    check:function(s){ return s.seasonChampion; },     boolCond:true, detail:function(s){ return "챌린지 시즌 1위 달성"; } },
-  { id:"misc:colors20",   kind:"title",  label:"정복자",    check:function(s){ return s.hard4Wins>=50; },     detail:function(s){ return "4인전 어려움 AI 상대 "+Math.min(s.hard4Wins,50)+"/50승"; } }
+  { id:"misc:colors20",   kind:"title",  label:"정복자",    check:function(s){ return s.hard4Wins>=100; },     detail:function(s){ return "4인전 어려움 AI 상대 "+Math.min(s.hard4Wins,100)+"/100승"; } }
 ];
 // Runs during startup unlock migration, before ALL_COLORS is assigned — so list colors here.
 function colorsAt20(s){
@@ -1644,7 +1644,7 @@ function loadStats(){
   try{ p = JSON.parse(localStorage.getItem("straightStats") || "{}") || {}; }catch(e){}
   return {
     wins: p.wins||0, games: p.games||0, draws: p.draws||0,
-    winStreak: p.winStreak||0, prismBanked: p.prismBanked||0,
+    winStreak: p.winStreak||0, bestStreak: p.bestStreak||0, prismBanked: p.prismBanked||0,
     jokersBanked: p.jokersBanked||0, hardWins: p.hardWins||0,
     onlineWins: p.onlineWins||0, fourPOnlineWins: p.fourPOnlineWins||0, hard4Wins: p.hard4Wins||0,
     winsByColor: Object.assign({ PINK:0, BLUE:0, YELLOW:0, GREEN:0 }, p.winsByColor||{}),
@@ -1706,15 +1706,22 @@ function initUnlocksIfNeeded(){
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
 // "10": 달밤 needs 20 online wins; A became 11 — re-derive once.
-// "17": achievement thresholds raised (rebalance) — re-check those once.
-var UNLOCK_SCHEMA_VERSION = "17";
-var REBALANCED_MILESTONES = ["win:10","win:50","win:100:avatar","win:100","win:200","win:500","win:1000",
+// "17"/"18": achievement thresholds raised (rebalance) — re-check those once.
+// Streaks now count the best streak ever (bestStreak); older saves take it from what they unlocked.
+var UNLOCK_SCHEMA_VERSION = "18";
+var REBALANCED_MILESTONES = ["misc:streak5","win:10","win:50","win:100:avatar","win:100","win:200","win:500","win:1000",
   "games:10","games:50","games:100:pattern","games:100","games:200","games:500","games:1000",
   "misc:jokers50","misc:bombs15","misc:bombs30","misc:prism50","misc:prism100","misc:hard30","misc:colors20","misc:streak10","misc:online10"];
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
-    if(localStorage.getItem("straightUnlocks")!==null) deriveUnlocksFromStats();
+    if(localStorage.getItem("straightUnlocks")!==null){
+      var st = loadStats(), had = loadUnlocksRaw()||[];
+      var shown = had.indexOf("misc:streak10")!==-1 ? 10 : had.indexOf("misc:streak5")!==-1 ? 5 : 0;
+      st.bestStreak = Math.max(st.bestStreak||0, st.winStreak||0, shown);
+      saveStats(st);
+      deriveUnlocksFromStats();
+    }
     localStorage.setItem("straightUnlocksVer", UNLOCK_SCHEMA_VERSION);
   }catch(e){}
 }
@@ -1725,6 +1732,7 @@ function recordGameResult(outcome, meta){
   if(outcome==="win"){
     stats.wins = stats.wins+1;
     stats.winStreak = stats.winStreak+1;
+    stats.bestStreak = Math.max(stats.bestStreak||0, stats.winStreak);
     if(meta){
       if(meta.difficulty==="hard") stats.hardWins = stats.hardWins+1;
       if(meta.difficulty==="hard" && !meta.isOnline && meta.playerCount===4) stats.hard4Wins = stats.hard4Wins+1;
@@ -2099,7 +2107,7 @@ var TITLE_PRESETS = [
   { id:"challenger", name:"챌린저" },
   { id:"grandmaster", name:"레전드", gm:true },
   // Event mail only (📮 우편함).
-  { id:"founder", name:"원년 멤버", mail:true }
+  { id:"founder", name:"원년 멤버", mail:true, desc:"알파테스트 참여 멤버 보상" }
 ];
 var BORDER_PRESETS = [
   // 클래식: the plain tag everyone starts with.
@@ -2236,6 +2244,7 @@ function sortCollectionItems(items, kind){
 function isAvatarUnlocked(name, unlocks){
   var ch = presetByName("avatar", name);
   if(!ch) return false;
+  if(unlocks.indexOf("mail:avatar:"+name)!==-1) return true;
   if(OPEN_TEST && !preset_isMailOnly(ch)) return true;
   if(isSpecialAccount()) return true;
   var special = specialItemOwned("avatar", ch);
@@ -2248,6 +2257,7 @@ function isPatternUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<CARD_BACK_PRESETS.length;i++){ if(CARD_BACK_PRESETS[i].id===id){ preset=CARD_BACK_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(unlocks.indexOf("mail:pattern:"+id)!==-1) return true;
   if(OPEN_TEST && !preset_isMailOnly(preset)) return true;
   if(isSpecialAccount()) return true;
   var special = specialItemOwned("pattern", preset);
@@ -2261,7 +2271,8 @@ function isTitleUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<TITLE_PRESETS.length;i++){ if(TITLE_PRESETS[i].id===id){ preset=TITLE_PRESETS[i]; break; } }
   if(!preset) return false;
-  if(preset.mail) return isSpecialAccount() || unlocks.indexOf("mail:"+preset.id)!==-1;
+  if(unlocks.indexOf("mail:title:"+preset.id)!==-1) return true;
+  if(preset.mail) return isSpecialAccount();
   if(OPEN_TEST && !preset_isMailOnly(preset)) return true;
   if(isSpecialAccount()) return true;
   if(preset.gm) return isGrandMaster(unlocks);
@@ -2272,6 +2283,7 @@ function isBorderUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<BORDER_PRESETS.length;i++){ if(BORDER_PRESETS[i].id===id){ preset=BORDER_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(unlocks.indexOf("mail:border:"+id)!==-1) return true;
   if(OPEN_TEST && !preset_isMailOnly(preset)) return true;
   if(isSpecialAccount()) return true;
   var special = specialItemOwned("border", preset);
@@ -5305,8 +5317,10 @@ function bankJoker(handIdx){
   announceReady(state.myIndex, readyBefore);
   clearSelectionState();
   render();
-  pushRoomState();
-  checkWin(state.myIndex);
+  if(checkWin(state.myIndex)) return;
+  // Banking a joker uses the turn (it used to be free, which made jokers too strong).
+  state.stagnantTurns++;
+  endTurn();
 }
 
 // Reset card: sweep every floor card back into the center deck, reshuffle, deal a fresh
@@ -5498,23 +5512,21 @@ function aiTakeTurn(playerIdx){
     player.aiTurnSeq = state.turnSeq;
     player.aiTurns = (player.aiTurns||0) + 1;
   }
-  var jokerIndices = [];
-  if(Math.random() < aiProfile(playerIdx).bankJoker){
-    player.hand.forEach(function(c,i){ if(c.isJoker) jokerIndices.push(i); });
-  }
-  if(jokerIndices.length>0){
+  var move = aiDecide(playerIdx);
+  // Banking a joker takes the whole turn, so the AI does it instead of drawing.
+  var jokerIdx = player.hand.findIndex(function(c){ return c.isJoker; });
+  if(jokerIdx>=0 && move.type!=="capture" && move.type!=="reset" && Math.random() < aiProfile(playerIdx).bankJoker){
     var readyBefore = straightProgress(player.score, state.colors).count;
-    for(var ji=jokerIndices.length-1; ji>=0; ji--){
-      player.score.push(player.hand.splice(jokerIndices[ji],1)[0]);
-      state.balance.jokers++;
-    }
+    player.score.push(player.hand.splice(jokerIdx,1)[0]);
+    state.balance.jokers++;
     pushLog(josa(logName(player),"이","가")+" 조커를 점수덱에 내려놓았습니다!");
     announceReady(playerIdx, readyBefore);
-    pushRoomState();
+    render();
     if(checkWin(playerIdx)) return;
+    state.stagnantTurns++;
+    endTurn();
+    return;
   }
-
-  var move = aiDecide(playerIdx);
   if(move.type==="capture"){
     doEat(playerIdx, move.hi, move.fi);
     return;
@@ -5951,8 +5963,14 @@ document.addEventListener("click", function(e){
 var PRESENCE_FRESH_MS = 150000;
 var socialStarted = false, myFriends = {}, friendPresence = {}, friendUnsubs = {};
 var pendingRequests = [], pendingInvites = [], mailItems = [], shownInvites = {};
-// Rewards that only arrive by mail. id = the item's preset id; unlocked as "mail:<id>".
-var MAIL_REWARDS = [{ id:"founder", kind:"title", name:"원년 멤버" }];
+// Event rewards: any collection item. rewardId is "<kind>:<id>" and unlocks as "mail:<kind>:<id>".
+var REWARD_KINDS = [["title","칭호"],["border","테두리"],["pattern","패턴"],["avatar","캐릭터"]];
+function rewardItems(kind){
+  if(kind==="avatar") return CHARACTERS.map(function(c){ return { id:c.name, name:c.name }; });
+  var list = kind==="title" ? TITLE_PRESETS : kind==="border" ? BORDER_PRESETS : CARD_BACK_PRESETS;
+  return list.map(function(p){ return { id:p.id, name:p.name }; });
+}
+function hasMailUnlock(kind, id){ return straightUnlocks.indexOf("mail:"+kind+":"+id)!==-1; }
 
 function myNick(){ try{ return localStorage.getItem("straightNickname") || ""; }catch(e){ return ""; } }
 function tsMillis(t){ return t && t.toMillis ? t.toMillis() : (typeof t==="number" ? t : 0); }
@@ -6065,10 +6083,10 @@ function renderFriendsBox(){
   var keepInput = box.querySelector("#friend-nick-input");
   var typed = keepInput ? keepInput.value : "";
   var msgText = box.querySelector(".social-msg") ? box.querySelector(".social-msg").textContent : "";
-  box.innerHTML = "<h2>👥 친구</h2><p class=\"coin-note\">내 닉네임: <b>"+cleanText(myNick(),16)+"</b></p>";
+  box.innerHTML = "<h2>👥 친구</h2>";
   var addRow = el("div","nick-change-row");
   var input = el("input","nickname-input");
-  input.id = "friend-nick-input"; input.placeholder = "친구 닉네임"; input.maxLength = 16; input.value = typed;
+  input.id = "friend-nick-input"; input.placeholder = "닉네임 입력"; input.maxLength = 16; input.value = typed;
   var addBtn = smallBtn("요청", true, function(b){ sendFriendRequest(input.value, b); });
   addRow.appendChild(input); addRow.appendChild(addBtn);
   box.appendChild(addRow);
@@ -6187,21 +6205,30 @@ function renderInviteBox(){
 
 // 📮 우편함: event rewards. Signing in during an event's window records an entry
 // (campaigns/{id}/entries/{uid}); the reward can then be claimed until claimUntil.
-function grantMailReward(id){
-  var key = "mail:"+id;
+function grantMailReward(rewardId){
+  var key = "mail:"+rewardId;
   if(straightUnlocks.indexOf(key)!==-1) return false;
   straightUnlocks.push(key);
   saveUnlocks(straightUnlocks);
   saveProgressSoon();
   return true;
 }
+// Mail rewards stay only while their event exists: deleting an event takes it back.
+function syncMailRewards(valid){
+  var before = straightUnlocks.length;
+  straightUnlocks = straightUnlocks.filter(function(id){ return !/^mail:/.test(id) || valid.indexOf(id.slice(5))!==-1; });
+  valid.forEach(function(r){ if(straightUnlocks.indexOf("mail:"+r)===-1) straightUnlocks.push("mail:"+r); });
+  if(straightUnlocks.length!==before || valid.length){ saveUnlocks(straightUnlocks); saveProgressSoon(); }
+}
 function refreshMail(){
   if(!account || !fbDb) return;
   var F = fbFs, uid = account.uid, now = serverNow();
-  // Rewards already claimed (on any device) are unlocked here too.
+  // Rewards claimed on any device are unlocked here too — if their event still exists.
   F.getDocs(F.collection(fbDb,"users",uid,"mail")).then(function(snap){
-    snap.forEach(function(d){ if(d.data().reward) grantMailReward(d.data().reward); });
-  }).catch(function(){});
+    return Promise.all(snap.docs.map(function(d){
+      return F.getDoc(F.doc(fbDb,"campaigns",d.id)).then(function(c){ return c.exists() ? d.data().reward : null; });
+    }));
+  }).then(function(rewards){ syncMailRewards(rewards.filter(Boolean)); }).catch(function(){});
   F.getDocs(F.query(F.collection(fbDb,"campaigns"), F.where("claimUntil",">=", new Date(now)))).then(function(snap){
     var list = [];
     return Promise.all(snap.docs.map(function(d){
@@ -6222,7 +6249,7 @@ function renderMailBox(){
   var box = $("mail-box");
   if(!box) return;
   box.innerHTML = "<h2>📮 우편함</h2>";
-  if(!mailItems.length) box.appendChild(el("p","coin-note muted","받을 선물이 없어요."));
+  if(!mailItems.length) box.appendChild(el("p","coin-note muted","받은 편지가 없어요."));
   mailItems.forEach(function(c){
     var until = new Date(tsMillis(c.claimUntil));
     var who = "<b>🎁 "+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+(until.getMonth()+1)+"/"+until.getDate()+"까지</small>";
@@ -6243,36 +6270,57 @@ function claimMail(c, btn){
   }).catch(function(e){ console.error("우편 받기 실패", e); btn.disabled = false; alert("받지 못했어요. 수령 기간이 지났을 수 있어요."); });
 }
 
-// 🛠 운영자 도구 (developer accounts): events that send a reward to everyone who signs in
-// during a period. Results show how many players qualified so far.
+// 🛠 운영자 도구 (developer accounts only — the rules refuse event writes from anyone else):
+// 보상 이벤트 = a reward item sent to every player who signs in during a period, or only to
+// the players listed by nickname. Deleting an event takes its reward back.
 function openOperatorModal(){
   var box = socialModal("operator-box", "🛠 운영자 도구");
-  box.innerHTML = "<h2>🛠 운영자 도구</h2><div class=\"social-head\">진행 중·예정 이벤트</div><div id=\"op-list\"><p class=\"coin-note muted\">불러오는 중...</p></div>"+
-    "<div class=\"social-head\">새 이벤트 (기간 중 접속한 모두에게 보상)</div>";
+  box.innerHTML = "<h2>🛠 운영자 도구</h2><div class=\"social-head\">보상 이벤트 목록</div><div id=\"op-list\"><p class=\"coin-note muted\">불러오는 중...</p></div>"+
+    "<div class=\"social-head\">새 보상 이벤트</div>";
   var F = fbFs;
   var form = el("div","op-form");
   var pad = function(n){ return ("0"+n).slice(-2); };
   var local = function(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes()); };
   var now = new Date();
   form.innerHTML =
-    "<label>제목<input class=\"nickname-input\" id=\"op-title\" value=\"알파 테스트 감사 선물\"></label>"+
-    "<label>보상<select class=\"nickname-input\" id=\"op-reward\">"+MAIL_REWARDS.map(function(r, i){ return "<option value=\""+i+"\">"+r.name+" ("+({title:"칭호"}[r.kind]||r.kind)+")</option>"; }).join("")+"</select></label>"+
-    "<label>접속 기간 시작<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-start\" value=\""+local(now)+"\"></label>"+
-    "<label>접속 기간 끝<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-end\" value=\""+local(new Date(now.getTime()+7*864e5))+"\"></label>"+
+    "<label>우편 제목<input class=\"nickname-input\" id=\"op-title\" placeholder=\"예: 알파 테스트 감사 선물\"></label>"+
+    "<label>받는 사람<select class=\"nickname-input\" id=\"op-target\"><option value=\"all\">기간 중 접속한 모든 플레이어</option><option value=\"list\">지정한 플레이어만 (기간 중 접속 시)</option></select></label>"+
+    "<label class=\"hidden\" id=\"op-nicks-wrap\">닉네임 (쉼표로 구분)<input class=\"nickname-input\" id=\"op-nicks\" placeholder=\"예: 허니뱅, 수달과빙어\"></label>"+
+    "<label>보상 종류<select class=\"nickname-input\" id=\"op-kind\">"+REWARD_KINDS.map(function(k){ return "<option value=\""+k[0]+"\">"+k[1]+"</option>"; }).join("")+"</select></label>"+
+    "<label>보상 아이템<select class=\"nickname-input\" id=\"op-item\"></select></label>"+
+    "<label>기간 시작<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-start\" value=\""+local(now)+"\"></label>"+
+    "<label>기간 끝<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-end\" value=\""+local(new Date(now.getTime()+7*864e5))+"\"></label>"+
     "<label>끝난 뒤 받기 가능 (일)<input class=\"nickname-input\" type=\"number\" id=\"op-days\" value=\"30\" min=\"1\" max=\"365\"></label>";
   box.appendChild(form);
+  var fillItems = function(){
+    $("op-item").innerHTML = rewardItems($("op-kind").value).map(function(it, i){ return "<option value=\""+i+"\">"+cleanText(it.name,20)+"</option>"; }).join("");
+  };
+  $("op-kind").addEventListener("change", fillItems);
+  $("op-target").addEventListener("change", function(){ $("op-nicks-wrap").classList.toggle("hidden", $("op-target").value!=="list"); });
+  fillItems();
   var actions = el("div","coin-modal-actions");
   actions.appendChild(smallBtn("이벤트 만들기", true, function(b){
-    var reward = MAIL_REWARDS[Number($("op-reward").value)];
+    var kind = $("op-kind").value, item = rewardItems(kind)[Number($("op-item").value)];
     var start = new Date($("op-start").value), end = new Date($("op-end").value);
     var days = Math.max(1, Number($("op-days").value)||30);
     var title = cleanText($("op-title").value, 30).trim();
-    if(!title || isNaN(start) || isNaN(end) || end<=start){ alert("제목과 기간을 확인해 주세요."); return; }
+    var nicks = $("op-target").value==="list" ? $("op-nicks").value.split(",").map(function(n){ return cleanNick(n); }).filter(Boolean) : null;
+    if(!title || !item || isNaN(start) || isNaN(end) || end<=start){ alert("제목, 보상, 기간을 확인해 주세요."); return; }
+    if(nicks && !nicks.length){ alert("받을 플레이어 닉네임을 입력해 주세요."); return; }
+    var kindName = REWARD_KINDS.filter(function(k){ return k[0]===kind; })[0][1];
+    var who = nicks ? nicks.join(", ")+" ("+nicks.length+"명)" : "기간 중 접속한 모든 플레이어";
+    if(!confirm("이 이벤트를 만들까요?\n\n"+title+"\n보상: "+item.name+" ("+kindName+")\n받는 사람: "+who)) return;
     b.disabled = true;
-    F.addDoc(F.collection(fbDb,"campaigns"), { title:title, cond:"login", rewardKind:reward.kind, rewardId:reward.id, rewardName:reward.name,
-      start:start, end:end, claimUntil:new Date(end.getTime()+days*864e5), createdAt:F.serverTimestamp() })
-      .then(function(){ coinToast("✅ 이벤트를 만들었어요."); loadOperatorList(); refreshMail(); })
-      .catch(function(e){ console.error("이벤트 생성 실패", e); alert("만들지 못했어요."); })
+    var resolve = nicks ? Promise.all(nicks.map(function(n){
+      return F.getDoc(F.doc(fbDb,"nicknames",nickKey(n))).then(function(d){ if(!d.exists()) throw new Error("닉네임을 찾지 못했어요: "+n); return d.data().uid; });
+    })) : Promise.resolve(null);
+    resolve.then(function(uids){
+      var data = { title:title, cond:"login", rewardKind:kind, rewardId:kind+":"+item.id, rewardName:item.name,
+        start:start, end:end, claimUntil:new Date(end.getTime()+days*864e5), createdAt:F.serverTimestamp() };
+      if(uids){ data.targets = uids; data.targetNicks = nicks; }
+      return F.addDoc(F.collection(fbDb,"campaigns"), data);
+    }).then(function(){ coinToast("✅ 보상 이벤트를 만들었어요."); loadOperatorList(); refreshMail(); })
+      .catch(function(e){ console.error("이벤트 생성 실패", e); alert(e && e.message && /닉네임/.test(e.message) ? e.message : "만들지 못했어요."); })
       .then(function(){ b.disabled = false; });
   }));
   actions.appendChild(smallBtn("닫기", false, closeModal));
@@ -6287,8 +6335,9 @@ function loadOperatorList(){
     if(snap.empty){ list.appendChild(el("p","coin-note muted","아직 이벤트가 없어요.")); return; }
     snap.forEach(function(d){
       var c = d.data(), fmt = function(t){ var x = new Date(tsMillis(t)); return (x.getMonth()+1)+"/"+x.getDate(); };
-      var row = socialRow("<b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · 접속 "+fmt(c.start)+"~"+fmt(c.end)+" · 수령 "+fmt(c.claimUntil)+"까지 · <span class=\"op-count\">참여 …</span></small>", [
-        smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요? (이미 받은 보상은 유지)")) F.deleteDoc(d.ref).then(loadOperatorList); })
+      var who = c.targetNicks ? "대상 "+c.targetNicks.length+"명" : "전체";
+      var row = socialRow("<b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+who+" · 기간 "+fmt(c.start)+"~"+fmt(c.end)+" · 받기 "+fmt(c.claimUntil)+"까지 · <span class=\"op-count\">참여 …</span></small>", [
+        smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요?\n이미 받은 플레이어의 보상도 회수돼요.")) F.deleteDoc(d.ref).then(loadOperatorList); })
       ]);
       list.appendChild(row);
       F.getCountFromServer(F.collection(fbDb,"campaigns",d.id,"entries")).then(function(r){
@@ -6313,7 +6362,7 @@ function buildRulebookPanel(){
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
     "<li><b>오늘의 프리즘</b>: 매 게임 무작위로 숫자 2개가 뽑혀, 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 프리즘이 됩니다(카드 수는 그대로). 프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다. 이번 게임의 프리즘 숫자는 게임 시작 시 안내됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
-    "<li><b>손패 조커</b>: 조커를 누르면 발동! 바닥 카드 아무거나 하나를 가져오거나, 점수덱에 내려놓을 수 있습니다(내려놓기는 턴을 소모하지 않음). 점수덱의 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
+    "<li><b>손패 조커</b>: 조커를 누르면 발동! 바닥 카드 아무거나 하나를 가져오거나, 점수덱에 내려놓을 수 있습니다(내려놓기도 턴을 사용합니다). 점수덱의 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
     "<li><b>폭탄 카드</b>: (인원수−1)장 등장 (2인 1장 · 3인 2장 · 4인 3장). 손패에서 누른 뒤 바닥판을 누르면 바닥 카드 전부가 중앙 덱으로 돌아가 섞이고 새 8장이 깔립니다. 사용한 폭탄 카드는 중앙 덱에 다시 섞이며, 턴은 소모하지 않습니다. 바닥에 놓인 폭탄 카드는 어떤 카드로든 가져올 수 있고, 가져오면 손패로 들어옵니다.</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
     "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
@@ -6441,10 +6490,10 @@ function collItemValue(kind, it){
 
 function collectionItemDetailText(kind, name){
   var mp = presetByName(kind, name);
-  if(mp && mp.mail) return "📮 이벤트 우편 보상";
+  if(mp && mp.mail) return mp.desc || "📮 이벤트 우편 보상";
   if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
   if(isMemberItem(kind, name)) return "👑 멤버십 전용";
-  if(isPaidItem(kind, name)) return COIN_PRICES[kind]+"코인 · 가격표를 눌러 구매";
+  if(isPaidItem(kind, name)) return COIN_PRICES[kind]+"코인";
   if(kind==="theme") return "기본 테마";
   if(isGrandMasterItem(kind, name)){
     var gp = grandMasterProgress();
@@ -6662,7 +6711,7 @@ var TUTORIAL_SLIDES = [
     title: "🃏 조커 사용법",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","손패의 조커를 누르면 <b>발동</b>! 둘 중 하나를 고르세요.<br>① 바닥 카드 <b>아무거나</b> 하나를 가져오기 (색·숫자 무관)<br>② 점수덱에 내려놓기 (턴 소모 없음) — 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다."));
+      wrap.appendChild(el("p","tutorial-text","손패의 조커를 누르면 <b>발동</b>! 둘 중 하나를 고르세요.<br>① 바닥 카드 <b>아무거나</b> 하나를 가져오기 (색·숫자 무관)<br>② 점수덱에 내려놓기 (턴 사용) — 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다."));
       var row = el("div","tutorial-card-row");
       row.appendChild(cardEl({ id:"tut-joker", isJoker:true }, { cls:"tiny" }));
       wrap.appendChild(row);

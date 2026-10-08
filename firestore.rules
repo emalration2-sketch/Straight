@@ -243,7 +243,9 @@ service cloud.firestore {
         allow create: if signedIn() && request.auth.uid == uid
           && request.resource.data.keys().hasOnly(['at'])
           && request.time >= get(/databases/$(database)/documents/campaigns/$(cid)).data.start
-          && request.time <= get(/databases/$(database)/documents/campaigns/$(cid)).data.end;
+          && request.time <= get(/databases/$(database)/documents/campaigns/$(cid)).data.end
+          && (!('targets' in get(/databases/$(database)/documents/campaigns/$(cid)).data)
+            || request.auth.uid in get(/databases/$(database)/documents/campaigns/$(cid)).data.targets);
       }
     }
     match /users/{uid}/mail/{cid} {
