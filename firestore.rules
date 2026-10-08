@@ -146,7 +146,7 @@ service cloud.firestore {
     }
     function itemPrice(key){ return key.split(':')[0] == 'theme' ? 330 : 220; }
     function walletShape(n){
-      return n.keys().hasOnly(['coins','items','membershipUntil','attendDay','streak','lastBuy'])
+      return n.keys().hasOnly(['coins','items','membershipUntil','attendDay','streak','lastBuy','missionDay','missionDone','claimed'])
         && n.keys().hasAll(['coins','items','membershipUntil','attendDay','streak'])
         && n.coins is int && n.coins >= 0 && n.items is list
         && n.membershipUntil is int && n.attendDay is int && n.streak is int;
@@ -202,6 +202,29 @@ service cloud.firestore {
             && n.membershipUntil >= request.time.toMillis() + 2592000000 - 600000
             && n.membershipUntil <= request.time.toMillis() + 2592000000 + 600000));
     }
+    // 오늘의 미션: one of today's three (index 0-2) once per KST day; +5 coins, +15 for the third.
+    function isMission(n, o){
+      let prev = o.get('missionDay', 0) == kstToday() ? o.get('missionDone', []) : [];
+      return sameExcept(n, o, ['coins','missionDay','missionDone'])
+        && n.missionDay == kstToday()
+        && n.missionDone is list && n.missionDone.size() == prev.size() + 1
+        && n.missionDone.hasAll(prev) && n.missionDone.hasOnly([0, 1, 2])
+        && n.missionDone.toSet().size() == n.missionDone.size()
+        && n.coins == o.coins + (n.missionDone.size() == 3 ? 15 : 5);
+    }
+    // 첫걸음 보상: each key once, at its fixed amount (FIRST_STEPS in index.html).
+    function firstStepRewards(){
+      return {'first:game1': 10, 'first:win1': 10, 'first:win3': 15, 'first:games10': 15,
+              'first:challenge1': 10, 'first:win10': 20, 'first:win25': 30};
+    }
+    function isFirstStep(n, o){
+      let prev = o.get('claimed', []);
+      let key = n.claimed[n.claimed.size() - 1];
+      return sameExcept(n, o, ['coins','claimed'])
+        && n.claimed is list && n.claimed.size() == prev.size() + 1 && n.claimed.hasAll(prev)
+        && key in firstStepRewards() && !(key in prev)
+        && n.coins == o.coins + firstStepRewards()[key];
+    }
     // Recall by the developer role: coins only down, bought items only removed, membership only shorter.
     function isRecall(n, o){
       return devRole() && sameExcept(n, o, ['coins','items','membershipUntil'])
@@ -230,7 +253,9 @@ service cloud.firestore {
           || isMembership(request.resource.data, resource.data)
           || isNickChange(request.resource.data, resource.data)
           || isMailCoins(request.resource.data, resource.data, uid)
-          || isMailMembership(request.resource.data, resource.data, uid)))
+          || isMailMembership(request.resource.data, resource.data, uid)
+          || isMission(request.resource.data, resource.data)
+          || isFirstStep(request.resource.data, resource.data)))
         || isGrant(request.resource.data, resource.data)
         || isRecall(request.resource.data, resource.data));
       allow delete: if false;
