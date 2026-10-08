@@ -879,6 +879,14 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .op-err-top small,.op-err-meta{color:var(--muted);font-size:12px;}
 .op-err-msg{font-size:13.5px;word-break:break-all;}
 .op-err .btn{align-self:flex-end;padding:5px 10px;min-height:0;font-size:12.5px;}
+.op-ev{border-radius:10px;background:var(--panel2);margin-bottom:5px;overflow:hidden;}
+.op-ev-head{display:flex;align-items:center;gap:7px;width:100%;padding:8px 10px;border:none;background:none;color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer;}
+.op-ev-head b{flex:1 1 auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.op-ev-head small{color:var(--muted);font-size:12px;white-space:nowrap;}
+.op-ev-state{flex:none;font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(61,220,132,.18);color:#3ddc84;}
+.op-ev-state.done{background:rgba(255,255,255,.08);color:var(--muted);}
+.op-ev-body{padding:0 10px 10px;}
+.op-ev-acts{justify-content:flex-end;margin-top:8px;}
 .op-guide{margin:0 0 8px;padding:8px 11px;border-radius:12px;background:var(--panel2);font-size:13px;}
 .op-guide summary{cursor:pointer;font-weight:700;}
 .op-guide table{width:100%;border-collapse:collapse;margin:8px 0 6px;font-size:12.5px;}
@@ -7272,23 +7280,45 @@ function renderOpEvents(box){
   box.appendChild(actions);
   loadOperatorList();
 }
+// Event history: one short line each; tapping opens the details and the two different removals —
+// 기록만 지우기 (hidden from this list, the event and its rewards stay) and 이벤트 삭제 (the mail
+// disappears and item rewards are taken back).
 function loadOperatorList(){
   var F = fbFs, list = $("op-list");
   if(!list) return;
-  F.getDocs(F.query(F.collection(fbDb,"campaigns"), F.orderBy("end","desc"), F.limit(20))).then(function(snap){
+  F.getDocs(F.query(F.collection(fbDb,"campaigns"), F.orderBy("end","desc"), F.limit(40))).then(function(snap){
     list.innerHTML = "";
-    if(snap.empty){ list.appendChild(el("p","coin-note muted","아직 이벤트가 없어요.")); return; }
-    snap.forEach(function(d){
+    var docs = snap.docs.filter(function(d){ var c = d.data(); return !c.sanction && !c.archived; });
+    if(!docs.length){ list.appendChild(el("p","coin-note muted","아직 이벤트가 없어요.")); return; }
+    var now = serverNow();
+    docs.forEach(function(d){
       var c = d.data(), fmt = function(t){ var x = new Date(tsMillis(t)); return (x.getMonth()+1)+"/"+x.getDate(); };
-      if(c.sanction) return;
-      var who = c.targets ? "대상 "+c.targets.length+"명" : "전체";
-      var row = socialRow("<b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+who+" · 기간 "+fmt(c.start)+"~"+fmt(c.end)+" · 받기 "+fmt(c.claimUntil)+"까지 · <span class=\"op-count\">참여 …</span></small>", [
-        smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요?\n"+(isConsumableReward(c.rewardKind) ? "이미 받거나 사용한 보상은 회수되지 않아요." : "이미 받은 플레이어의 보상도 회수돼요."))) F.deleteDoc(d.ref).then(loadOperatorList); })
-      ]);
-      list.appendChild(row);
+      var state = now < tsMillis(c.start) ? "예정" : now <= tsMillis(c.end) ? "진행 중" : now <= tsMillis(c.claimUntil) ? "받기만 가능" : "끝남";
+      var item = el("div","op-ev");
+      var head = el("button","op-ev-head","<span class=\"op-ev-state"+(state==="끝남"?" done":"")+"\">"+state+"</span><b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · <span class=\"op-count\">…</span></small>");
+      var body = el("div","op-ev-body hidden");
+      body.innerHTML = "<div class=\"op-table\">"+
+        [["받는 사람", c.targets ? "대상 "+c.targets.length+"명" : "기간 중 접속한 모든 플레이어"],
+         ["기간", fmt(c.start)+" ~ "+fmt(c.end)], ["받기 기한", fmt(c.claimUntil)+"까지"],
+         ["내용", c.message ? cleanText(c.message,200) : "-"]].map(function(r){ return "<div class=\"op-tr\"><span>"+r[0]+"</span><b>"+r[1]+"</b></div>"; }).join("")+"</div>";
+      var acts = el("div","fr-btns op-ev-acts");
+      acts.appendChild(smallBtn("기록만 지우기", false, function(btn){
+        if(!confirm("이 기록을 목록에서 지울까요?\n이벤트와 보상은 그대로 남아요."+(state!=="끝남" ? "\n(아직 "+state+"이라 플레이어는 계속 받을 수 있어요)" : ""))) return;
+        btn.disabled = true;
+        F.updateDoc(d.ref, { archived:true }).then(loadOperatorList).catch(function(e){ console.error("기록 지우기 실패", e); btn.disabled = false; });
+      }));
+      acts.appendChild(smallBtn("이벤트 삭제(회수)", false, function(btn){
+        if(!confirm("이벤트를 삭제할까요?\n우편함에서 바로 사라지고, "+(isConsumableReward(c.rewardKind) ? "이미 받거나 사용한 코인·이용권은 돌아오지 않아요." : "이미 받은 플레이어의 보상도 회수돼요."))) return;
+        btn.disabled = true;
+        F.deleteDoc(d.ref).then(loadOperatorList).catch(function(e){ console.error("이벤트 삭제 실패", e); btn.disabled = false; });
+      }));
+      body.appendChild(acts);
+      head.addEventListener("click", function(){ body.classList.toggle("hidden"); item.classList.toggle("open"); });
+      item.appendChild(head); item.appendChild(body);
+      list.appendChild(item);
       F.getCountFromServer(F.collection(fbDb,"campaigns",d.id,"entries")).then(function(r){
-        row.querySelector(".op-count").textContent = "참여 "+r.data().count+"명";
-      }).catch(function(){ row.querySelector(".op-count").textContent = ""; });
+        head.querySelector(".op-count").textContent = "우편 "+r.data().count+"명";
+      }).catch(function(){ head.querySelector(".op-count").textContent = ""; });
     });
   }).catch(function(e){ console.error("이벤트 목록 실패", e); list.innerHTML = "<p class=\"coin-note muted\">불러오지 못했어요.</p>"; });
 }
