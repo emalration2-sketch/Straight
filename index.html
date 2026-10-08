@@ -883,9 +883,13 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .presence-dot.on{background:#3ddc84;box-shadow:0 0 6px rgba(61,220,132,.8);}
 .op-form{display:flex;flex-direction:column;gap:8px;}
 .op-form label{display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--muted);}
-.op-form input,.op-form select{width:100%;box-sizing:border-box;text-align:left;}
+.op-form input,.op-form select,.op-form textarea{width:100%;box-sizing:border-box;text-align:left;}
 /* iPhone Safari gives date inputs a fixed native width; let them fit the column like the rest. */
 .op-form label{min-width:0;}
+.op-msg{resize:vertical;min-height:64px;font:inherit;line-height:1.45;padding:8px 12px;}
+.mail-item{margin-bottom:8px;}
+.mail-item .social-row{margin-bottom:0;border-radius:12px 12px 0 0;}
+.mail-msg{margin:0;padding:8px 12px 10px;border-radius:0 0 12px 12px;background:var(--panel2);border-top:1px dashed rgba(var(--line-rgb),.18);font-size:14px;line-height:1.5;white-space:pre-line;color:var(--text);}
 .op-dh{display:flex;gap:6px;min-width:0;}
 .op-dh input{flex:1 1 auto;}
 .op-dh select{flex:0 0 84px;width:84px !important;}
@@ -6479,7 +6483,10 @@ function renderMailBox(){
     var until = new Date(tsMillis(c.claimUntil));
     var who = "<b>🎁 "+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+(until.getMonth()+1)+"/"+until.getDate()+"까지</small>";
     var useNow = c.rewardKind==="membership" || c.rewardKind==="nickchange";
-    box.appendChild(socialRow(who, [ smallBtn(useNow ? "사용" : "받기", true, function(b){ claimMail(c, b); }) ]));
+    var card = el("div","mail-item");
+    card.appendChild(socialRow(who, [ smallBtn(useNow ? "사용" : "받기", true, function(b){ claimMail(c, b); }) ]));
+    if(c.message) card.appendChild(el("p","mail-msg", cleanText(c.message, 200)));
+    box.appendChild(card);
   });
   var close = el("div","coin-modal-actions");
   close.appendChild(smallBtn("닫기", false, closeModal));
@@ -6552,6 +6559,7 @@ function openOperatorModal(){
   var now = new Date();
   form.innerHTML =
     "<label>우편 제목<input class=\"nickname-input\" id=\"op-title\" placeholder=\"예: 알파 테스트 감사 선물\"></label>"+
+    "<label>우편 내용<textarea class=\"nickname-input op-msg\" id=\"op-msg\" maxlength=\"200\" rows=\"3\" placeholder=\"예: 알파 테스트에 참여해 주셔서 고마워요! 작은 선물을 보내드려요.\"></textarea></label>"+
     "<label>받는 사람<select class=\"nickname-input\" id=\"op-target\"><option value=\"all\">기간 중 접속한 모든 플레이어</option><option value=\"list\">지정한 플레이어만 (기간 중 접속 시)</option></select></label>"+
     "<label class=\"hidden\" id=\"op-nicks-wrap\">닉네임 (쉼표로 구분)<input class=\"nickname-input\" id=\"op-nicks\" placeholder=\"예: 허니뱅, 수달과빙어\"></label>"+
     "<label>보상 종류<select class=\"nickname-input\" id=\"op-kind\">"+REWARD_KINDS.map(function(k){ return "<option value=\""+k[0]+"\">"+k[1]+"</option>"; }).join("")+"</select></label>"+
@@ -6583,6 +6591,7 @@ function openOperatorModal(){
     var start = readDateHour("op-start"), end = readDateHour("op-end");
     var days = Math.max(1, Number($("op-days").value)||30);
     var title = cleanText($("op-title").value, 30).trim();
+    var message = cleanText($("op-msg").value, 200).trim();
     var nicks = $("op-target").value==="list" ? $("op-nicks").value.split(",").map(function(n){ return cleanNick(n); }).filter(Boolean) : null;
     if(!title || !item || isNaN(start) || isNaN(end) || end<=start){ alert("제목, 보상, 기간을 확인해 주세요."); return; }
     if(nicks && !nicks.length){ alert("받을 플레이어 닉네임을 입력해 주세요."); return; }
@@ -6594,7 +6603,7 @@ function openOperatorModal(){
       return F.getDoc(F.doc(fbDb,"nicknames",nickKey(n))).then(function(d){ if(!d.exists()) throw new Error("닉네임을 찾지 못했어요: "+n); return d.data().uid; });
     })) : Promise.resolve(null);
     resolve.then(function(uids){
-      var data = { title:title, cond:"login", rewardKind:kind, rewardId:kind+":"+item.id, rewardName:item.name,
+      var data = { title:title, message:message, cond:"login", rewardKind:kind, rewardId:kind+":"+item.id, rewardName:item.name,
         start:start, end:end, claimUntil:new Date(end.getTime()+days*864e5), createdAt:F.serverTimestamp() };
       if(uids){ data.targets = uids; data.targetNicks = nicks; }
       if(kind==="coins") data.rewardCoins = amount;
