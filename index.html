@@ -370,6 +370,14 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .turn-chip .tt-avatar{font-size:17px;line-height:1;}
 .turn-chip .tt-name{overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .turn-chip.other{color:var(--muted);}
+.prism-intro{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);z-index:60;display:flex;flex-direction:column;align-items:center;gap:10px;padding:18px 26px 16px;border-radius:20px;background:rgba(10,14,32,.96);border:1.5px solid rgba(255,255,255,.22);box-shadow:0 12px 40px rgba(0,0,0,.6);color:#fff;text-align:center;animation:introIn .35s cubic-bezier(.2,1.4,.4,1) both;pointer-events:none;}
+.prism-intro.out{animation:introOut .3s ease-in forwards;}
+.prism-intro-title{font-size:19px;font-weight:800;letter-spacing:.5px;}
+.prism-intro-cards{display:flex;gap:12px;}
+.prism-intro-cards .card{width:64px;height:90px;font-size:30px;cursor:default;}
+.prism-intro-sub{white-space:nowrap;font-size:13px;color:rgba(255,255,255,.75);}
+@keyframes introIn{from{opacity:0;transform:translate(-50%,-50%) scale(.8);}to{opacity:1;transform:translate(-50%,-50%) scale(1);}}
+@keyframes introOut{to{opacity:0;transform:translate(-50%,-50%) scale(.92);}}
 .turn-chip.notice{background:linear-gradient(135deg,#7f77dd,#33d6c0);border-color:transparent;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);overflow:hidden;text-overflow:ellipsis;}
 .turn-chip.mine{background:linear-gradient(135deg,var(--pink),#ff8fb8);border-color:transparent;color:#1a0510;padding:4px 6px 4px 14px;}
 .turn-chip .tt-num{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:26px;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.88);color:#1a0510;font-family:var(--font-display);font-size:17px;font-weight:400;letter-spacing:.5px;}
@@ -3370,10 +3378,12 @@ function applyRemoteRoomState(data){
     else clearSelectionState();
   }
 
-  if($("screen-game").classList.contains("hidden")){
+  var entering = $("screen-game").classList.contains("hidden");
+  if(entering){
     switchScreen("game");
   }
   render();
+  if(entering && state.turnSeq===0 && !state.gameOver) showPrismIntro(state.prismRanks);
 
   if(state.gameOver && !wasOver && !state.ceremonyShown){
     state.ceremonyShown = true;
@@ -3411,6 +3421,30 @@ function applyRemoteRoomState(data){
 }
 
 var aiDriveGuard = {};
+// The prism numbers are shown in the middle of the table for 3 s at the start of a game;
+// nobody (AI included) moves until it has gone.
+var PRISM_INTRO_MS = 3000, introUntil = 0;
+function showPrismIntro(ranks){
+  var host = $("screen-game");
+  var old = $("prism-intro");
+  if(old) old.remove();
+  var box = el("div","prism-intro");
+  box.id = "prism-intro";
+  var cards = el("div","prism-intro-cards");
+  (ranks||[]).forEach(function(v, i){ cards.appendChild(cardEl({ id:"intro-"+i, isPrism:true, value:v, color:null }, {})); });
+  box.appendChild(el("div","prism-intro-title","✨ 이번 판 프리즘"));
+  box.appendChild(cards);
+  box.appendChild(el("div","prism-intro-sub","이 숫자는 모든 색으로 쓸 수 있어요"));
+  host.appendChild(box);
+  introUntil = Date.now() + PRISM_INTRO_MS;
+  state.animating = true;
+  setTimeout(function(){
+    box.classList.add("out");
+    setTimeout(function(){ box.remove(); }, 350);
+    state.animating = false;
+    render();
+  }, PRISM_INTRO_MS);
+}
 function maybeDriveAi(idx, delay){
   var key = state.turnSeq+"-"+idx;
   if(aiDriveGuard[key]) return;
@@ -3421,6 +3455,7 @@ function maybeDriveAi(idx, delay){
     // Online, AI seats move at a human-ish pace (a stand-in for someone away a bit slower).
     delay = !isMultiplayer() ? 900 : (p && p.aiTakeover ? 2400 : 1600);
   }
+  delay += Math.max(0, introUntil - Date.now());
   setTimeout(function(){ aiTakeTurn(idx); }, delay);
 }
 
@@ -4368,12 +4403,13 @@ function startGame(players, order){
   pushLog("게임을 시작합니다! 선공은 "+logName(players[order[0]])+"입니다.");
   pushLog("✨ 이번 게임의 프리즘 숫자: "+prismRanks.map(rankLabel).join(", "));
   render();
+  showPrismIntro(prismRanks);
 
   var firstIdx = order[0];
   if(players[firstIdx].isAI){
     maybeDriveAi(firstIdx);
   } else {
-    startTurnTimer();
+    setTimeout(startTurnTimer, PRISM_INTRO_MS);
   }
 }
 
@@ -4495,7 +4531,7 @@ function noticeNewLogLines(){
     if(noticedLog[m]) return;
     noticedLog[m] = true;
     var prism = /이번 게임의 프리즘 숫자: (.+)$/.exec(m);
-    if(prism){ queueChipNotice("✨ 프리즘 숫자: "+prism[1].split(", ").join(" · ")); return; }
+    if(prism) return;
     if(/레디!/.test(m)) queueChipNotice(m);
   });
 }
@@ -4870,7 +4906,8 @@ function startDailyChallenge(){
     .catch(function(e){ $("daily-status").textContent = "오늘은 이미 도전했어요."; console.error("챌린지 시작 실패", e); });
 }
 function startDailyGame(key, ch){
-  gameRng = seededRng("straight-daily-"+key);
+  // The whole season (month) plays the same deal, so day by day players can learn it.
+  gameRng = seededRng("straight-season-"+seasonKey());
   state.daily = { key:key, startedAt:Date.now() };
   var mf = myMemberFields();
   var me = { idx:0, name:(chosenNickname||ch.name)+" (나)", characterName:ch.name, avatar:avatarIconHTML(ch), title:activeTitleLabel(), border:activeBorderCls(), vip:mf.vip, master:mf.master, medal:mf.medal, isAI:false, hand:[], score:[] };
