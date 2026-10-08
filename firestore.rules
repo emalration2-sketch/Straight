@@ -201,6 +201,59 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Friends: presence is public to signed-in players; requests and friend lists only to the two.
+    match /presence/{uid} {
+      allow read: if signedIn();
+      allow write: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['nick','avatar','online','at']);
+    }
+    match /friendRequests/{id} {
+      allow read: if signedIn() && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+      allow create: if signedIn() && request.resource.data.from == request.auth.uid
+        && request.resource.data.to is string && request.resource.data.to != request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.to
+        && request.resource.data.keys().hasOnly(['from','to','fromNick','at']);
+      allow delete: if signedIn() && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid);
+    }
+    // Both entries are written by whoever accepts a pending request.
+    match /users/{uid}/friends/{fid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['nick','at'])
+        && ((request.auth.uid == uid && exists(/databases/$(database)/documents/friendRequests/$(fid + '_' + uid)))
+          || (request.auth.uid == fid && exists(/databases/$(database)/documents/friendRequests/$(uid + '_' + fid))));
+      allow delete: if signedIn() && (request.auth.uid == uid || request.auth.uid == fid);
+    }
+    // A room invite can only come from someone on the invitee's friend list.
+    match /invites/{id} {
+      allow read: if signedIn() && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+      allow create, update: if signedIn() && request.resource.data.from == request.auth.uid
+        && id == request.resource.data.to + '_' + request.auth.uid
+        && exists(/databases/$(database)/documents/users/$(request.resource.data.to)/friends/$(request.auth.uid))
+        && request.resource.data.keys().hasOnly(['from','to','fromNick','room','at']);
+      allow delete: if signedIn() && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid);
+    }
+    // Event mail: signing in during [start, end] records an entry; the reward can be claimed
+    // until claimUntil. Only the developer role creates events.
+    match /campaigns/{cid} {
+      allow read: if signedIn();
+      allow write: if devRole();
+      match /entries/{uid} {
+        allow get: if signedIn() && (request.auth.uid == uid || devRole());
+        allow list: if devRole();
+        allow create: if signedIn() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['at'])
+          && request.time >= get(/databases/$(database)/documents/campaigns/$(cid)).data.start
+          && request.time <= get(/databases/$(database)/documents/campaigns/$(cid)).data.end;
+      }
+    }
+    match /users/{uid}/mail/{cid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['reward','at'])
+        && exists(/databases/$(database)/documents/campaigns/$(cid)/entries/$(uid))
+        && request.time <= get(/databases/$(database)/documents/campaigns/$(cid)).data.claimUntil
+        && request.resource.data.reward == get(/databases/$(database)/documents/campaigns/$(cid)).data.rewardId;
+    }
     match /rooms/{code} {
       allow get: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{5}$');
       // Quick match lists open public lobbies only; private rooms stay unlistable.

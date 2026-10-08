@@ -809,6 +809,24 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
 .coin-pill{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:calc(env(safe-area-inset-right) + 14px);z-index:5;display:inline-flex;align-items:center;gap:5px;padding:4px 12px 4px 5px;border-radius:999px;background:var(--panel);border:1.5px solid rgba(239,159,39,.6);color:var(--text);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .coin-pill{font-size:16px;padding:0;background:none !important;border:none !important;box-shadow:none !important;height:34px;}
+.start-side{position:absolute;top:calc(env(safe-area-inset-top) + 56px);right:calc(env(safe-area-inset-right) + 12px);z-index:5;display:flex;flex-direction:column;gap:8px;}
+.side-btn{position:relative;width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(var(--line-rgb),.16);background:var(--panel2);font-size:20px;line-height:1;cursor:pointer;color:var(--text);}
+.side-badge{position:absolute;top:-4px;right:-4px;min-width:18px;height:18px;padding:0 4px;border-radius:9px;background:#ff4d6d;color:#fff;font-size:11.5px;font-weight:800;line-height:18px;box-sizing:border-box;}
+.modal-box.social-box{text-align:left;}
+.social-box h2{text-align:center;}
+.social-head{margin:12px 0 6px;font-size:13.5px;font-weight:800;color:var(--muted);}
+.social-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:12px;background:var(--panel2);margin-bottom:6px;}
+.social-who{display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap;font-size:15px;}
+.social-who b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.social-who small{color:var(--muted);font-size:12.5px;}
+.social-btns{display:flex;gap:6px;flex-shrink:0;}
+.social-btns .btn{padding:6px 12px;min-height:0;font-size:14px;}
+.social-msg{min-height:18px;margin:4px 0;font-size:13.5px;color:var(--muted);}
+.presence-dot{width:9px;height:9px;border-radius:50%;background:rgba(var(--line-rgb),.3);flex-shrink:0;}
+.presence-dot.on{background:#3ddc84;box-shadow:0 0 6px rgba(61,220,132,.8);}
+.op-form{display:flex;flex-direction:column;gap:8px;}
+.op-form label{display:flex;flex-direction:column;gap:4px;font-size:13.5px;color:var(--muted);}
+.op-form input,.op-form select{width:100%;box-sizing:border-box;text-align:left;}
 .coin-pill .coin-ico{width:28px;height:28px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
 .coin-modal{width:min(340px,88vw);box-sizing:border-box;padding:22px 20px;text-align:center;}
 .coin-modal h2{font-size:21px;margin-bottom:12px;}
@@ -919,6 +937,10 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
   <div class="screen" id="screen-start">
     <div class="start-me" id="start-me"></div>
     <button class="coin-pill hidden" aria-label="내 코인"></button>
+    <div class="start-side hidden" id="start-side">
+      <button class="side-btn" id="friends-btn" aria-label="친구">👥<span class="side-badge hidden"></span></button>
+      <button class="side-btn" id="mail-btn" aria-label="우편함">📮<span class="side-badge hidden"></span></button>
+    </div>
     <div class="start-hero">
       <div class="start-fan" id="start-fan" aria-hidden="true"></div>
       <div class="title-block">
@@ -981,6 +1003,7 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
     <div class="lobby-invite-row" id="lobby-copy-btn">
       <button class="btn primary" id="lobby-invite-btn">💌 친구 초대하기</button>
       <button class="btn" id="lobby-code-btn">📋 코드 복사</button>
+      <button class="btn" id="lobby-friends-btn">👥 친구 초대</button>
     </div>
     <div class="order-list" id="lobby-players" style="min-width:280px;"></div>
     <button class="btn primary big hidden" id="lobby-start-btn">게임 시작 (부족 인원 AI 채움)</button>
@@ -2074,7 +2097,9 @@ var TITLE_PRESETS = [
   { id:"prismhunter", name:"프리즘 헌터" },
   { id:"hardcore", name:"고수" },
   { id:"challenger", name:"챌린저" },
-  { id:"grandmaster", name:"레전드", gm:true }
+  { id:"grandmaster", name:"레전드", gm:true },
+  // Event mail only (📮 우편함).
+  { id:"founder", name:"원년 멤버", mail:true }
 ];
 var BORDER_PRESETS = [
   // 클래식: the plain tag everyone starts with.
@@ -2186,7 +2211,7 @@ function presetByName(kind, name){
   for(var i=0;i<list.length;i++){ if(list[i].name===name) return list[i]; }
   return null;
 }
-function isEventItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.event); }
+function isEventItem(kind, name){ var p = presetByName(kind, name); return !!(p && (p.event || p.mail)); }
 function isPaidItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.paid); }
 function isMemberItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.member); }
 function isGrandMasterItem(kind, name){ var p = presetByName(kind, name); return !!(p && p.gm); }
@@ -2236,6 +2261,7 @@ function isTitleUnlocked(id, unlocks){
   var preset = null;
   for(var i=0;i<TITLE_PRESETS.length;i++){ if(TITLE_PRESETS[i].id===id){ preset=TITLE_PRESETS[i]; break; } }
   if(!preset) return false;
+  if(preset.mail) return isSpecialAccount() || unlocks.indexOf("mail:"+preset.id)!==-1;
   if(OPEN_TEST && !preset_isMailOnly(preset)) return true;
   if(isSpecialAccount()) return true;
   if(preset.gm) return isGrandMaster(unlocks);
@@ -3967,6 +3993,9 @@ $("lobby-invite-btn").addEventListener("click", function(){
   }
   copyText(text+"\n"+url, $("lobby-invite-btn"), "✅ 초대 메시지 복사됨!");
 });
+$("friends-btn").addEventListener("click", function(){ sfxSelect(); openFriendsModal(); });
+$("mail-btn").addEventListener("click", function(){ sfxSelect(); refreshMail(); openMailModal(); });
+$("lobby-friends-btn").addEventListener("click", function(){ sfxSelect(); openInviteModal(); });
 $("lobby-code-btn").addEventListener("click", function(){
   sfxSelect();
   copyText(state.mpRoomCode, $("lobby-code-btn"), "✅ 코드 복사됨!");
@@ -5073,6 +5102,8 @@ Array.prototype.forEach.call(document.querySelectorAll(".coin-pill"), function(p
   p.addEventListener("click", function(){ sfxSelect(); openWalletModal(); });
 });
 renderCoinPills();
+// Friends, invites and mail start once the account is in (after this script has run).
+setTimeout(function(){ startSocial(); $("start-side").classList.toggle("hidden", !account); }, 0);
 claimAttendance().then(function(r){
   renderCoinPills();
   if(!r) return;
@@ -5912,6 +5943,361 @@ document.addEventListener("click", function(e){
   if(p && !p.contains(e.target) && e.target!==$("emoji-btn")){ closeEmojiPicker(); }
 });
 
+/* ---------------- friends, invites, mail ---------------- */
+// presence/{uid}: an online flag plus server time, refreshed every minute while the app is
+// open and cleared when it goes to the background. Friends follow it live (onSnapshot), so
+// signing in shows up on their list within a second or two. Invites don't depend on it:
+// any friend can be invited, online or not.
+var PRESENCE_FRESH_MS = 150000;
+var socialStarted = false, myFriends = {}, friendPresence = {}, friendUnsubs = {};
+var pendingRequests = [], pendingInvites = [], mailItems = [], shownInvites = {};
+// Rewards that only arrive by mail. id = the item's preset id; unlocked as "mail:<id>".
+var MAIL_REWARDS = [{ id:"founder", kind:"title", name:"원년 멤버" }];
+
+function myNick(){ try{ return localStorage.getItem("straightNickname") || ""; }catch(e){ return ""; } }
+function tsMillis(t){ return t && t.toMillis ? t.toMillis() : (typeof t==="number" ? t : 0); }
+function setPresence(online){
+  if(!account || !fbDb) return;
+  var F = fbFs;
+  F.setDoc(F.doc(fbDb,"presence",account.uid), { nick:myNick(), avatar:getDefaultAvatarName()||"", online:!!online, at:F.serverTimestamp() }).catch(function(){});
+}
+function friendOnline(id){
+  var p = friendPresence[id];
+  return !!(p && p.online && serverNow() - tsMillis(p.at) < PRESENCE_FRESH_MS);
+}
+function startSocial(){
+  if(socialStarted || !account || !fbDb) return;
+  socialStarted = true;
+  var F = fbFs, uid = account.uid;
+  setPresence(true);
+  setInterval(function(){ if(!document.hidden) setPresence(true); }, 60000);
+  document.addEventListener("visibilitychange", function(){ setPresence(!document.hidden); });
+  window.addEventListener("pagehide", function(){ setPresence(false); });
+  F.onSnapshot(F.collection(fbDb,"users",uid,"friends"), function(snap){
+    var next = {};
+    snap.forEach(function(d){ next[d.id] = d.data(); });
+    Object.keys(friendUnsubs).forEach(function(id){
+      if(next[id]) return;
+      friendUnsubs[id](); delete friendUnsubs[id]; delete friendPresence[id];
+    });
+    Object.keys(next).forEach(function(id){
+      if(friendUnsubs[id]) return;
+      friendUnsubs[id] = F.onSnapshot(F.doc(fbDb,"presence",id), function(s){
+        friendPresence[id] = s.exists() ? s.data() : null;
+        refreshSocialUI();
+      }, function(){});
+    });
+    myFriends = next;
+    refreshSocialUI();
+  }, function(e){ console.warn("친구 목록을 불러오지 못했어요", e); });
+  F.onSnapshot(F.query(F.collection(fbDb,"friendRequests"), F.where("to","==",uid)), function(snap){
+    pendingRequests = snap.docs.map(function(d){ return { id:d.id, data:d.data() }; });
+    refreshSocialUI();
+  }, function(e){ console.warn("친구 요청을 불러오지 못했어요", e); });
+  F.onSnapshot(F.query(F.collection(fbDb,"invites"), F.where("to","==",uid)), function(snap){
+    pendingInvites = snap.docs.map(function(d){ return { id:d.id, data:d.data() }; })
+      .filter(function(i){ return serverNow() - (Number(i.data.at)||0) < 600000; });
+    pendingInvites.forEach(function(i){
+      var key = i.id+":"+i.data.at;
+      if(shownInvites[key]) return;
+      shownInvites[key] = true;
+      showInvitePopup(i);
+    });
+    refreshSocialUI();
+  }, function(e){ console.warn("초대를 불러오지 못했어요", e); });
+  setInterval(refreshSocialUI, 30000);   // online labels age out
+  refreshMail();
+}
+function refreshSocialUI(){
+  var fb = $("friends-btn"), mb = $("mail-btn");
+  var setBadge = function(btn, n){
+    if(!btn) return;
+    var b = btn.querySelector(".side-badge");
+    b.textContent = n;
+    b.classList.toggle("hidden", !n);
+  };
+  setBadge(fb, pendingRequests.length + pendingInvites.length);
+  setBadge(mb, mailItems.length);
+  if($("friends-box")) renderFriendsBox();
+  if($("invite-box")) renderInviteBox();
+  if($("mail-box")) renderMailBox();
+}
+function socialModal(id, title){
+  closeModal();
+  var backdrop = el("div","modal-backdrop");
+  var box = el("div","modal-box coin-modal social-box");
+  box.id = id;
+  box.setAttribute("data-title", title);
+  backdrop.appendChild(box);
+  backdrop.addEventListener("click", function(e){ if(e.target===backdrop) closeModal(); });
+  tooltipLayer.appendChild(backdrop);
+  return box;
+}
+function socialRow(left, buttons){
+  var row = el("div","social-row");
+  row.appendChild(el("div","social-who", left));
+  var btns = el("div","social-btns");
+  buttons.forEach(function(b){ btns.appendChild(b); });
+  row.appendChild(btns);
+  return row;
+}
+function smallBtn(label, primary, onClick){
+  var b = el("button","btn"+(primary?" primary":""), label);
+  b.addEventListener("click", function(){ sfxSelect(); onClick(b); });
+  return b;
+}
+function sortedFriendIds(){
+  return Object.keys(myFriends).sort(function(a, b){
+    return (friendOnline(b)?1:0) - (friendOnline(a)?1:0) || String(myFriends[a].nick).localeCompare(String(myFriends[b].nick));
+  });
+}
+function friendLabel(id){
+  var on = friendOnline(id);
+  var nick = cleanText((friendPresence[id] && friendPresence[id].nick) || myFriends[id].nick, 16);
+  return "<span class=\"presence-dot"+(on?" on":"")+"\"></span><b>"+nick+"</b><small>"+(on?"온라인":"오프라인")+"</small>";
+}
+
+// 👥 친구: add by nickname, answer requests and invites, see who's online.
+function openFriendsModal(){ socialModal("friends-box", "👥 친구"); renderFriendsBox(); }
+function renderFriendsBox(){
+  var box = $("friends-box");
+  if(!box) return;
+  var keepInput = box.querySelector("#friend-nick-input");
+  var typed = keepInput ? keepInput.value : "";
+  var msgText = box.querySelector(".social-msg") ? box.querySelector(".social-msg").textContent : "";
+  box.innerHTML = "<h2>👥 친구</h2><p class=\"coin-note\">내 닉네임: <b>"+cleanText(myNick(),16)+"</b></p>";
+  var addRow = el("div","nick-change-row");
+  var input = el("input","nickname-input");
+  input.id = "friend-nick-input"; input.placeholder = "친구 닉네임"; input.maxLength = 16; input.value = typed;
+  var addBtn = smallBtn("요청", true, function(b){ sendFriendRequest(input.value, b); });
+  addRow.appendChild(input); addRow.appendChild(addBtn);
+  box.appendChild(addRow);
+  box.appendChild(el("p","social-msg", msgText));
+  if(pendingInvites.length){
+    box.appendChild(el("div","social-head","📨 받은 초대"));
+    pendingInvites.forEach(function(i){
+      box.appendChild(socialRow("<b>"+cleanText(i.data.fromNick,16)+"</b><small>님의 방</small>", [
+        smallBtn("참가", true, function(){ acceptInvite(i); }),
+        smallBtn("거절", false, function(){ deleteInvite(i.id); })
+      ]));
+    });
+  }
+  if(pendingRequests.length){
+    box.appendChild(el("div","social-head","🙋 받은 친구 요청"));
+    pendingRequests.forEach(function(r){
+      box.appendChild(socialRow("<b>"+cleanText(r.data.fromNick,16)+"</b>", [
+        smallBtn("수락", true, function(b){ acceptFriendRequest(r, b); }),
+        smallBtn("거절", false, function(){ fbFs.deleteDoc(fbFs.doc(fbDb,"friendRequests",r.id)).catch(function(){}); })
+      ]));
+    });
+  }
+  var ids = sortedFriendIds();
+  box.appendChild(el("div","social-head","친구 "+ids.length+"명"));
+  if(!ids.length) box.appendChild(el("p","coin-note muted","닉네임으로 친구를 추가해 보세요."));
+  ids.forEach(function(id){
+    box.appendChild(socialRow(friendLabel(id), [
+      smallBtn("삭제", false, function(){ if(confirm("친구를 삭제할까요?")) removeFriend(id); })
+    ]));
+  });
+  var close = el("div","coin-modal-actions");
+  close.appendChild(smallBtn("닫기", false, closeModal));
+  box.appendChild(close);
+}
+function setSocialMsg(text){ var m = document.querySelector("#friends-box .social-msg"); if(m) m.textContent = text; }
+function sendFriendRequest(raw, btn){
+  var nick = cleanNick(raw);
+  if(!nick) return;
+  var F = fbFs, uid = account.uid;
+  btn.disabled = true;
+  F.getDoc(F.doc(fbDb,"nicknames",nickKey(nick))).then(function(snap){
+    if(!snap.exists()){ setSocialMsg("그런 닉네임을 찾지 못했어요."); return; }
+    var to = snap.data().uid;
+    if(to===uid){ setSocialMsg("내 닉네임이에요."); return; }
+    if(myFriends[to]){ setSocialMsg("이미 친구예요."); return; }
+    var theirs = pendingRequests.filter(function(r){ return r.data.from===to; })[0];
+    if(theirs) return acceptFriendRequest(theirs, btn);
+    return F.setDoc(F.doc(fbDb,"friendRequests",uid+"_"+to), { from:uid, to:to, fromNick:myNick(), at:serverNow() }).then(function(){
+      setSocialMsg("✅ "+snap.data().nick+"님에게 친구 요청을 보냈어요.");
+      var input = $("friend-nick-input"); if(input) input.value = "";
+    });
+  }).catch(function(e){ console.error("친구 요청 실패", e); setSocialMsg("요청하지 못했어요. 잠시 후 다시 시도해 주세요."); })
+    .then(function(){ btn.disabled = false; });
+}
+function acceptFriendRequest(r, btn){
+  var F = fbFs, uid = account.uid, from = r.data.from;
+  if(btn) btn.disabled = true;
+  var batch = F.writeBatch(fbDb);
+  batch.set(F.doc(fbDb,"users",uid,"friends",from), { nick:cleanText(r.data.fromNick,16), at:serverNow() });
+  batch.set(F.doc(fbDb,"users",from,"friends",uid), { nick:myNick(), at:serverNow() });
+  batch.delete(F.doc(fbDb,"friendRequests",r.id));
+  return batch.commit().then(function(){ coinToast("🤝 <b>"+cleanText(r.data.fromNick,16)+"</b>님과 친구가 됐어요!"); })
+    .catch(function(e){ console.error("친구 수락 실패", e); setSocialMsg("수락하지 못했어요. 다시 시도해 주세요."); if(btn) btn.disabled = false; });
+}
+function removeFriend(id){
+  var F = fbFs, uid = account.uid, batch = F.writeBatch(fbDb);
+  batch.delete(F.doc(fbDb,"users",uid,"friends",id));
+  batch.delete(F.doc(fbDb,"users",id,"friends",uid));
+  batch.commit().catch(function(e){ console.error("친구 삭제 실패", e); });
+}
+
+// 📨 Invites: a friend's room code, valid for 10 minutes.
+function inviteFriend(id, btn){
+  if(!state.mpRoomCode) return;
+  var F = fbFs, uid = account.uid;
+  btn.disabled = true;
+  F.setDoc(F.doc(fbDb,"invites",id+"_"+uid), { from:uid, to:id, fromNick:myNick(), room:state.mpRoomCode, at:serverNow() })
+    .then(function(){ btn.textContent = "✅ 보냄"; })
+    .catch(function(e){ console.error("초대 실패", e); btn.disabled = false; btn.textContent = "다시"; });
+}
+function deleteInvite(id){ fbFs.deleteDoc(fbFs.doc(fbDb,"invites",id)).catch(function(){}); }
+function acceptInvite(i){
+  closeModal();
+  deleteInvite(i.id);
+  var go = function(){
+    joinRoom(i.data.room, function(err){
+      if(err){ alert("초대받은 방에 들어가지 못했어요: "+err); return; }
+      switchScreen("lobby");
+    });
+  };
+  if(state.mpRoomCode && !$("screen-lobby").classList.contains("hidden")) leaveLobby().then(go); else go();
+}
+function showInvitePopup(i){
+  var inGame = !$("screen-game").classList.contains("hidden") && !state.gameOver;
+  if(inGame) return;   // the 👥 badge keeps it until the game ends
+  sfxSelect();
+  coinModal("📨 게임 초대", "<p class=\"coin-note\"><b>"+cleanText(i.data.fromNick,16)+"</b>님이 방에 초대했어요.</p>", [
+    { label:"참가", primary:true, onClick:function(){ acceptInvite(i); } },
+    { label:"거절", onClick:function(){ deleteInvite(i.id); closeModal(); } }
+  ]);
+}
+function openInviteModal(){ socialModal("invite-box", "👥 친구 초대"); renderInviteBox(); }
+function renderInviteBox(){
+  var box = $("invite-box");
+  if(!box) return;
+  box.innerHTML = "<h2>👥 친구 초대</h2><p class=\"coin-note muted\">초대받은 친구 화면에 바로 참가 창이 떠요.</p>";
+  var ids = sortedFriendIds();
+  if(!ids.length) box.appendChild(el("p","coin-note muted","아직 친구가 없어요. 메인 화면의 👥에서 추가해 보세요."));
+  ids.forEach(function(id){
+    box.appendChild(socialRow(friendLabel(id), [ smallBtn("초대", friendOnline(id), function(b){ inviteFriend(id, b); }) ]));
+  });
+  var close = el("div","coin-modal-actions");
+  close.appendChild(smallBtn("닫기", false, closeModal));
+  box.appendChild(close);
+}
+
+// 📮 우편함: event rewards. Signing in during an event's window records an entry
+// (campaigns/{id}/entries/{uid}); the reward can then be claimed until claimUntil.
+function grantMailReward(id){
+  var key = "mail:"+id;
+  if(straightUnlocks.indexOf(key)!==-1) return false;
+  straightUnlocks.push(key);
+  saveUnlocks(straightUnlocks);
+  saveProgressSoon();
+  return true;
+}
+function refreshMail(){
+  if(!account || !fbDb) return;
+  var F = fbFs, uid = account.uid, now = serverNow();
+  // Rewards already claimed (on any device) are unlocked here too.
+  F.getDocs(F.collection(fbDb,"users",uid,"mail")).then(function(snap){
+    snap.forEach(function(d){ if(d.data().reward) grantMailReward(d.data().reward); });
+  }).catch(function(){});
+  F.getDocs(F.query(F.collection(fbDb,"campaigns"), F.where("claimUntil",">=", new Date(now)))).then(function(snap){
+    var list = [];
+    return Promise.all(snap.docs.map(function(d){
+      var c = Object.assign({ id:d.id }, d.data());
+      var entryRef = F.doc(fbDb,"campaigns",d.id,"entries",uid);
+      return Promise.all([F.getDoc(entryRef), F.getDoc(F.doc(fbDb,"users",uid,"mail",d.id))]).then(function(r){
+        if(r[1].exists()) return;
+        if(r[0].exists()){ list.push(c); return; }
+        if(tsMillis(c.start) <= now && now <= tsMillis(c.end)){
+          return F.setDoc(entryRef, { at:F.serverTimestamp() }).then(function(){ list.push(c); }, function(){});
+        }
+      }).catch(function(){});
+    })).then(function(){ mailItems = list; refreshSocialUI(); });
+  }).catch(function(e){ console.warn("우편함을 불러오지 못했어요", e); });
+}
+function openMailModal(){ socialModal("mail-box", "📮 우편함"); renderMailBox(); }
+function renderMailBox(){
+  var box = $("mail-box");
+  if(!box) return;
+  box.innerHTML = "<h2>📮 우편함</h2>";
+  if(!mailItems.length) box.appendChild(el("p","coin-note muted","받을 선물이 없어요."));
+  mailItems.forEach(function(c){
+    var until = new Date(tsMillis(c.claimUntil));
+    var who = "<b>🎁 "+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+(until.getMonth()+1)+"/"+until.getDate()+"까지</small>";
+    box.appendChild(socialRow(who, [ smallBtn("받기", true, function(b){ claimMail(c, b); }) ]));
+  });
+  var close = el("div","coin-modal-actions");
+  close.appendChild(smallBtn("닫기", false, closeModal));
+  box.appendChild(close);
+}
+function claimMail(c, btn){
+  var F = fbFs;
+  btn.disabled = true;
+  F.setDoc(F.doc(fbDb,"users",account.uid,"mail",c.id), { reward:c.rewardId, at:F.serverTimestamp() }).then(function(){
+    grantMailReward(c.rewardId);
+    mailItems = mailItems.filter(function(m){ return m.id!==c.id; });
+    refreshSocialUI();
+    coinToast("🎁 <b>"+cleanText(c.rewardName,20)+"</b> 받았어요! 수집품에서 장착해 보세요.");
+  }).catch(function(e){ console.error("우편 받기 실패", e); btn.disabled = false; alert("받지 못했어요. 수령 기간이 지났을 수 있어요."); });
+}
+
+// 🛠 운영자 도구 (developer accounts): events that send a reward to everyone who signs in
+// during a period. Results show how many players qualified so far.
+function openOperatorModal(){
+  var box = socialModal("operator-box", "🛠 운영자 도구");
+  box.innerHTML = "<h2>🛠 운영자 도구</h2><div class=\"social-head\">진행 중·예정 이벤트</div><div id=\"op-list\"><p class=\"coin-note muted\">불러오는 중...</p></div>"+
+    "<div class=\"social-head\">새 이벤트 (기간 중 접속한 모두에게 보상)</div>";
+  var F = fbFs;
+  var form = el("div","op-form");
+  var pad = function(n){ return ("0"+n).slice(-2); };
+  var local = function(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"T"+pad(d.getHours())+":"+pad(d.getMinutes()); };
+  var now = new Date();
+  form.innerHTML =
+    "<label>제목<input class=\"nickname-input\" id=\"op-title\" value=\"알파 테스트 감사 선물\"></label>"+
+    "<label>보상<select class=\"nickname-input\" id=\"op-reward\">"+MAIL_REWARDS.map(function(r, i){ return "<option value=\""+i+"\">"+r.name+" ("+({title:"칭호"}[r.kind]||r.kind)+")</option>"; }).join("")+"</select></label>"+
+    "<label>접속 기간 시작<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-start\" value=\""+local(now)+"\"></label>"+
+    "<label>접속 기간 끝<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-end\" value=\""+local(new Date(now.getTime()+7*864e5))+"\"></label>"+
+    "<label>끝난 뒤 받기 가능 (일)<input class=\"nickname-input\" type=\"number\" id=\"op-days\" value=\"30\" min=\"1\" max=\"365\"></label>";
+  box.appendChild(form);
+  var actions = el("div","coin-modal-actions");
+  actions.appendChild(smallBtn("이벤트 만들기", true, function(b){
+    var reward = MAIL_REWARDS[Number($("op-reward").value)];
+    var start = new Date($("op-start").value), end = new Date($("op-end").value);
+    var days = Math.max(1, Number($("op-days").value)||30);
+    var title = cleanText($("op-title").value, 30).trim();
+    if(!title || isNaN(start) || isNaN(end) || end<=start){ alert("제목과 기간을 확인해 주세요."); return; }
+    b.disabled = true;
+    F.addDoc(F.collection(fbDb,"campaigns"), { title:title, cond:"login", rewardKind:reward.kind, rewardId:reward.id, rewardName:reward.name,
+      start:start, end:end, claimUntil:new Date(end.getTime()+days*864e5), createdAt:F.serverTimestamp() })
+      .then(function(){ coinToast("✅ 이벤트를 만들었어요."); loadOperatorList(); refreshMail(); })
+      .catch(function(e){ console.error("이벤트 생성 실패", e); alert("만들지 못했어요."); })
+      .then(function(){ b.disabled = false; });
+  }));
+  actions.appendChild(smallBtn("닫기", false, closeModal));
+  box.appendChild(actions);
+  loadOperatorList();
+}
+function loadOperatorList(){
+  var F = fbFs, list = $("op-list");
+  if(!list) return;
+  F.getDocs(F.query(F.collection(fbDb,"campaigns"), F.orderBy("end","desc"), F.limit(20))).then(function(snap){
+    list.innerHTML = "";
+    if(snap.empty){ list.appendChild(el("p","coin-note muted","아직 이벤트가 없어요.")); return; }
+    snap.forEach(function(d){
+      var c = d.data(), fmt = function(t){ var x = new Date(tsMillis(t)); return (x.getMonth()+1)+"/"+x.getDate(); };
+      var row = socialRow("<b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · 접속 "+fmt(c.start)+"~"+fmt(c.end)+" · 수령 "+fmt(c.claimUntil)+"까지 · <span class=\"op-count\">참여 …</span></small>", [
+        smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요? (이미 받은 보상은 유지)")) F.deleteDoc(d.ref).then(loadOperatorList); })
+      ]);
+      list.appendChild(row);
+      F.getCountFromServer(F.collection(fbDb,"campaigns",d.id,"entries")).then(function(r){
+        row.querySelector(".op-count").textContent = "참여 "+r.data().count+"명";
+      }).catch(function(){ row.querySelector(".op-count").textContent = ""; });
+    });
+  }).catch(function(e){ console.error("이벤트 목록 실패", e); list.innerHTML = "<p class=\"coin-note muted\">불러오지 못했어요.</p>"; });
+}
+
 /* ---------------- modals ---------------- */
 
 function closeModal(){ tooltipLayer.innerHTML = ""; }
@@ -6054,6 +6440,8 @@ function collItemValue(kind, it){
 }
 
 function collectionItemDetailText(kind, name){
+  var mp = presetByName(kind, name);
+  if(mp && mp.mail) return "📮 이벤트 우편 보상";
   if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
   if(isMemberItem(kind, name)) return "👑 멤버십 전용";
   if(isPaidItem(kind, name)) return COIN_PRICES[kind]+"코인 · 가격표를 눌러 구매";
@@ -6467,6 +6855,12 @@ function openSettingsModal(){
   box.appendChild(trackRow);
   box.appendChild(modeRow);
   if(!inGame && account) box.appendChild(logoutRow);
+  if(!inGame && isDevAccount()){
+    var opRow = el("div","settings-row");
+    opRow.appendChild(el("span","","🛠 운영자"));
+    opRow.appendChild(smallBtn("운영자 도구", false, openOperatorModal));
+    box.appendChild(opRow);
+  }
   if(quitRow) box.appendChild(quitRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
