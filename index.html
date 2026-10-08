@@ -48,6 +48,9 @@ h1 span{color:var(--pink);}
 p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .title-block{display:flex;flex-direction:column;align-items:center;gap:8px;}
 .title-main{font-family:var(--font-display);font-weight:400;font-size:clamp(42px,12vw,64px);letter-spacing:1px;color:var(--text);line-height:1;}
+.beta-tag{display:inline-block;margin-left:5px;vertical-align:bottom;padding-bottom:.35em;font-family:inherit;font-size:12px;font-weight:800;letter-spacing:1px;color:var(--muted);opacity:.85;}
+.feedback-link{margin-top:6px;font-size:12.5px;color:var(--muted);text-decoration:none;opacity:.8;padding:4px 10px;border-radius:999px;}
+.feedback-link:active{background:rgba(var(--line-rgb),.1);}
 .title-main span{color:var(--pink);display:inline-block;animation:bangPop 2.6s ease-in-out infinite;transform-origin:50% 90%;}
 @keyframes bangPop{0%,70%,100%{transform:rotate(0) scale(1);}78%{transform:rotate(-10deg) scale(1.12);}86%{transform:rotate(8deg) scale(1.05);}}
 .title-sub{font-family:var(--font-display);font-weight:400;font-size:clamp(13px,3.6vw,18px);letter-spacing:7px;padding-left:7px;color:var(--muted);}
@@ -1021,7 +1024,7 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
     <div class="start-hero">
       <div class="start-fan" id="start-fan" aria-hidden="true"></div>
       <div class="title-block">
-        <div class="title-main">스트레이트<span>!</span></div>
+        <div class="title-main">스트레이트<span>!</span><small class="beta-tag">BETA</small></div>
         <div class="title-sub">STRAIGHT!</div>
       </div>
     </div>
@@ -1034,6 +1037,7 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
       </div>
     </div>
     <div class="title-by">by. PixelRooM</div>
+    <a class="feedback-link" href="https://forms.gle/YwbXyFFWnn7s5NCK7" target="_blank" rel="noopener" aria-label="의견 보내기">💬 의견 보내기</a>
   </div>
 
   <div class="screen hidden" id="screen-mode">
@@ -4517,12 +4521,10 @@ function endTurn(){
   state.turnTimedOut = false;
   clearSelectionState();
   clearTurnTimer();
-  if(!state.gameOver && state.stagnantTurns >= (state.daily ? 3 : state.turnOrder.length)){
-    if(state.floor.length + state.centerDeck.length === 0 || state.floorResetStreak >= 3){
-      declareDraw();
-      return;
-    }
-    resetFloor();
+  // A full round of passes with the center deck empty: nobody can move any more — draw.
+  if(!state.gameOver && state.centerDeck.length===0 && state.stagnantTurns >= (state.daily ? 3 : state.turnOrder.length)){
+    declareDraw();
+    return;
   }
   state.currentTurnPos = (state.currentTurnPos+1) % state.turnOrder.length;
   state.turnSeq++;
@@ -5468,7 +5470,7 @@ function bankJoker(handIdx){
   player.score.push(joker);
   state.balance.jokers++;
   bumpStatAndCheck("jokersBanked", 1);
-  pushLog(josa(logName(player),"이","가")+" 조커를 점수덱에 내려놓았습니다!");
+  pushLog(josa(logName(player),"이","가")+" 조커를 모은 카드에 내려놓았습니다!");
   announceReady(state.myIndex, readyBefore);
   clearSelectionState();
   render();
@@ -5674,7 +5676,7 @@ function aiTakeTurn(playerIdx){
     var readyBefore = straightProgress(player.score, state.colors).count;
     player.score.push(player.hand.splice(jokerIdx,1)[0]);
     state.balance.jokers++;
-    pushLog(josa(logName(player),"이","가")+" 조커를 점수덱에 내려놓았습니다!");
+    pushLog(josa(logName(player),"이","가")+" 조커를 모은 카드에 내려놓았습니다!");
     announceReady(playerIdx, readyBefore);
     render();
     if(checkWin(playerIdx)) return;
@@ -5851,7 +5853,7 @@ function renderInstruction(){
   }
   switch(state.mode){
     case "eat-target": bar.textContent = " "; break; // blank, but keeps the bar's height so the log doesn't jump
-    case "joker-choice": bar.textContent = "★ 바닥 카드 아무거나, 또는 점수덱에 보관"; break;
+    case "joker-choice": bar.textContent = "★ 바닥 카드 아무거나, 또는 모은 카드에 내려놓기"; break;
     case "reset-choice": bar.textContent = "💣 바닥판을 누르면 바닥 카드를 전부 새로 깝니다"; break;
     default: bar.textContent = "✋ 손패를 골라 바닥 카드를 가져오세요";
   }
@@ -6646,15 +6648,15 @@ function buildRulebookPanel(){
   panel.innerHTML =
     "<h2>📖 게임 규칙 요약</h2>"+
     "<ul>"+
-    "<li><b>숫자 체계</b>: A(1), 2~10. 카드를 가져올 때 A는 1입니다. 스트레이트에서는 A가 1로도, 10 다음으로도 쓰여서 A-2-3-4-5부터 7-8-9-10-A까지 가능합니다.</li>"+
+    "<li><b>숫자</b>: A, 2~10. A는 1과 11로 판정됩니다. 예) 7-8-9-10-A</li>"+
     "<li><b>가져오기</b>: 손패 카드가 바닥 카드와 같은 색상이면서 숫자가 같거나 높으면 획득할 수 있습니다.</li>"+
     "<li><b>숫자 일치 예외</b>: 숫자가 정확히 같으면 색상이 달라도 가져올 수 있습니다.</li>"+
-    "<li><b>오늘의 프리즘</b>: 매 게임 무작위로 숫자 2개가 뽑혀, 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 프리즘이 됩니다(카드 수는 그대로). 프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다. 이번 게임의 프리즘 숫자는 게임 시작 시 안내됩니다.</li>"+
+    "<li><b>프리즘 카드</b>: 매 게임 숫자 2개가 무작위로 프리즘 카드로 정해집니다. 프리즘 카드는 색 상관없이 가져오거나 다른 카드를 가져올 수 있고, 모은 카드에서는 어느 색으로든 인정됩니다.</li>"+
     "<li><b>바닥 조커</b>: 바닥에 놓인 조커는 손패의 A로만 가져올 수 있습니다.</li>"+
-    "<li><b>손패 조커</b>: 조커를 누르면 발동! 바닥 카드 아무거나 하나를 가져오거나, 점수덱에 내려놓을 수 있습니다(내려놓기도 턴을 사용합니다). 점수덱의 조커는 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다.</li>"+
+    "<li><b>조커</b>: 손패의 조커를 누르면 둘 중 하나의 행동을 할 수 있습니다. ① 바닥 카드 아무거나 하나 가져오기 ② 모은 카드에 내려놓기(턴 사용) — 스트레이트의 빈 자리를 색·숫자 상관없이 채워줍니다.</li>"+
     "<li><b>폭탄 카드</b>: (인원수−1)장 등장 (2인 1장 · 3인 2장 · 4인 3장). 손패에서 누른 뒤 바닥판을 누르면 바닥 카드 전부가 중앙 덱으로 돌아가 섞이고 새 8장이 깔립니다. 사용한 폭탄 카드는 중앙 덱에 다시 섞이며, 턴은 소모하지 않습니다. 바닥에 놓인 폭탄 카드는 어떤 카드로든 가져올 수 있고, 가져오면 손패로 들어옵니다.</li>"+
     "<li><b>패스(2장 뽑기)</b>: 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다. 손패가 마르지 않습니다.</li>"+
-    "<li><b>승리 = 스트레이트!</b>: 점수 슬롯에 같은 색 5연속 숫자를 가장 먼저 완성하는 사람이 즉시 승리합니다. 누적 점수는 참고용일 뿐 승리 조건이 아닙니다.</li>"+
+    "<li><b>승리 = 스트레이트!</b>: 모은 카드로 같은 색 숫자 5개를 연달아 가장 먼저 완성하면 즉시 승리합니다. 중앙 덱이 다 떨어진 뒤 모두 연달아 패스하면 무승부입니다.</li>"+
     "<li><b>색상 수</b>: 참가 인원 수만큼 색상이 사용됩니다 (2인=2색, 3인=3색, 4인=4색).</li>"+
     "</ul>";
 }
@@ -6959,7 +6961,7 @@ var TUTORIAL_SLIDES = [
     title: "🎯 목표",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","가져온 카드는 내 점수덱에 쌓입니다. 점수덱에 같은 색 5장 연속 숫자(스트레이트)를 가장 먼저 완성하면 즉시 승리합니다.<br>숫자는 A(1)부터 10까지이고, 스트레이트에서는 A가 10 다음으로도 이어집니다(7-8-9-10-A)."));
+      wrap.appendChild(el("p","tutorial-text","가져온 카드는 <b>모은 카드</b>에 쌓입니다. 모은 카드로 같은 색 숫자 5개를 연달아(스트레이트) 가장 먼저 완성하면 즉시 승리합니다.<br>A는 1과 11로 판정됩니다. 예) 7-8-9-10-A"));
       var row = el("div","tutorial-card-row");
       [3,4,5,6,7].forEach(function(v){
         row.appendChild(cardEl({ id:"tut-goal-"+v, color:"PINK", value:v }, { cls:"tiny" }));
@@ -6972,7 +6974,7 @@ var TUTORIAL_SLIDES = [
     title: "🔄 턴마다 할 일",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","내 턴에는 둘 중 하나를 합니다.<br>① 손패 카드로 바닥 카드를 <b>가져오기(캡처)</b> — 가져온 카드는 내 점수덱으로 가고, 사용한 손패 카드는 그 자리 바닥에 남습니다.<br>② 가져올 카드가 없으면 중앙 덱에서 <b>2장 뽑기</b>"));
+      wrap.appendChild(el("p","tutorial-text","내 턴에는 둘 중 하나를 합니다.<br><b>캡처</b> — 손패 카드로 바닥 카드를 가져옵니다. 가져온 카드는 모은 카드로 가고, 쓴 손패 카드는 그 자리 바닥에 남습니다.<br><b>드로우</b> — 가져올 카드가 없으면 중앙 덱에서 2장을 뽑고 턴을 마칩니다."));
       return wrap;
     }
   },
@@ -6990,10 +6992,10 @@ var TUTORIAL_SLIDES = [
     }
   },
   {
-    title: "🌈 오늘의 프리즘",
+    title: "🌈 프리즘 카드",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","매 게임 무작위로 <b>숫자 2개</b>가 프리즘으로 지정됩니다. 그 숫자의 카드 중 색깔마다 1장씩이 색 없는 무지개 카드가 됩니다(카드 수는 그대로).<br>프리즘은 색상 제한 없이 가져오거나 가져갈 수 있고, 점수덱에서는 모든 색의 해당 숫자로 인정됩니다.<br>이번 게임의 프리즘 숫자는 시작할 때 알려드려요."));
+      wrap.appendChild(el("p","tutorial-text","매 게임 무작위로 <b>숫자 2개</b>가 프리즘 카드로 지정됩니다.<br>프리즘 카드는 색 상관없이 가져오거나 다른 카드를 가져올 수 있고, 모은 카드에서는 어느 색으로든 인정됩니다."));
       var row = el("div","tutorial-card-row");
       [2,5].forEach(function(v){
         row.appendChild(cardEl({ id:"tut-prism-"+v, isPrism:true, value:v, color:null }, { cls:"tiny" }));
@@ -7006,7 +7008,7 @@ var TUTORIAL_SLIDES = [
     title: "🃏 조커 사용법",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","손패의 조커를 누르면 <b>발동</b>! 둘 중 하나를 고르세요.<br>① 바닥 카드 <b>아무거나</b> 하나를 가져오기 (색·숫자 무관)<br>② 점수덱에 내려놓기 (턴 사용) — 스트레이트의 빈 자리를 색상·숫자 상관없이 채워줍니다."));
+      wrap.appendChild(el("p","tutorial-text","손패의 조커를 누르면 둘 중 하나의 행동을 할 수 있습니다.<br>① 바닥 카드 <b>아무거나</b> 하나 가져오기 (색·숫자 상관없음)<br>② 모은 카드에 내려놓기 (턴 사용) — 스트레이트의 빈 자리를 색·숫자 상관없이 채워줍니다."));
       var row = el("div","tutorial-card-row");
       row.appendChild(cardEl({ id:"tut-joker", isJoker:true }, { cls:"tiny" }));
       wrap.appendChild(row);
@@ -7030,7 +7032,7 @@ var TUTORIAL_SLIDES = [
     title: "🏆 승리 조건",
     build: function(){
       var wrap = el("div","tutorial-slide-body");
-      wrap.appendChild(el("p","tutorial-text","점수덱에 같은 색 5연속 숫자를 가장 먼저 완성하면 즉시 승리합니다.<br>중앙 덱이 다 떨어진 뒤 모두가 더 가져올 카드가 없어 연달아 패스하면 무승부로 끝납니다."));
+      wrap.appendChild(el("p","tutorial-text","모은 카드로 같은 색 숫자 5개를 연달아 가장 먼저 완성하면 즉시 승리합니다.<br>중앙 덱이 다 떨어진 뒤 모두 연달아 패스하면 무승부로 끝납니다."));
       return wrap;
     }
   }
