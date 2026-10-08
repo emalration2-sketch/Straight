@@ -370,6 +370,7 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .turn-chip .tt-avatar{font-size:17px;line-height:1;}
 .turn-chip .tt-name{overflow:hidden;text-overflow:ellipsis;min-width:0;}
 .turn-chip.other{color:var(--muted);}
+.turn-chip.notice{background:linear-gradient(135deg,#7f77dd,#33d6c0);border-color:transparent;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.3);overflow:hidden;text-overflow:ellipsis;}
 .turn-chip.mine{background:linear-gradient(135deg,var(--pink),#ff8fb8);border-color:transparent;color:#1a0510;padding:4px 6px 4px 14px;}
 .turn-chip .tt-num{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:26px;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.88);color:#1a0510;font-family:var(--font-display);font-size:17px;font-weight:400;letter-spacing:.5px;}
 .turn-chip.warn{background:linear-gradient(135deg,#ff5a5a,#ff8a5a);animation:timerWarn .6s ease-in-out infinite alternate;}
@@ -1418,8 +1419,9 @@ function limitNickWidth(str){
 // Same name regardless of letter case or spaces.
 function nickKey(nick){ return String(nick).toLowerCase().replace(/\s+/g,""); }
 function cleanNick(s){ return limitNickWidth(String(s==null?"":s).replace(/[<>&"'`]/g,"").trim()); }
-function askNickname(defaultName){
+function askNickname(defaultName, notice){
   showGate("nickname", "");
+  if(notice) gateEl("login-nick-err").textContent = notice;
   var input = gateEl("login-nick-input");
   input.value = cleanNick(defaultName);
   input.oninput = function(){ var v = limitNickWidth(input.value); if(v!==input.value) input.value = v; };
@@ -1453,16 +1455,22 @@ function askNickname(defaultName){
   };
 }
 // Players who picked a nickname before names were unique: reserve it now if it is free.
+// Resolves false when someone else already owns the name (they must pick a new one).
 function reserveExistingNick(){
   var nick = ""; try{ nick = localStorage.getItem("straightNickname") || ""; }catch(e){}
-  if(!nick || !account) return;
+  if(!nick || !account) return Promise.resolve(true);
   var F = fbFs, ref = F.doc(fbDb,"nicknames",nickKey(nick));
-  F.runTransaction(fbDb, function(tx){
-    return tx.get(ref).then(function(snap){ if(!snap.exists()) tx.set(ref, { uid:account.uid, nick:nick, at:F.serverTimestamp() }); });
-  }).catch(function(){});
+  var mine = true;
+  return F.runTransaction(fbDb, function(tx){
+    return tx.get(ref).then(function(snap){
+      if(!snap.exists()) tx.set(ref, { uid:account.uid, nick:nick, at:F.serverTimestamp() });
+      else if(snap.data().uid!==account.uid) mine = false;
+    });
+  }).then(function(){ return mine; }, function(){ return true; });
 }
 function signInWithGoogle(){
   var provider = new fbAuthApi.GoogleAuthProvider();
+  provider.setCustomParameters({ prompt:"select_account" });   // always ask which account
   fbAuthApi.signInWithPopup(fbAuth, provider).catch(function(e){
     if(e && e.code==="auth/popup-blocked") return fbAuthApi.signInWithRedirect(fbAuth, provider);
     if(e && (e.code==="auth/popup-closed-by-user" || e.code==="auth/cancelled-popup-request")) return;
@@ -1494,7 +1502,12 @@ function bootAuth(){
       if(!user){ showGate("signin", "구글 계정으로 로그인하면 기록이 저장돼요."); return; }
       showGate("loading", "계정 불러오는 중...");
       loadAccount(user).then(function(hasDoc){
-        if(hasDoc){ reserveExistingNick(); enterGame(); }
+        if(hasDoc){
+          reserveExistingNick().then(function(ok){
+            if(ok) enterGame();
+            else askNickname("", "이 닉네임은 다른 플레이어가 먼저 등록했어요. 새 닉네임을 정해 주세요.");
+          });
+        }
         else askNickname(user.displayName || "");
       }).catch(function(e){
         console.error("계정 불러오기 실패", e);
@@ -1558,45 +1571,45 @@ var UNLOCK_STARTER_PATTERNS = ["stripe","argyle"];
 var UNLOCK_STARTER_BORDERS = ["basic"];
 
 var UNLOCK_MILESTONES = [
-  { id:"win:10",   kind:"avatar",  label:"나이트올빼미",   check:function(s){ return s.wins>=10; },   detail:function(s){ return "승리 "+Math.min(s.wins,10)+"/10회"; } },
   { id:"win:20",   kind:"title",   label:"초보",          check:function(s){ return s.wins>=20; },   detail:function(s){ return "승리 "+Math.min(s.wins,20)+"/20회"; } },
-  { id:"win:50",   kind:"avatar",  label:"볼트 드라코",    check:function(s){ return s.wins>=50; },   detail:function(s){ return "승리 "+Math.min(s.wins,50)+"/50회"; } },
+  { id:"win:10",   kind:"avatar",  label:"미드나잇 아울",   check:function(s){ return s.wins>=50; },   detail:function(s){ return "승리 "+Math.min(s.wins,50)+"/50회"; } },
+  { id:"win:50",   kind:"avatar",  label:"볼트 드라코",    check:function(s){ return s.wins>=100; },   detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
   // 100 wins rewards both a character and a title, so ids carry the reward kind.
-  { id:"win:100:avatar", kind:"avatar", label:"폭스트릭",  check:function(s){ return s.wins>=100; }, detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
-  { id:"win:100",  kind:"title",   label:"승부사",          check:function(s){ return s.wins>=100; },  detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
-  { id:"win:200",  kind:"avatar",  label:"고양이 예언자",  check:function(s){ return s.wins>=200; },  detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
+  { id:"win:100:avatar", kind:"avatar", label:"폭스트릭",  check:function(s){ return s.wins>=200; }, detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
+  { id:"win:100",  kind:"title",   label:"승부사",          check:function(s){ return s.wins>=200; },  detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
   { id:"win:400",  kind:"title",   label:"카드의 신",        check:function(s){ return s.wins>=400; },  detail:function(s){ return "승리 "+Math.min(s.wins,400)+"/400회"; } },
-  { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
-  { id:"win:1000", kind:"avatar",  label:"렉스 버서커",    check:function(s){ return s.wins>=1000; }, detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
+  { id:"win:200",  kind:"avatar",  label:"섀도우 캣",  check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
+  { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=1000; },  detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
+  { id:"win:1000", kind:"avatar",  label:"렉스 버서커",    check:function(s){ return s.wins>=2000; }, detail:function(s){ return "승리 "+Math.min(s.wins,2000)+"/2000회"; } },
 
   { id:"misc:tutorial:pattern", kind:"pattern", label:"다이애그널", check:function(s){ return s.tutorialDone; }, boolCond:true, detail:function(s){ return "튜토리얼 완료"; } },
-  { id:"games:10",   kind:"pattern", label:"리플",     check:function(s){ return s.games>=10; },   detail:function(s){ return "플레이 "+Math.min(s.games,10)+"/10판"; } },
-  { id:"games:50",   kind:"pattern", label:"비늘",     check:function(s){ return s.games>=50; },   detail:function(s){ return "플레이 "+Math.min(s.games,50)+"/50판"; } },
+  { id:"games:10",   kind:"pattern", label:"리플",     check:function(s){ return s.games>=50; },   detail:function(s){ return "플레이 "+Math.min(s.games,50)+"/50판"; } },
+  { id:"games:50",   kind:"pattern", label:"비늘",     check:function(s){ return s.games>=100; },   detail:function(s){ return "플레이 "+Math.min(s.games,100)+"/100판"; } },
   // 100 games rewards both a pattern and a title.
-  { id:"games:100:pattern", kind:"pattern", label:"허니콤", check:function(s){ return s.games>=100; }, detail:function(s){ return "플레이 "+Math.min(s.games,100)+"/100판"; } },
-  { id:"games:100",  kind:"title",   label:"개근상",   check:function(s){ return s.games>=100; },  detail:function(s){ return "플레이 "+Math.min(s.games,100)+"/100판"; } },
-  { id:"games:200",  kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=200; },  detail:function(s){ return "플레이 "+Math.min(s.games,200)+"/200판"; } },
+  { id:"games:100:pattern", kind:"pattern", label:"허니콤", check:function(s){ return s.games>=200; }, detail:function(s){ return "플레이 "+Math.min(s.games,200)+"/200판"; } },
+  { id:"games:100",  kind:"title",   label:"개근상",   check:function(s){ return s.games>=200; },  detail:function(s){ return "플레이 "+Math.min(s.games,200)+"/200판"; } },
   { id:"games:400",  kind:"title",   label:"카드에 진심", check:function(s){ return s.games>=400; },  detail:function(s){ return "플레이 "+Math.min(s.games,400)+"/400판"; } },
-  { id:"games:500",  kind:"pattern", label:"루나",   check:function(s){ return s.games>=500; },  detail:function(s){ return "플레이 "+Math.min(s.games,500)+"/500판"; } },
-  { id:"games:1000", kind:"pattern", label:"네뷸라", check:function(s){ return s.games>=1000; }, detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
+  { id:"games:200",  kind:"pattern", label:"홀로그램", check:function(s){ return s.games>=500; },  detail:function(s){ return "플레이 "+Math.min(s.games,500)+"/500판"; } },
+  { id:"games:500",  kind:"pattern", label:"루나",   check:function(s){ return s.games>=1000; },  detail:function(s){ return "플레이 "+Math.min(s.games,1000)+"/1000판"; } },
+  { id:"games:1000", kind:"pattern", label:"네뷸라", check:function(s){ return s.games>=2000; }, detail:function(s){ return "플레이 "+Math.min(s.games,2000)+"/2000판"; } },
 
   { id:"misc:tutorial",   kind:"border", label:"새싹",      check:function(s){ return s.tutorialDone; },       boolCond:true, detail:function(s){ return "튜토리얼 완료"; } },
-  { id:"misc:online10",   kind:"border", label:"크롬",      check:function(s){ return s.onlineWins>=20; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,20)+"/20회"; } },
-  { id:"misc:streak10",   kind:"border", label:"불꽃",      check:function(s){ return s.winStreak>=10; },      detail:function(s){ return "연승 "+Math.min(s.winStreak,10)+"/10회"; } },
+  { id:"misc:online10",   kind:"border", label:"크롬",      check:function(s){ return s.onlineWins>=50; },     detail:function(s){ return "온라인 승리 "+Math.min(s.onlineWins,50)+"/50회"; } },
+  { id:"misc:streak10",   kind:"border", label:"불꽃",      check:function(s){ return s.winStreak>=15; },      detail:function(s){ return "연승 "+Math.min(s.winStreak,15)+"/15회"; } },
   { id:"misc:kstraight",  kind:"border", label:"사자 갈기", check:function(s){ return s.hasKStraightWin; },    boolCond:true, detail:function(s){ return "7-8-9-10-A 스트레이트"; } },
-  { id:"misc:prism50",    kind:"border", label:"수정구",    check:function(s){ return s.prismBanked>=50; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,50)+"/50개"; } },
+  { id:"misc:prism50",    kind:"border", label:"수정구",    check:function(s){ return s.prismBanked>=200; },    detail:function(s){ return "프리즘 획득 "+Math.min(s.prismBanked,200)+"/200개"; } },
 
   { id:"misc:streak5",    kind:"title",  label:"연승 머신",  check:function(s){ return s.winStreak>=5; },       detail:function(s){ return "연승 "+Math.min(s.winStreak,5)+"/5회"; } },
   { id:"misc:draws10",    kind:"title",  label:"평화주의자", check:function(s){ return s.draws>=10; },          detail:function(s){ return "무승부 "+Math.min(s.draws,10)+"/10회"; } },
-  { id:"misc:jokers50",   kind:"title",  label:"조커 마니아", check:function(s){ return s.jokersBanked>=50; },   detail:function(s){ return "조커 사용 "+Math.min(s.jokersBanked,50)+"/50개"; } },
-  { id:"misc:bombs15",    kind:"pattern", label:"폭죽",     check:function(s){ return s.bombsUsed>=30; },      detail:function(s){ return "폭탄 카드 사용 "+Math.min(s.bombsUsed,30)+"/30회"; } },
-  { id:"misc:bombs30",    kind:"title",  label:"폭탄마",    check:function(s){ return s.bombsUsed>=30; },      detail:function(s){ return "폭탄 카드 사용 "+Math.min(s.bombsUsed,30)+"/30회"; } },
+  { id:"misc:jokers50",   kind:"title",  label:"조커 마니아", check:function(s){ return s.jokersBanked>=200; },   detail:function(s){ return "조커 사용 "+Math.min(s.jokersBanked,200)+"/200개"; } },
+  { id:"misc:bombs15",    kind:"pattern", label:"폭죽",     check:function(s){ return s.bombsUsed>=100; },      detail:function(s){ return "폭탄 카드 사용 "+Math.min(s.bombsUsed,100)+"/100회"; } },
+  { id:"misc:bombs30",    kind:"title",  label:"폭탄마",    check:function(s){ return s.bombsUsed>=200; },      detail:function(s){ return "폭탄 카드 사용 "+Math.min(s.bombsUsed,200)+"/200회"; } },
   { id:"misc:online1",    kind:"title",  label:"인싸 등극", check:function(s){ return s.onlineWins>=1; },      boolCond:true, detail:function(s){ return "온라인 승리"; } },
-  { id:"misc:prism100",   kind:"title",  label:"프리즘 헌터", check:function(s){ return s.prismBanked>=100; },   detail:function(s){ return "프리즘 카드 획득 "+Math.min(s.prismBanked,100)+"/100개"; } },
-  { id:"misc:hard30",     kind:"title",  label:"고수",      check:function(s){ return s.hardWins>=30; },       detail:function(s){ return "어려움 AI 승리 "+Math.min(s.hardWins,30)+"/30회"; } },
+  { id:"misc:prism100",   kind:"title",  label:"프리즘 헌터", check:function(s){ return s.prismBanked>=400; },   detail:function(s){ return "프리즘 카드 획득 "+Math.min(s.prismBanked,400)+"/400개"; } },
+  { id:"misc:hard30",     kind:"title",  label:"고수",      check:function(s){ return s.hardWins>=100; },       detail:function(s){ return "어려움 AI 승리 "+Math.min(s.hardWins,100)+"/100회"; } },
   { id:"misc:podium",     kind:"title",  label:"챌린저",    check:function(s){ return s.seasonPodium; },       boolCond:true, detail:function(s){ return "챌린지 시즌 1~3위 달성"; } },
   { id:"misc:champion",   kind:"border", label:"트로피",    check:function(s){ return s.seasonChampion; },     boolCond:true, detail:function(s){ return "챌린지 시즌 1위 달성"; } },
-  { id:"misc:colors20",   kind:"title",  label:"정복자",    check:function(s){ return s.hard4Wins>=20; },     detail:function(s){ return "4인전 어려움 AI 상대 "+Math.min(s.hard4Wins,20)+"/20승"; } }
+  { id:"misc:colors20",   kind:"title",  label:"정복자",    check:function(s){ return s.hard4Wins>=50; },     detail:function(s){ return "4인전 어려움 AI 상대 "+Math.min(s.hard4Wins,50)+"/50승"; } }
 ];
 // Runs during startup unlock migration, before ALL_COLORS is assigned — so list colors here.
 function colorsAt20(s){
@@ -1649,7 +1662,10 @@ function checkUnlocks(stats, unlocks){
 // (wins/games/streaks/etc.), so this always grants exactly what current progress
 // justifies — nothing is ever unlocked without its condition being genuinely met.
 function deriveUnlocksFromStats(){
-  var result = checkUnlocks(loadStats(), []);
+  // Mail rewards ("mail:<id>") and milestones whose condition didn't change (some, like
+  // streaks, can't be rebuilt from stats) carry over; only the rebalanced ones are re-checked.
+  var kept = (loadUnlocksRaw()||[]).filter(function(id){ return /^mail:/.test(id) || REBALANCED_MILESTONES.indexOf(id)===-1; });
+  var result = checkUnlocks(loadStats(), kept);
   saveUnlocks(result.updated);
   return result.updated;
 }
@@ -1667,7 +1683,11 @@ function initUnlocksIfNeeded(){
 // actual tracked stats. Must run exactly once per browser, before initUnlocksIfNeeded()
 // reads straightUnlocks.
 // "10": 달밤 needs 20 online wins; A became 11 — re-derive once.
-var UNLOCK_SCHEMA_VERSION = "15";
+// "17": achievement thresholds raised (rebalance) — re-check those once.
+var UNLOCK_SCHEMA_VERSION = "17";
+var REBALANCED_MILESTONES = ["win:10","win:50","win:100:avatar","win:100","win:200","win:500","win:1000",
+  "games:10","games:50","games:100:pattern","games:100","games:200","games:500","games:1000",
+  "misc:jokers50","misc:bombs15","misc:bombs30","misc:prism50","misc:prism100","misc:hard30","misc:colors20","misc:streak10","misc:online10"];
 function migrateOldUnlocksIfNeeded(){
   try{
     if(localStorage.getItem("straightUnlocksVer")===UNLOCK_SCHEMA_VERSION) return;
@@ -2015,23 +2035,26 @@ function setCardTheme(idx){
   saveProgressSoon();
 }
 
+// Characters that were renamed: saved picks and older clients' names map to the new ones.
+var RENAMED_CHARACTERS = {"스파크 렉스":"볼트 드라코","고양이 예언자":"섀도우 캣","나이트올빼미":"미드나잇 아울","슬로우모":"아이언 쉘","유니콘":"프리즘 혼"};
+function currentCharacterName(name){ return RENAMED_CHARACTERS[name] || name; }
 var CHARACTERS = [
   { emoji:"🦡", name:"허니뱅" },
-  { emoji:"🐈‍⬛", name:"고양이 예언자" },
+  { emoji:"🐈‍⬛", name:"섀도우 캣" },
   { emoji:"🦁", name:"바코드 라이언" },
   { emoji:"🐳", name:"메가블록", event:true },
   { emoji:"🐧", name:"카이저 핑" },
   { emoji:"🐕", name:"매드독" },
   { emoji:"🦘", name:"크러셔 루" },
   { emoji:"🐉", name:"볼트 드라코" },
-  { emoji:"🦉", name:"나이트올빼미" },
-  { emoji:"🐢", name:"슬로우모", event:true },
+  { emoji:"🦉", name:"미드나잇 아울" },
+  { emoji:"🐢", name:"아이언 쉘", event:true },
   { emoji:"🦊", name:"폭스트릭" },
   { emoji:"🦖", name:"렉스 버서커" },
   // Member-only characters.
-  { emoji:"🦄", name:"유니콘", member:true },
+  { emoji:"🦄", name:"프리즘 혼", member:true },
   { emoji:"🐼", name:"판다 킹", member:true },
-  // Event characters (슬로우모 and 메가블록 above too): locked until an event hands them out.
+  // Event characters (아이언 쉘 and 메가블록 above too): locked until an event hands them out.
   { emoji:"🦈", name:"썬더 죠스", event:true },
   { emoji:"🦂", name:"블랙 스콜피온", event:true }
 ];
@@ -2060,7 +2083,7 @@ var BORDER_PRESETS = [
   { id:"sprout", name:"새싹", cls:"border-sprout" },
   { id:"flame", name:"불꽃", cls:"border-flame" },
   { id:"chrome", name:"크롬", cls:"border-chrome" },
-  // Avatar sets: each matches a character (🦁 바코드 라이언, 🐈‍⬛ 고양이 예언자; 🦉 달밤 is in the shop).
+  // Avatar sets: each matches a character (🦁 바코드 라이언, 🐈‍⬛ 섀도우 캣; 🦉 달밤 is in the shop).
   { id:"mane", name:"사자 갈기", cls:"border-mane" },
   { id:"crystal", name:"수정구", cls:"border-crystal" },
   { id:"trophy", name:"트로피", cls:"border-trophy" },
@@ -2244,6 +2267,7 @@ function $(id){ return document.getElementById(id); }
 function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 function switchScreen(name){
+  if(name==="game" && (typeof noticedLog!=="undefined")){ noticedLog = {}; chipNoticeQueue = []; chipNoticeUntil = 0; }
   if(name==="win"){
     $("daily-rank-btn").classList.toggle("hidden", !state.daily);
     var rb = $("rematch-btn");
@@ -2903,8 +2927,8 @@ var state = {
 var chosenCharacter = null;
 try{
   var savedDefaultAvatar = localStorage.getItem("straightDefaultAvatar");
-  if(savedDefaultAvatar==="스파크 렉스"){
-    savedDefaultAvatar = "볼트 드라코";
+  if(savedDefaultAvatar && RENAMED_CHARACTERS[savedDefaultAvatar]){
+    savedDefaultAvatar = currentCharacterName(savedDefaultAvatar);
     localStorage.setItem("straightDefaultAvatar", savedDefaultAvatar);
   }
   if(savedDefaultAvatar && isAvatarUnlocked(savedDefaultAvatar, straightUnlocks)){
@@ -2997,7 +3021,8 @@ function cleanCards(list){ return Array.isArray(list) ? list.map(cleanCard).filt
 function cleanPlayer(p){
   if(!p || typeof p!=="object") return null;
   var ch = null;
-  for(var i=0;i<CHARACTERS.length;i++){ if(CHARACTERS[i].name===p.characterName){ ch=CHARACTERS[i]; break; } }
+  var cname = currentCharacterName(p.characterName);
+  for(var i=0;i<CHARACTERS.length;i++){ if(CHARACTERS[i].name===cname){ ch=CHARACTERS[i]; break; } }
   var out = Object.assign({}, p);
   out.characterName = ch ? ch.name : null;
   out.avatar = ch ? avatarIconHTML(ch) : (p.avatarPicked ? "❓" : null);
@@ -3677,7 +3702,7 @@ function dealOnlineGame(lobbyPlayers, maxPlayers){
   state.hostIndex = 0;
   state.claimSeq = -1;
   state.fx = [];
-  state.turnDeadline = serverNow() + turnLimitMs(lobbyPlayers[turnOrder[0]]);
+  state.turnDeadline = serverNow() + 3000 + turnLimitMs(lobbyPlayers[turnOrder[0]]);
   aiDriveGuard = {};
   // Newest first: Grand Master announcements sit on top of the start lines.
   state.log = [].concat([
@@ -4280,6 +4305,7 @@ function pushLog(msg){
   renderLog();
 }
 function renderLog(){
+  noticeNewLogLines();
   var panel = $("log-panel");
   panel.innerHTML = "";
   state.log.forEach(function(m){
@@ -4335,6 +4361,8 @@ var turnTimerId = null;
 function renderTurnTimer(remaining){
   var chip = $("turn-timer");
   if(!chip) return;
+  if(Date.now() < chipNoticeUntil) return;
+  if(remaining===undefined){ chip.classList.remove("notice"); return; }
   chip.classList.remove("warn","mine","other");
   if(remaining===null || remaining===undefined){
     var cur = state.players[currentPlayerIdx()];
@@ -4361,6 +4389,37 @@ setInterval(function(){
   if(currentPlayerIdx()===state.myIndex) return;
   renderTurnTimer(null);
 }, 500);
+// Notices take over the chip for a few seconds, one after another (log lines are noticed once).
+var chipNoticeQueue = [], chipNoticeUntil = 0, noticedLog = {};
+function queueChipNotice(text){
+  chipNoticeQueue.push(text);
+  if(Date.now() >= chipNoticeUntil) nextChipNotice();
+}
+function nextChipNotice(){
+  var chip = $("turn-timer");
+  var text = chipNoticeQueue.shift();
+  if(!chip) return;
+  if(!text){
+    chipNoticeUntil = 0;
+    chip.classList.remove("notice");
+    renderTurnTimer(turnTimerId ? undefined : null);
+    return;
+  }
+  chipNoticeUntil = Date.now() + 2800;
+  chip.classList.remove("warn","mine","other");
+  chip.classList.add("notice");
+  chip.textContent = text;
+  setTimeout(nextChipNotice, 2800);
+}
+function noticeNewLogLines(){
+  (state.log||[]).slice().reverse().forEach(function(m){
+    if(noticedLog[m]) return;
+    noticedLog[m] = true;
+    var prism = /이번 게임의 프리즘 숫자: (.+)$/.exec(m);
+    if(prism){ queueChipNotice("✨ 프리즘 숫자: "+prism[1].split(", ").join(" · ")); return; }
+    if(/레디!/.test(m)) queueChipNotice(m);
+  });
+}
 function clearTurnTimer(){
   if(turnTimerId){ clearInterval(turnTimerId); turnTimerId=null; }
   renderTurnTimer(null);
@@ -5613,12 +5672,6 @@ function renderOpponents(){
     // score cards get the height.
     var headRow = el("div","opp-head-row");
     headRow.innerHTML = playerTagHTML(p, "compact");
-    var prog = straightProgress(p.score, state.colors);
-    if(prog.count>=2){
-      var chip = el("span","opp-progress"+(prog.count>=4?" ready":""), (prog.count>=4?"🔥 ":"")+COLOR_NAMES[prog.color]+" "+prog.count+"/5");
-      chip.style.setProperty("--prog-color", COLORS[prog.color]);
-      headRow.appendChild(chip);
-    }
 
     var scoreWrap = el("div","opp-score-wrap");
     p.score.filter(function(c){ return c.isJoker; }).forEach(function(c){
@@ -5796,7 +5849,16 @@ $("cancel-action-btn").addEventListener("click", function(){ if(state.animating)
 
 /* ---------------- emoji chat ---------------- */
 
-var EMOJI_SET = ["👍","😂","😮","😢","🔥"];
+// Quick chat: the picker shows just the icons; a tap sends the icon with its phrase.
+var QUICK_CHAT = [
+  { emo:"👋", text:"안녕하세요!" },
+  { emo:"👍", text:"나이스!" },
+  { emo:"😢", text:"아깝다" },
+  { emo:"😜", text:"메롱메롱" },
+  { emo:"✋", text:"잠깐만요" },
+  { emo:"⏰", text:"빨리빨리" },
+  { emo:"🔁", text:"한판더?" }
+];
 
 function sendChatEmoji(emo){
   if(!state.players || !state.players.length) return;
@@ -5819,11 +5881,12 @@ function openEmojiPicker(){
   var rect = btn.getBoundingClientRect();
   var panel = el("div","emoji-picker-panel");
   panel.id = "emoji-picker-panel";
-  EMOJI_SET.forEach(function(emo){
-    var b = el("button","emoji-opt",emo);
+  QUICK_CHAT.forEach(function(q){
+    var b = el("button","emoji-opt",q.emo);
+    b.title = q.text;
     b.addEventListener("click", function(ev){
       ev.stopPropagation();
-      sendChatEmoji(emo);
+      sendChatEmoji(q.emo+" "+q.text);
       closeEmojiPicker();
     });
     panel.appendChild(b);
