@@ -17,7 +17,8 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read, create, update: if signedIn() && request.auth.uid == uid;
+      allow read: if signedIn() && (request.auth.uid == uid || devRole());
+      allow create, update: if signedIn() && request.auth.uid == uid;
       allow delete: if false;
     }
     // Nicknames are unique: the first account to claim one keeps it for good.
@@ -197,7 +198,7 @@ service cloud.firestore {
       return devRole() && sameExcept(n, o, ['coins']) && n.coins > o.coins && n.coins <= o.coins + 100;
     }
     match /wallets/{uid} {
-      allow read: if signedIn() && request.auth.uid == uid;
+      allow read: if signedIn() && (request.auth.uid == uid || devRole());
       allow create: if walletShape(request.resource.data) && (
         (signedIn() && request.auth.uid == uid
           && request.resource.data.coins == 2 && request.resource.data.streak == 1
@@ -275,12 +276,21 @@ service cloud.firestore {
       }
     }
     match /users/{uid}/mail/{cid} {
-      allow read: if signedIn() && request.auth.uid == uid;
+      allow read: if signedIn() && (request.auth.uid == uid || devRole());
       allow create: if signedIn() && request.auth.uid == uid
         && request.resource.data.keys().hasOnly(['reward','at'])
         && exists(/databases/$(database)/documents/campaigns/$(cid)/entries/$(uid))
         && request.time <= get(/databases/$(database)/documents/campaigns/$(cid)).data.claimUntil
         && request.resource.data.reward == get(/databases/$(database)/documents/campaigns/$(cid)).data.rewardId;
+    }
+    // Errors on players' screens (a few per session), read and cleared by the developer role.
+    match /errorLogs/{id} {
+      allow create: if signedIn() && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['msg','src','line','screen','ua','uid','nick','at'])
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 300
+        && request.resource.data.ua is string && request.resource.data.ua.size() <= 160;
+      allow read, delete: if devRole();
+      allow update: if false;
     }
     match /rooms/{code} {
       allow get: if signedIn() && code.matches('^[A-HJ-NP-Z2-9]{5}$');

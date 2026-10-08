@@ -838,6 +838,31 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .top-cluster.hidden{display:none;}
 .cluster-btn{position:relative;width:36px;height:36px;border-radius:50%;border:none;background:transparent;font-size:19px;line-height:1;cursor:pointer;color:var(--text);}
 .cluster-btn:active{background:rgba(var(--line-rgb),.12);}
+.cluster-btn.hidden{display:none;}
+.op-console{width:min(420px,94vw);}
+.op-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:10px;}
+.op-tabs .btn{padding:7px 2px;min-height:0;font-size:13px;}
+.op-body{max-height:62vh;overflow-y:auto;overscroll-behavior:contain;}
+.op-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;}
+.op-stat{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;border-radius:12px;background:var(--panel2);}
+.op-stat b{font-size:24px;}
+.op-stat small{font-size:12.5px;color:var(--muted);}
+.op-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.op-chip{border:1.5px solid rgba(61,220,132,.5);background:rgba(61,220,132,.1);color:var(--text);border-radius:999px;padding:5px 11px;font:inherit;font-size:13.5px;cursor:pointer;}
+.op-who{display:flex;align-items:baseline;gap:8px;margin:10px 2px 0;}
+.op-who b{font-size:19px;}
+.op-who small{color:var(--muted);font-size:12.5px;}
+.op-table{display:flex;flex-direction:column;gap:3px;}
+.op-tr{display:grid;grid-template-columns:104px 1fr;gap:2px 8px;padding:6px 10px;border-radius:9px;background:var(--panel2);font-size:13.5px;}
+.op-tr span{color:var(--muted);}
+.op-tr b{font-weight:700;word-break:break-all;}
+.op-tr small{grid-column:2;color:#ff8a8a;font-size:12px;}
+.op-tr.warn{background:linear-gradient(90deg,rgba(255,90,90,.18),transparent 80%),var(--panel2);}
+.op-err{display:flex;flex-direction:column;gap:4px;padding:9px 11px;margin-bottom:6px;border-radius:12px;background:var(--panel2);border-left:3px solid #ff6b6b;}
+.op-err-top{display:flex;align-items:baseline;gap:8px;}
+.op-err-top small,.op-err-meta{color:var(--muted);font-size:12px;}
+.op-err-msg{font-size:13.5px;word-break:break-all;}
+.op-err .btn{align-self:flex-end;padding:5px 10px;min-height:0;font-size:12.5px;}
 .cluster-sep{width:1px;height:20px;margin:0 6px 0 4px;background:rgba(var(--line-rgb),.22);}
 .top-cluster .coin-pill{position:static;height:36px;}
 .top-cluster .side-badge{top:-2px;right:-2px;}
@@ -1016,6 +1041,7 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
   <div class="screen" id="screen-start">
     <div class="start-me" id="start-me"></div>
     <div class="top-cluster hidden" id="start-side">
+      <button class="cluster-btn hidden" id="op-btn" aria-label="운영자 도구">🛠</button>
       <button class="cluster-btn" id="friends-btn" aria-label="친구">👥<span class="side-badge hidden"></span></button>
       <button class="cluster-btn" id="mail-btn" aria-label="우편함">📮<span class="side-badge hidden"></span></button>
       <span class="cluster-sep"></span>
@@ -5274,7 +5300,8 @@ Array.prototype.forEach.call(document.querySelectorAll(".coin-pill"), function(p
 });
 renderCoinPills();
 // Friends, invites and mail start once the account is in (after this script has run).
-setTimeout(function(){ startSocial(); $("start-side").classList.toggle("hidden", !account); }, 0);
+setTimeout(function(){ startSocial(); $("start-side").classList.toggle("hidden", !account); $("op-btn").classList.toggle("hidden", !isDevAccount()); }, 0);
+$("op-btn").addEventListener("click", function(){ sfxSelect(); openOperatorModal(); });
 claimAttendance().then(function(r){
   renderCoinPills();
   if(!r) return;
@@ -6553,9 +6580,222 @@ function readDateHour(id){
   var p = day.split("-").map(Number);
   return new Date(p[0], p[1]-1, p[2], Number($(id+"-hour").value)||0, 0, 0);
 }
-function openOperatorModal(){
+// 🛠 운영자 콘솔 (developer accounts): 현황 · 플레이어 조회 · 오류 기록 · 보상 이벤트.
+// Every read here is allowed by the rules for the developer role only.
+var opTab = "status";
+function openOperatorModal(tab){
+  if(typeof tab==="string") opTab = tab;
   var box = socialModal("operator-box", "🛠 운영자 도구");
-  box.innerHTML = "<h2>🛠 운영자 도구</h2><div class=\"social-head\">보상 이벤트 목록</div><div id=\"op-list\"><p class=\"coin-note muted\">불러오는 중...</p></div>"+
+  box.classList.add("op-console");
+  box.innerHTML = "<h2>🛠 운영자 도구</h2>";
+  var tabs = el("div","op-tabs");
+  [["status","📊 현황"],["player","🔎 플레이어"],["errors","🐞 오류"],["events","🎁 보상"]].forEach(function(t){
+    var b = el("button","btn"+(opTab===t[0]?" primary":""), t[1]);
+    b.addEventListener("click", function(){ sfxSelect(); openOperatorModal(t[0]); });
+    tabs.appendChild(b);
+  });
+  box.appendChild(tabs);
+  var body = el("div","op-body");
+  box.appendChild(body);
+  if(opTab==="player") renderOpPlayer(body, opPlayerNick);
+  else if(opTab==="errors") renderOpErrors(body);
+  else if(opTab==="events") renderOpEvents(body);
+  else renderOpStatus(body);
+  if(opTab!=="events"){
+    var close = el("div","coin-modal-actions");
+    close.appendChild(smallBtn("닫기", false, closeModal));
+    box.appendChild(close);
+  }
+}
+function kstDayStart(){
+  var d = kstDate();
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()) - 9*3600*1000);
+}
+function opStat(label, id){ return "<div class=\"op-stat\"><b id=\""+id+"\">…</b><small>"+label+"</small></div>"; }
+function fmtWhen(ms){
+  if(!ms) return "-";
+  var d = new Date(ms), pad = function(n){ return ("0"+n).slice(-2); };
+  return (d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes());
+}
+
+// 📊 현황: who's on now and today's numbers.
+function renderOpStatus(body){
+  var F = fbFs, today = kstDayStart();
+  body.innerHTML = "<div class=\"op-stats\">"+opStat("지금 접속","op-s-online")+opStat("오늘 게임","op-s-games")+
+    opStat("오늘 챌린지","op-s-daily")+opStat("오늘 오류","op-s-errors")+"</div>"+
+    "<div class=\"social-head\">지금 접속 중 <small>(누르면 플레이어 조회)</small></div><div id=\"op-online\" class=\"op-chips\"></div>";
+  var setN = function(id, n){ var e = $(id); if(e) e.textContent = n; };
+  F.getDocs(F.query(F.collection(fbDb,"presence"), F.where("at",">=", new Date(serverNow()-PRESENCE_FRESH_MS)))).then(function(snap){
+    var on = snap.docs.filter(function(d){ return d.data().online; });
+    setN("op-s-online", on.length);
+    var host = $("op-online");
+    if(!host) return;
+    if(!on.length){ host.innerHTML = "<p class=\"coin-note muted\">지금 접속한 사람이 없어요.</p>"; return; }
+    on.forEach(function(d){
+      var nick = cleanText(d.data().nick, 16) || "(닉네임 없음)";
+      var c = el("button","op-chip", nick);
+      c.addEventListener("click", function(){ opPlayerNick = d.data().nick; openOperatorModal("player"); });
+      host.appendChild(c);
+    });
+  }).catch(function(){ setN("op-s-online","?"); });
+  F.getCountFromServer(F.query(F.collection(fbDb,"balanceLogs"), F.where("at",">=", today)))
+    .then(function(r){ setN("op-s-games", r.data().count); }).catch(function(){ setN("op-s-games","?"); });
+  F.getCountFromServer(F.collection(fbDb,"daily",dailyKey(),"scores"))
+    .then(function(r){ setN("op-s-daily", r.data().count); }).catch(function(){ setN("op-s-daily","?"); });
+  F.getCountFromServer(F.query(F.collection(fbDb,"errorLogs"), F.where("at",">=", today)))
+    .then(function(r){ setN("op-s-errors", r.data().count); }).catch(function(){ setN("op-s-errors","?"); });
+}
+
+// 🔎 플레이어 조회: one player's account, wallet, play record and challenge, with ⚠️ flags.
+var opPlayerNick = "";
+function renderOpPlayer(body, nick){
+  body.innerHTML = "";
+  var row = el("div","fr-search");
+  var input = el("input","");
+  input.placeholder = "닉네임 입력"; input.maxLength = 16; input.value = nick || "";
+  var go = smallBtn("조회", true, function(){ opPlayerNick = input.value; lookupPlayer(cleanNick(input.value), out); });
+  input.addEventListener("keydown", function(e){ if(e.key==="Enter") go.click(); });
+  row.appendChild(el("span","fr-search-ico","🔍"));
+  row.appendChild(input); row.appendChild(go);
+  body.appendChild(row);
+  var out = el("div","op-player");
+  body.appendChild(out);
+  if(nick) lookupPlayer(cleanNick(nick), out);
+}
+function opSection(title, rows){
+  return "<div class=\"social-head\">"+title+"</div><div class=\"op-table\">"+rows.map(function(r){
+    return "<div class=\"op-tr"+(r[2]?" warn":"")+"\"><span>"+r[0]+"</span><b>"+r[1]+(r[2]?" ⚠️":"")+"</b>"+(r[2]?"<small>"+r[2]+"</small>":"")+"</div>";
+  }).join("")+"</div>";
+}
+function lookupPlayer(nick, out){
+  if(!nick){ out.innerHTML = ""; return; }
+  out.innerHTML = "<p class=\"coin-note muted\">불러오는 중...</p>";
+  var F = fbFs;
+  F.getDoc(F.doc(fbDb,"nicknames",nickKey(nick))).then(function(nd){
+    if(!nd.exists()){ out.innerHTML = "<p class=\"coin-note muted\">그런 닉네임을 찾지 못했어요.</p>"; return; }
+    var n = nd.data(), uid = n.uid;
+    return Promise.all([
+      F.getDoc(F.doc(fbDb,"users",uid)).catch(function(){ return null; }),
+      F.getDoc(F.doc(fbDb,"wallets",uid)).catch(function(){ return null; }),
+      F.getDoc(F.doc(fbDb,"presence",uid)).catch(function(){ return null; }),
+      F.getDoc(F.doc(fbDb,"seasons",seasonKey(),"players",uid)).catch(function(){ return null; }),
+      F.getDocs(F.collection(fbDb,"users",uid,"mail")).catch(function(){ return null; })
+    ]).then(function(r){
+      var u = r[0] && r[0].exists() ? r[0].data() : {};
+      var w = r[1] && r[1].exists() ? r[1].data() : null;
+      var p = r[2] && r[2].exists() ? r[2].data() : {};
+      var se = r[3] && r[3].exists() ? r[3].data() : null;
+      var stats = {};
+      try{ stats = JSON.parse((u.progress && u.progress.straightStats) || "{}") || {}; }catch(e){}
+      var rec = u.record || {};
+      var created = tsMillis(u.createdAt), days = created ? Math.max(1, (Date.now()-created)/864e5) : 0;
+      var hist = Array.isArray(n.history) ? n.history : [];
+      var online = p.online && serverNow() - tsMillis(p.at) < PRESENCE_FRESH_MS;
+      var html = "<div class=\"op-who\"><b>"+cleanText(n.nick,16)+"</b><small>"+(online ? "🟢 접속 중" : "마지막 접속 "+fmtWhen(tsMillis(p.at)))+"</small></div>";
+      html += opSection("계정", [
+        ["가입", created ? fmtWhen(created) : "-"],
+        ["닉네임 사용", n.at ? fmtWhen(tsMillis(n.at))+"부터" : "-"],
+        ["이전 닉네임", hist.length ? hist.map(function(h){ return cleanText(h.nick,16)+"(~"+fmtWhen(h.until)+")"; }).join(", ") : "없음",
+          hist.length>=3 ? "닉네임을 자주 바꿨어요" : ""]
+      ]);
+      var g = Number(stats.games)||0, wn = Number(stats.wins)||0;
+      html += opSection("플레이 (기기 기록)", [
+        ["판수 / 승수", g+" / "+wn, wn>g ? "승수가 판수보다 많아요" : ""],
+        ["하루 평균", days ? (g/days).toFixed(1)+"판" : "-", days && g/days>150 ? "하루 평균 판수가 비정상적으로 많아요" : ""],
+        ["최고 연승", Number(stats.bestStreak)||0, (Number(stats.bestStreak)||0)>wn ? "연승이 승수보다 많아요" : ""],
+        ["온라인 승 / 어려움 승", (Number(stats.onlineWins)||0)+" / "+(Number(stats.hardWins)||0), ((Number(stats.onlineWins)||0)>wn || (Number(stats.hardWins)||0)>wn) ? "세부 승수가 전체 승수보다 많아요" : ""],
+        ["프리즘 / 조커 / 폭탄", (Number(stats.prismBanked)||0)+" / "+(Number(stats.jokersBanked)||0)+" / "+(Number(stats.bombsUsed)||0),
+          ((Number(stats.prismBanked)||0) > g*6 || (Number(stats.jokersBanked)||0) > g*2 || (Number(stats.bombsUsed)||0) > g*3) ? "판수에 비해 너무 많아요" : ""]
+      ]);
+      var rg = (Number((rec.solo||{}).games)||0) + (Number((rec.online||{}).games)||0);
+      html += opSection("서버 전적", [
+        ["판수", rec.games!==undefined ? rec.games : rg, g > (Number(rec.games)||rg) + 20 ? "기기 기록이 서버 전적보다 많아요(조작 의심)" : ""],
+        ["탈주", (Number(rec.leaves)||0), (Number(rec.leaves)||0) >= 10 ? "탈주가 많아요" : ""]
+      ]);
+      html += opSection("지갑", w ? [
+        ["코인", (Number(w.coins)||0).toLocaleString(), (Number(w.coins)||0) >= 3000 ? "코인이 많아요(충전 없이 모으기 어려운 양)" : ""],
+        ["멤버십", w.membershipUntil > Date.now() ? fmtWhen(w.membershipUntil)+"까지" : "없음"],
+        ["산 아이템", (w.items||[]).length ? (w.items||[]).join(", ") : "없음"],
+        ["마지막 거래", w.lastBuy || "-"]
+      ] : [["지갑", "없음"]]);
+      html += opSection("챌린지 (이번 시즌)", se ? [
+        ["최고 기록", se.bestTurns+"턴 · "+(se.bestMs ? fmtPlayTime(se.bestMs) : "-"), se.bestTurns<=4 ? "턴 수가 비정상적으로 적어요" : ""],
+        ["참여", (se.days||0)+"일 · 마지막 "+(se.lastDay||"-")]
+      ] : [["기록", "없음"]]);
+      var mails = r[4] ? r[4].docs.map(function(d){ return d.data().reward; }) : [];
+      html += opSection("받은 우편", [["보상", mails.length ? mails.join(", ") : "없음"]]);
+      out.innerHTML = html;
+    });
+  }).catch(function(e){ console.warn("플레이어 조회 실패", e); out.innerHTML = "<p class=\"coin-note muted\">불러오지 못했어요.</p>"; });
+}
+
+// 🐞 오류 기록: what went wrong on players' screens, grouped by message.
+function renderOpErrors(body){
+  var F = fbFs;
+  body.innerHTML = "<p class=\"coin-note muted\">불러오는 중...</p>";
+  F.getDocs(F.query(F.collection(fbDb,"errorLogs"), F.orderBy("at","desc"), F.limit(100))).then(function(snap){
+    if(snap.empty){ body.innerHTML = "<p class=\"coin-note muted\">최근 오류가 없어요. 🎉</p>"; return; }
+    var groups = {}, order = [];
+    snap.forEach(function(d){
+      var e = d.data(), key = e.msg || "(내용 없음)";
+      if(!groups[key]){ groups[key] = { e:e, refs:[], nicks:{} }; order.push(key); }
+      groups[key].refs.push(d.ref);
+      if(e.nick) groups[key].nicks[e.nick] = true;
+    });
+    body.innerHTML = "<p class=\"coin-note muted\">최근 오류 "+snap.size+"건 · 같은 내용끼리 묶었어요</p>";
+    order.forEach(function(key){
+      var g = groups[key], e = g.e;
+      var card = el("div","op-err");
+      card.innerHTML = "<div class=\"op-err-top\"><b>"+g.refs.length+"회</b><small>"+fmtWhen(tsMillis(e.at))+" · "+cleanText(e.screen||"",20)+"</small></div>"+
+        "<div class=\"op-err-msg\">"+cleanText(key,300)+"</div>"+
+        "<small class=\"op-err-meta\">"+Object.keys(g.nicks).slice(0,5).map(function(n){ return cleanText(n,16); }).join(", ")+
+        (e.src ? " · "+cleanText(e.src,80)+(e.line?":"+e.line:"") : "")+" · "+cleanText(e.ua||"",60)+"</small>";
+      var del = smallBtn("확인함(지우기)", false, function(b){
+        b.disabled = true;
+        var batch = F.writeBatch(fbDb);
+        g.refs.forEach(function(ref){ batch.delete(ref); });
+        batch.commit().then(function(){ card.remove(); }).catch(function(){ b.disabled = false; });
+      });
+      card.appendChild(del);
+      body.appendChild(card);
+    });
+  }).catch(function(e){ console.warn("오류 기록 실패", e); body.innerHTML = "<p class=\"coin-note muted\">불러오지 못했어요.</p>"; });
+}
+
+// Errors on players' screens are sent to errorLogs (a few per session, each message once).
+(function errorReporter(){
+  var sent = 0, seen = {}, origError = console.error;
+  function screenName(){
+    var sc = document.querySelector(".screen:not(.hidden)");
+    return sc ? sc.id.replace(/^screen-/,"") : "";
+  }
+  function report(msg, src, line){
+    if(!account || !fbDb || sent >= 6) return;
+    var key = String(msg).slice(0,140);
+    if(seen[key]) return;
+    seen[key] = true; sent++;
+    try{
+      fbFs.addDoc(fbFs.collection(fbDb,"errorLogs"), {
+        msg:String(msg).slice(0,300), src:String(src||"").slice(-120), line:Number(line)||0,
+        screen:screenName(), ua:navigator.userAgent.slice(0,160), uid:account.uid, nick:myNick().slice(0,16),
+        at:fbFs.serverTimestamp()
+      }).catch(function(){});
+    }catch(e){}
+  }
+  window.addEventListener("error", function(e){ report(e.message, e.filename, e.lineno); });
+  window.addEventListener("unhandledrejection", function(e){ var r = e.reason; report("Promise: "+(r && r.message ? r.message : r), "", 0); });
+  // Failures the game already handles (logged as "… 실패") are worth seeing too.
+  console.error = function(){
+    try{
+      var a = arguments, first = String(a[0]||"");
+      if(/실패|오류|error/i.test(first)) report("[처리됨] "+first+(a[1] && a[1].message ? " — "+a[1].message : (a[1] && a[1].code ? " — "+a[1].code : "")), "", 0);
+    }catch(e){}
+    return origError.apply(console, arguments);
+  };
+})();
+
+function renderOpEvents(box){
+  box.innerHTML = "<div class=\"social-head\">보상 이벤트 목록</div><div id=\"op-list\"><p class=\"coin-note muted\">불러오는 중...</p></div>"+
     "<div class=\"social-head\">새 보상 이벤트</div>";
   var F = fbFs;
   var form = el("div","op-form");
@@ -7212,12 +7452,6 @@ function openSettingsModal(){
   box.appendChild(trackRow);
   box.appendChild(modeRow);
   if(!inGame && account) box.appendChild(logoutRow);
-  if(!inGame && isDevAccount()){
-    var opRow = el("div","settings-row");
-    opRow.appendChild(el("span","","🛠 운영자"));
-    opRow.appendChild(smallBtn("운영자 도구", false, openOperatorModal));
-    box.appendChild(opRow);
-  }
   if(quitRow) box.appendChild(quitRow);
   box.appendChild(actions);
   backdrop.appendChild(box);
