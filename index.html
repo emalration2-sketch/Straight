@@ -5263,28 +5263,28 @@ function coinCount(){ return account && account.wallet ? account.wallet.coins : 
 // Each period has three missions (one per slot, the same for everyone), measured as stat gains
 // since the period's first look (straightMission:<period>). A claim is a wallet action the
 // rules recompute — amounts and period keys must match periodClaim() in firestore.rules:
-// 일일 5 (+10 for the third), 주간 10 (+10), 월간 30 (+30). Periods: KST day, week (Monday),
+// 일일 5, 주간 10, 월간 20 coins per mission. Periods: KST day, week (Monday),
 // month. 첫걸음 rewards are one-time coins (firstStepRewards() in the rules).
 function kstWeekNum(){ return Math.floor((kstDayNum() + 3) / 7); }
 function kstMonthNum(){ var d = kstDate(); return d.getUTCFullYear()*12 + d.getUTCMonth() + 1; }
 var MISSION_PERIODS = [
-  { id:"day", name:"일일 미션", reset:"매일 밤 12시 초기화", each:5, bonus:10, keyF:"missionDay", doneF:"missionDone", cur:kstDayNum, seed:function(){ return dailyKey(); },
+  { id:"day", name:"일일 미션", reset:"매일 밤 12시 초기화", each:5, keyF:"missionDay", doneF:"missionDone", cur:kstDayNum, seed:function(){ return dailyKey(); }, legacySeed:true,
     slots:[
       [{ k:"games", n:3, t:"3판 플레이하기" }, { k:"games", n:5, t:"5판 플레이하기" }],
       [{ k:"wins", n:1, t:"1승 하기" }, { k:"wins", n:3, t:"3승 하기" }, { k:"hardWins", n:1, t:"어려움 AI 이기기" }],
       [{ k:"jokersBanked", n:2, t:"조커 2번 내려놓기" }, { k:"prismBanked", n:3, t:"프리즘 카드 3장 모으기" }, { k:"bombsUsed", n:1, t:"폭탄 1번 쓰기" }, { k:"challengeClears", n:1, t:"오늘의 챌린지 완성하기" }]
     ] },
-  { id:"week", name:"주간 미션", reset:"매주 월요일 초기화", each:10, bonus:10, keyF:"missionWeek", doneF:"missionWeekDone", cur:kstWeekNum, seed:function(){ return "w"+kstWeekNum(); },
+  { id:"week", name:"주간 미션", reset:"매주 월요일 초기화", each:10, keyF:"missionWeek", doneF:"missionWeekDone", cur:kstWeekNum, seed:function(){ return "w"+kstWeekNum(); },
     slots:[
-      [{ k:"games", n:20, t:"20판 플레이하기" }, { k:"games", n:30, t:"30판 플레이하기" }],
-      [{ k:"wins", n:10, t:"10승 하기" }, { k:"hardWins", n:5, t:"어려움 AI 5번 이기기" }],
-      [{ k:"jokersBanked", n:10, t:"조커 10번 내려놓기" }, { k:"prismBanked", n:15, t:"프리즘 카드 15장 모으기" }, { k:"bombsUsed", n:5, t:"폭탄 5번 쓰기" }, { k:"challengeClears", n:3, t:"챌린지 3번 완성하기" }]
+      [{ k:"games", n:10, t:"10판 플레이하기" }, { k:"games", n:15, t:"15판 플레이하기" }],
+      [{ k:"wins", n:5, t:"5승 하기" }, { k:"hardWins", n:3, t:"어려움 AI 3번 이기기" }],
+      [{ k:"jokersBanked", n:5, t:"조커 5번 내려놓기" }, { k:"prismBanked", n:10, t:"프리즘 카드 10장 모으기" }, { k:"bombsUsed", n:3, t:"폭탄 3번 쓰기" }, { k:"challengeClears", n:3, t:"챌린지 3번 완성하기" }]
     ] },
-  { id:"month", name:"월간 미션", reset:"매달 1일 초기화", each:30, bonus:30, keyF:"missionMonth", doneF:"missionMonthDone", cur:kstMonthNum, seed:function(){ return seasonKey(); },
+  { id:"month", name:"월간 미션", reset:"매달 1일 초기화", each:20, keyF:"missionMonth", doneF:"missionMonthDone", cur:kstMonthNum, seed:function(){ return seasonKey(); },
     slots:[
-      [{ k:"games", n:80, t:"80판 플레이하기" }, { k:"games", n:100, t:"100판 플레이하기" }],
-      [{ k:"wins", n:40, t:"40승 하기" }, { k:"hardWins", n:20, t:"어려움 AI 20번 이기기" }],
-      [{ k:"prismBanked", n:50, t:"프리즘 카드 50장 모으기" }, { k:"jokersBanked", n:30, t:"조커 30번 내려놓기" }, { k:"challengeClears", n:10, t:"챌린지 10번 완성하기" }]
+      [{ k:"games", n:30, t:"30판 플레이하기" }],
+      [{ k:"wins", n:15, t:"15승 하기" }, { k:"hardWins", n:8, t:"어려움 AI 8번 이기기" }],
+      [{ k:"prismBanked", n:25, t:"프리즘 카드 25장 모으기" }, { k:"jokersBanked", n:15, t:"조커 15번 내려놓기" }, { k:"challengeClears", n:7, t:"챌린지 7번 완성하기" }]
     ] }
 ];
 var FIRST_STEPS = [
@@ -5298,7 +5298,7 @@ var FIRST_STEPS = [
 ];
 var MISSION_KEYS = ["games","wins","hardWins","jokersBanked","prismBanked","bombsUsed","challengeClears"];
 function periodMissions(P){
-  var rng = seededRng("straight-mission-"+P.id+"-"+P.seed());
+  var rng = seededRng(P.legacySeed ? "straight-mission-"+P.seed() : "straight-mission-"+P.id+"-"+P.seed());
   return P.slots.map(function(slot){ return slot[Math.floor(rng()*slot.length)]; });
 }
 // Stats at the period's first look; progress is what was gained since.
@@ -5306,6 +5306,11 @@ function missionBase(P){
   if(!P){ MISSION_PERIODS.forEach(function(x){ missionBase(x); }); return null; }
   var key = "straightMission:"+P.id, tag = String(P.seed()), m = null;
   try{ m = JSON.parse(localStorage.getItem(key) || "null"); }catch(e){}
+  if((!m || m.tag!==tag) && P.legacySeed){
+    var old = null;
+    try{ old = JSON.parse(localStorage.getItem("straightMission") || "null"); }catch(e){}
+    if(old && old.day===tag && old.base){ m = { tag:tag, base:old.base }; try{ localStorage.setItem(key, JSON.stringify(m)); }catch(e){} }
+  }
   if(!m || m.tag!==tag || !m.base){
     var st = loadStats();
     m = { tag:tag, base:{} };
@@ -5319,7 +5324,8 @@ function missionStatus(P){
   var done = w && w[P.keyF]===cur && Array.isArray(w[P.doneF]) ? w[P.doneF] : [];
   return periodMissions(P).map(function(m, i){
     var p = Math.max(0, (Number(st[m.k])||0) - (base[m.k]||0));
-    return { P:P, i:i, m:m, p:Math.min(p, m.n), ready:p>=m.n, claimed:done.indexOf(i)!==-1 };
+    var claimed = done.indexOf(i)!==-1;
+    return { P:P, i:i, m:m, p:claimed ? m.n : Math.min(p, m.n), ready:claimed || p>=m.n, claimed:claimed };
   });
 }
 function firstStepStatus(){
@@ -5352,7 +5358,7 @@ function claimMission(P, i){
     var next = readWallet(w);
     done.push(i);
     next[P.keyF] = cur; next[P.doneF] = done;
-    next.coins += done.length===3 ? P.each + P.bonus : P.each;
+    next.coins += P.each;
     return next;
   });
 }
@@ -5399,9 +5405,9 @@ function renderMissionBody(){
   } else {
     var P = MISSION_PERIODS.filter(function(x){ return x.id===missionTab; })[0];
     var ms = missionStatus(P), got = ms.filter(function(x){ return x.claimed; }).length;
-    html += "<div class=\"ms-head\"><span>"+P.name+" "+got+"/3</span><small>3개 모두 받으면 보너스 "+P.bonus+"코인 · "+P.reset+"</small></div>";
+    html += "<div class=\"ms-head\"><span>"+P.name+" "+got+"/3</span><small>미션마다 "+P.each+"코인 · "+P.reset+"</small></div>";
     ms.forEach(function(x){
-      html += missionRowHTML(x.m.t, x.p, x.m.n, P.each + (got===2 && !x.claimed ? P.bonus : 0), x.claimed ? "claimed" : x.ready ? "ready" : "todo", P.id+":"+x.i);
+      html += missionRowHTML(x.m.t, x.p, x.m.n, P.each, x.claimed ? "claimed" : x.ready ? "ready" : "todo", P.id+":"+x.i);
     });
   }
   body.innerHTML = html;
