@@ -1,3 +1,7 @@
 # impeccable design hook: per-machine cache and personal overrides (config.json is shared)
 .impeccable/hook.cache.json
 .impeccable/config.local.json
+
+# App Check debug token for the local preview (secret, never commit)
+.appcheck-debug-token.txt
+firestore-debug.log

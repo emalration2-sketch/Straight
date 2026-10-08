@@ -822,6 +822,31 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .social-btns{display:flex;gap:6px;flex-shrink:0;}
 .social-btns .btn{padding:6px 12px;min-height:0;font-size:14px;}
 .social-msg{min-height:18px;margin:4px 0;font-size:13.5px;color:var(--muted);}
+.fr-sub{display:flex;align-items:center;justify-content:center;gap:6px;margin:-4px 0 10px;font-size:13.5px;color:var(--muted);}
+.fr-search{display:flex;align-items:center;gap:6px;padding:5px 5px 5px 12px;border-radius:14px;background:var(--panel2);border:1.5px solid rgba(var(--line-rgb),.14);}
+.fr-search input{flex:1;min-width:0;border:none;background:transparent;color:var(--text);font:inherit;font-size:15px;outline:none;}
+.fr-search-ico{font-size:15px;opacity:.7;}
+.fr-search .btn{padding:7px 12px;min-height:0;font-size:13.5px;white-space:nowrap;}
+.fr-list{display:flex;flex-direction:column;gap:6px;max-height:42vh;overflow-y:auto;}
+.fr-row,.fr-card{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:14px;background:var(--panel2);}
+.fr-row.on{background:linear-gradient(90deg,rgba(61,220,132,.12),transparent 70%),var(--panel2);}
+.fr-card{margin-bottom:6px;border:1.5px solid rgba(255,122,168,.55);background:linear-gradient(90deg,rgba(255,122,168,.16),transparent 75%),var(--panel2);}
+.fr-card.invite{border-color:rgba(127,119,221,.7);background:linear-gradient(90deg,rgba(127,119,221,.2),transparent 75%),var(--panel2);}
+.fr-ava{position:relative;width:38px;height:38px;flex-shrink:0;border-radius:50%;background:rgba(var(--line-rgb),.1);display:flex;align-items:center;justify-content:center;font-size:21px;}
+.fr-ava svg{width:1.1em;height:1.1em;}
+.fr-ava .presence-dot{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border:2px solid var(--panel2);}
+.fr-card-ico{font-size:24px;flex-shrink:0;}
+.fr-meta{display:flex;flex-direction:column;min-width:0;flex:1;line-height:1.25;}
+.fr-meta b{font-size:15.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.fr-meta small{font-size:12.5px;color:var(--muted);}
+.fr-row.on .fr-meta small{color:#3ddc84;}
+.fr-btns{display:flex;gap:6px;flex-shrink:0;}
+.fr-btns .btn{padding:6px 12px;min-height:0;font-size:13.5px;}
+.fr-x{width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;}
+.fr-x:active{background:rgba(var(--line-rgb),.12);}
+.fr-empty{display:flex;flex-direction:column;align-items:center;gap:4px;padding:18px 8px 8px;text-align:center;}
+.fr-empty-ico{font-size:38px;margin-bottom:4px;}
+.fr-empty small{color:var(--muted);font-size:13px;}
 .presence-dot{width:9px;height:9px;border-radius:50%;background:rgba(var(--line-rgb),.3);flex-shrink:0;}
 .presence-dot.on{background:#3ddc84;box-shadow:0 0 6px rgba(61,220,132,.8);}
 .op-form{display:flex;flex-direction:column;gap:8px;}
@@ -883,6 +908,14 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .member-perks li{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;background:var(--panel2);font-size:16px;}
 .member-perks .mp-ico{font-size:24px;line-height:1;}
 .member-perks b{color:var(--accent);}
+.buy-kind{font-size:13px;font-weight:400;color:var(--muted);margin-top:2px;}
+.buy-price{display:flex;align-items:center;justify-content:center;gap:6px;font-size:28px;font-weight:900;margin:4px 0 2px;}
+.buy-price .coin-ico{width:28px;height:28px;}
+.buy-price span{font-size:14px;font-weight:700;color:var(--muted);}
+.buy-have{font-size:14px;color:var(--muted);margin:2px 0 4px;}
+.buy-have.lack{color:#ff8a8a;}
+.buy-modal .coin-modal-actions{flex-direction:column;align-items:stretch;}
+.buy-modal .coin-modal-actions .btn{width:100%;}
 .coin-modal-actions{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
 .coin-buy-preview{display:flex;justify-content:center;padding:14px 0;transform:scale(1.35);}
 .daily-payout{font-size:14px;}
@@ -1155,6 +1188,10 @@ const firebaseConfig = {
 // Local dev skips App Check: an unregistered debug token makes Firestore go offline even
 // before enforcement. Register the debug token and drop this check when enforcing.
 var IS_LOCAL_DEV = /^(localhost|127.0.0.1)$/.test(location.hostname);
+// Local dev uses App Check only with a debug token registered in the Firebase console. The
+// token stays in this browser (localStorage "straightAppCheckDebug"), never in the code.
+var LOCAL_APPCHECK_TOKEN = null;
+try{ if(IS_LOCAL_DEV) LOCAL_APPCHECK_TOKEN = localStorage.getItem("straightAppCheckDebug"); }catch(e){}
 // Fraud Defense (reCAPTCHA Enterprise) site key — public; registered in Firebase App Check.
 var APP_CHECK_SITE_KEY = "6Lcq19wtAAAAALXhtiGYmavBSpqBaE5jI_XWDyEe";
 var fbDb = null, fbDoc = null, fbSetDoc = null, fbUpdateDoc = null, fbGetDoc = null, fbOnSnapshot = null, fbRunTransaction = null;
@@ -1166,13 +1203,13 @@ function ensureFirebase(){
     import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js"),
     import("https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js"),
     import("https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js"),
-    APP_CHECK_SITE_KEY && !IS_LOCAL_DEV ? import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check.js") : Promise.resolve(null)
+    APP_CHECK_SITE_KEY && (!IS_LOCAL_DEV || LOCAL_APPCHECK_TOKEN) ? import("https://www.gstatic.com/firebasejs/10.13.0/firebase-app-check.js") : Promise.resolve(null)
   ]).then(function(mods){
     var appMod = mods[0], fsMod = mods[1], authMod = mods[2], acMod = mods[3];
     var fbApp = appMod.initializeApp(firebaseConfig);
     if(acMod){
       // Local dev prints a debug token to register under App Check > Apps > Manage debug tokens.
-      if(/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) self.FIREBASE_APPCHECK_DEBUG_TOKEN = true;
+      if(IS_LOCAL_DEV) self.FIREBASE_APPCHECK_DEBUG_TOKEN = LOCAL_APPCHECK_TOKEN;
       acMod.initializeAppCheck(fbApp, { provider: new acMod.ReCaptchaEnterpriseProvider(APP_CHECK_SITE_KEY), isTokenAutoRefreshEnabled: true });
     }
     // Long polling: some mobile networks buffer Firestore's streamed connection, so other
@@ -1595,13 +1632,13 @@ var UNLOCK_STARTER_BORDERS = ["basic"];
 
 var UNLOCK_MILESTONES = [
   { id:"win:20",   kind:"title",   label:"초보",          check:function(s){ return s.wins>=20; },   detail:function(s){ return "승리 "+Math.min(s.wins,20)+"/20회"; } },
-  { id:"win:10",   kind:"avatar",  label:"미드나잇 아울",   check:function(s){ return s.wins>=50; },   detail:function(s){ return "승리 "+Math.min(s.wins,50)+"/50회"; } },
+  { id:"win:10",   kind:"avatar",  label:"아울 렛",   check:function(s){ return s.wins>=50; },   detail:function(s){ return "승리 "+Math.min(s.wins,50)+"/50회"; } },
   { id:"win:50",   kind:"avatar",  label:"볼트 드라코",    check:function(s){ return s.wins>=100; },   detail:function(s){ return "승리 "+Math.min(s.wins,100)+"/100회"; } },
   // 100 wins rewards both a character and a title, so ids carry the reward kind.
   { id:"win:100:avatar", kind:"avatar", label:"폭스트릭",  check:function(s){ return s.wins>=200; }, detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
   { id:"win:100",  kind:"title",   label:"승부사",          check:function(s){ return s.wins>=200; },  detail:function(s){ return "승리 "+Math.min(s.wins,200)+"/200회"; } },
   { id:"win:400",  kind:"title",   label:"카드의 신",        check:function(s){ return s.wins>=400; },  detail:function(s){ return "승리 "+Math.min(s.wins,400)+"/400회"; } },
-  { id:"win:200",  kind:"avatar",  label:"섀도우 캣",  check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
+  { id:"win:200",  kind:"avatar",  label:"쉐도우 캣",  check:function(s){ return s.wins>=500; },  detail:function(s){ return "승리 "+Math.min(s.wins,500)+"/500회"; } },
   { id:"win:500",  kind:"avatar",  label:"카이저 핑",      check:function(s){ return s.wins>=1000; },  detail:function(s){ return "승리 "+Math.min(s.wins,1000)+"/1000회"; } },
   { id:"win:1000", kind:"avatar",  label:"렉스 버서커",    check:function(s){ return s.wins>=2000; }, detail:function(s){ return "승리 "+Math.min(s.wins,2000)+"/2000회"; } },
 
@@ -2067,18 +2104,18 @@ function setCardTheme(idx){
 }
 
 // Characters that were renamed: saved picks and older clients' names map to the new ones.
-var RENAMED_CHARACTERS = {"스파크 렉스":"볼트 드라코","고양이 예언자":"섀도우 캣","나이트올빼미":"미드나잇 아울","슬로우모":"아이언 쉘","유니콘":"프리즘 혼"};
+var RENAMED_CHARACTERS = {"스파크 렉스":"볼트 드라코","고양이 예언자":"쉐도우 캣","나이트올빼미":"아울 렛","슬로우모":"아이언 쉘","유니콘":"프리즘 혼","섀도우 캣":"쉐도우 캣","미드나잇 아울":"아울 렛"};
 function currentCharacterName(name){ return RENAMED_CHARACTERS[name] || name; }
 var CHARACTERS = [
   { emoji:"🦡", name:"허니뱅" },
-  { emoji:"🐈‍⬛", name:"섀도우 캣" },
+  { emoji:"🐈‍⬛", name:"쉐도우 캣" },
   { emoji:"🦁", name:"바코드 라이언" },
   { emoji:"🐳", name:"메가블록", event:true },
   { emoji:"🐧", name:"카이저 핑" },
   { emoji:"🐕", name:"매드독" },
   { emoji:"🦘", name:"크러셔 루" },
   { emoji:"🐉", name:"볼트 드라코" },
-  { emoji:"🦉", name:"미드나잇 아울" },
+  { emoji:"🦉", name:"아울 렛" },
   { emoji:"🐢", name:"아이언 쉘", event:true },
   { emoji:"🦊", name:"폭스트릭" },
   { emoji:"🦖", name:"렉스 버서커" },
@@ -2116,7 +2153,7 @@ var BORDER_PRESETS = [
   { id:"sprout", name:"새싹", cls:"border-sprout" },
   { id:"flame", name:"불꽃", cls:"border-flame" },
   { id:"chrome", name:"크롬", cls:"border-chrome" },
-  // Avatar sets: each matches a character (🦁 바코드 라이언, 🐈‍⬛ 섀도우 캣; 🦉 달밤 is in the shop).
+  // Avatar sets: each matches a character (🦁 바코드 라이언, 🐈‍⬛ 쉐도우 캣; 🦉 달밤 is in the shop).
   { id:"mane", name:"사자 갈기", cls:"border-mane" },
   { id:"crystal", name:"수정구", cls:"border-crystal" },
   { id:"trophy", name:"트로피", cls:"border-trophy" },
@@ -5052,18 +5089,20 @@ function openBuyItemModal(kind, it, onDone){
   var price = COIN_PRICES[kind];
   var enough = w.coins >= price;
   var kindLabel = { pattern:"패턴", border:"테두리", theme:"테마" }[kind];
-  coinModal(it.name+" "+kindLabel,
+  coinModal(it.name+"<div class=\"buy-kind\">"+kindLabel+"</div>",
     "<div class=\"coin-buy-preview\">"+it.preview+"</div>"+
-    "<p class=\"coin-note\">가격 "+COIN_SVG+"<b>"+price+"</b> · 보유 "+COIN_SVG+"<b>"+w.coins.toLocaleString()+"</b></p>"+
-    "<p class=\"coin-note muted\">멤버십이면 구매하지 않아도 쓸 수 있어요.</p>"+
-    "",
-    [{ label: enough ? "구매" : "💳 코인 충전", primary:true,
+    "<div class=\"buy-price\">"+COIN_SVG+price+"<span>(영구)</span></div>"+
+    (enough ? "<p class=\"buy-have\">보유 <b>"+w.coins.toLocaleString()+"</b> → 구매 후 <b>"+(w.coins-price).toLocaleString()+"</b></p>"
+            : "<p class=\"buy-have lack\">보유 "+w.coins.toLocaleString()+" · "+(price-w.coins).toLocaleString()+"코인 부족해요</p>"),
+    [{ label: enough ? "🛍️ "+price+"코인으로 구매" : "💳 코인 충전하기", primary:true,
        onClick:function(btn){ if(!enough){ openChargeModal(function(){ openBuyItemModal(kind, it, onDone); }); return; } walletAction(btn, function(){ return buyItemWithCoins(kind, it.id.replace(/^[a-z]+:/,"")); }, function(){
          coinToast("🛍️ <b>"+it.name+"</b> 구매 완료!");
          if(onDone) onDone();
        }); } },
-     { label:"멤버십 혜택", onClick:function(){ openMembershipModal(function(){ openBuyItemModal(kind, it, onDone); }); } },
-     { label:"취소" }]);
+     { label:"👑 멤버십이면 무료로 사용", onClick:function(){ openMembershipModal(function(){ openBuyItemModal(kind, it, onDone); }); } },
+     { label:"닫기" }]);
+  var box = document.querySelector(".coin-modal");
+  if(box) box.classList.add("buy-modal");
 }
 // Developer only: pay last season's challenge 1~3위 once (seasonRewards/{season} is the ledger).
 function payLastSeasonRewards(btn){
@@ -6074,6 +6113,26 @@ function friendLabel(id){
   var nick = cleanText((friendPresence[id] && friendPresence[id].nick) || myFriends[id].nick, 16);
   return "<span class=\"presence-dot"+(on?" on":"")+"\"></span><b>"+nick+"</b><small>"+(on?"온라인":"오프라인")+"</small>";
 }
+function agoText(ms){
+  if(!ms) return "오프라인";
+  var m = Math.max(1, Math.round((serverNow() - ms)/60000));
+  if(m < 60) return m+"분 전 접속";
+  var h = Math.round(m/60);
+  if(h < 24) return h+"시간 전 접속";
+  return Math.round(h/24)+"일 전 접속";
+}
+// One friend: character, name, online dot and last-seen line, then the actions.
+function friendRowEl(id, buttons){
+  var p = friendPresence[id] || {}, on = friendOnline(id);
+  var ch = presetByName("avatar", currentCharacterName(p.avatar||""));
+  var row = el("div","fr-row"+(on?" on":""));
+  row.innerHTML = "<span class=\"fr-ava\">"+(ch ? avatarIconHTML(ch) : "🙂")+"<i class=\"presence-dot"+(on?" on":"")+"\"></i></span>"+
+    "<span class=\"fr-meta\"><b>"+cleanText(p.nick || myFriends[id].nick, 16)+"</b><small>"+(on ? "온라인" : agoText(tsMillis(p.at)))+"</small></span>";
+  var btns = el("span","fr-btns");
+  buttons.forEach(function(b){ btns.appendChild(b); });
+  row.appendChild(btns);
+  return row;
+}
 
 // 👥 친구: add by nickname, answer requests and invites, see who's online.
 function openFriendsModal(){ socialModal("friends-box", "👥 친구"); renderFriendsBox(); }
@@ -6083,40 +6142,46 @@ function renderFriendsBox(){
   var keepInput = box.querySelector("#friend-nick-input");
   var typed = keepInput ? keepInput.value : "";
   var msgText = box.querySelector(".social-msg") ? box.querySelector(".social-msg").textContent : "";
-  box.innerHTML = "<h2>👥 친구</h2>";
-  var addRow = el("div","nick-change-row");
-  var input = el("input","nickname-input");
+  var ids = sortedFriendIds();
+  var onCount = ids.filter(friendOnline).length;
+  box.innerHTML = "<h2>👥 친구</h2><p class=\"fr-sub\"><span class=\"presence-dot on\"></span>온라인 <b>"+onCount+"</b> · 전체 "+ids.length+"명</p>";
+  var addRow = el("div","fr-search");
+  var input = el("input","");
   input.id = "friend-nick-input"; input.placeholder = "닉네임 입력"; input.maxLength = 16; input.value = typed;
-  var addBtn = smallBtn("요청", true, function(b){ sendFriendRequest(input.value, b); });
+  input.addEventListener("keydown", function(e){ if(e.key==="Enter") addBtn.click(); });
+  var addBtn = smallBtn("＋ 친구 요청", true, function(b){ sendFriendRequest(input.value, b); });
+  addRow.appendChild(el("span","fr-search-ico","🔍"));
   addRow.appendChild(input); addRow.appendChild(addBtn);
   box.appendChild(addRow);
   box.appendChild(el("p","social-msg", msgText));
-  if(pendingInvites.length){
-    box.appendChild(el("div","social-head","📨 받은 초대"));
-    pendingInvites.forEach(function(i){
-      box.appendChild(socialRow("<b>"+cleanText(i.data.fromNick,16)+"</b><small>님의 방</small>", [
-        smallBtn("참가", true, function(){ acceptInvite(i); }),
-        smallBtn("거절", false, function(){ deleteInvite(i.id); })
-      ]));
-    });
-  }
-  if(pendingRequests.length){
-    box.appendChild(el("div","social-head","🙋 받은 친구 요청"));
-    pendingRequests.forEach(function(r){
-      box.appendChild(socialRow("<b>"+cleanText(r.data.fromNick,16)+"</b>", [
-        smallBtn("수락", true, function(b){ acceptFriendRequest(r, b); }),
-        smallBtn("거절", false, function(){ fbFs.deleteDoc(fbFs.doc(fbDb,"friendRequests",r.id)).catch(function(){}); })
-      ]));
-    });
-  }
-  var ids = sortedFriendIds();
-  box.appendChild(el("div","social-head","친구 "+ids.length+"명"));
-  if(!ids.length) box.appendChild(el("p","coin-note muted","닉네임으로 친구를 추가해 보세요."));
-  ids.forEach(function(id){
-    box.appendChild(socialRow(friendLabel(id), [
-      smallBtn("삭제", false, function(){ if(confirm("친구를 삭제할까요?")) removeFriend(id); })
-    ]));
+  pendingInvites.forEach(function(i){
+    var card = el("div","fr-card invite", "<span class=\"fr-card-ico\">🎮</span><span class=\"fr-meta\"><b>"+cleanText(i.data.fromNick,16)+"</b><small>님이 게임에 초대했어요</small></span>");
+    var bt = el("span","fr-btns");
+    bt.appendChild(smallBtn("참가", true, function(){ acceptInvite(i); }));
+    bt.appendChild(smallBtn("거절", false, function(){ deleteInvite(i.id); }));
+    card.appendChild(bt);
+    box.appendChild(card);
   });
+  pendingRequests.forEach(function(r){
+    var card = el("div","fr-card", "<span class=\"fr-card-ico\">🙋</span><span class=\"fr-meta\"><b>"+cleanText(r.data.fromNick,16)+"</b><small>님이 친구 요청을 보냈어요</small></span>");
+    var bt = el("span","fr-btns");
+    bt.appendChild(smallBtn("수락", true, function(b){ acceptFriendRequest(r, b); }));
+    bt.appendChild(smallBtn("거절", false, function(){ fbFs.deleteDoc(fbFs.doc(fbDb,"friendRequests",r.id)).catch(function(){}); }));
+    card.appendChild(bt);
+    box.appendChild(card);
+  });
+  if(!ids.length){
+    box.appendChild(el("div","fr-empty","<div class=\"fr-empty-ico\">👋</div><b>아직 친구가 없어요</b><small>닉네임으로 친구를 찾아 함께 플레이해 보세요</small>"));
+  } else {
+    var list = el("div","fr-list");
+    ids.forEach(function(id){
+      var x = el("button","fr-x","✕");
+      x.title = "친구 삭제";
+      x.addEventListener("click", function(){ if(confirm("친구를 삭제할까요?")) removeFriend(id); });
+      list.appendChild(friendRowEl(id, [x]));
+    });
+    box.appendChild(list);
+  }
   var close = el("div","coin-modal-actions");
   close.appendChild(smallBtn("닫기", false, closeModal));
   box.appendChild(close);
@@ -6195,9 +6260,11 @@ function renderInviteBox(){
   box.innerHTML = "<h2>👥 친구 초대</h2><p class=\"coin-note muted\">초대받은 친구 화면에 바로 참가 창이 떠요.</p>";
   var ids = sortedFriendIds();
   if(!ids.length) box.appendChild(el("p","coin-note muted","아직 친구가 없어요. 메인 화면의 👥에서 추가해 보세요."));
+  var list = el("div","fr-list");
   ids.forEach(function(id){
-    box.appendChild(socialRow(friendLabel(id), [ smallBtn("초대", friendOnline(id), function(b){ inviteFriend(id, b); }) ]));
+    list.appendChild(friendRowEl(id, [ smallBtn("초대", friendOnline(id), function(b){ inviteFriend(id, b); }) ]));
   });
+  box.appendChild(list);
   var close = el("div","coin-modal-actions");
   close.appendChild(smallBtn("닫기", false, closeModal));
   box.appendChild(close);
