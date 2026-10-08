@@ -102,15 +102,15 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .rk-prism{background:linear-gradient(90deg,#ff7ac8,#ffd76a,#7af0b0,#7ac8ff,#b07cff);-webkit-background-clip:text;background-clip:text;color:transparent;}
 .theme-light .rk-silver{color:#6f6890;}.theme-light .rk-mint{color:#16936f;}.theme-light .rk-sky{color:#2a74c4;}.theme-light .rk-violet{color:#7646c9;}.theme-light .rk-ace{color:#b07a00;}
 .theme-light .rk-prism{background:linear-gradient(90deg,#d6338a,#c98a00,#13976a,#2a74c4,#7646c9);-webkit-background-clip:text;background-clip:text;}
-/* 계급 window */
+/* 레벨 window */
 .rk-me{display:flex;flex-direction:column;align-items:center;gap:2px;margin-bottom:8px;}
 .rk-me .name-tag-lv{font-size:22px;cursor:default;}
 .rk-me b{font-size:18px;}
 .rk-me small{color:var(--muted);font-size:12.5px;}
-.rk-help{font-size:12.5px;line-height:1.5;text-align:left;}
+.rk-help{margin:4px 0 6px;padding-left:18px;font-size:12.5px;line-height:1.55;text-align:left;color:var(--muted);}
+.rk-help li{margin:0;}
 .rk-list{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin:8px 0;}
 .rk-row{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;border-radius:10px;background:var(--panel2);}
-.rk-row:last-child{grid-column:1/-1;}
 .rk-row.me{outline:2px solid var(--accent);}
 .rk-row small{font-size:11px;color:var(--muted);}
 .rk-row .name-tag-lv{cursor:default;font-size:13.5px;}
@@ -5364,7 +5364,7 @@ function applyRankResult(r){
   var res = { delta:next-before, before:before, after:next, up:rankIndex(next)>rankIndex(before), label:rankLabelOf(next, myRank.prism), beforeLabel:beforeLabel };
   state.lastRank = res;
   if(fbDb) saveMyRank().then(loadPrismTop).catch(function(e){ console.warn("계급 저장 실패", e); });
-  if(res.up) setTimeout(function(){ coinToast("🎉 <b>"+res.label+"</b> 달성!"); sfxCapture(); }, 1200);
+  if(res.up) setTimeout(function(){ coinToast("🎉 레벨 업! <b>"+res.label+"</b>"); sfxCapture(); }, 1200);
   return res;
 }
 function rankTagHTML(label){ return label ? "<span class=\"name-tag-lv "+rankBand(label)+"\">"+label+"</span>" : ""; }
@@ -5374,13 +5374,23 @@ function openRankModal(){
   var rows = RANK_FLOORS.map(function(f, k){
     var l = k===10 ? "Lv.Ace" : "Lv."+(k+1);
     return "<div class=\"rk-row"+(k===i && !myRank.prism ? " me" : "")+"\"><span class=\"name-tag-lv "+rankBand(l)+"\">"+l+"</span><small>"+f.toLocaleString()+" RP</small></div>";
-  }).join("") + "<div class=\"rk-row"+(myRank.prism ? " me" : "")+"\"><span class=\"name-tag-lv rk-prism\">PRISM</span><small>Lv.Ace 중 시즌 상위 "+RANK_PRISM_TOP+"명</small></div>";
+  }).join("") + "<div class=\"rk-row"+(myRank.prism ? " me" : "")+"\"><span class=\"name-tag-lv rk-prism\">PRISM</span><small>시즌 상위 "+RANK_PRISM_TOP+"명</small></div>";
   var top = prismTop.length ? prismTop.map(function(p, k){ return "<div class=\"rk-top\"><b>"+(k+1)+"</b><span>"+cleanText(p.name,16)+"</span><small>"+p.rp.toLocaleString()+" RP</small></div>"; }).join("")
     : "<p class=\"coin-note muted\">아직 Lv.Ace에 오른 플레이어가 없어요.</p>";
-  coinModal("🏅 계급",
+  coinModal("🏅 레벨",
     "<div class=\"rk-me\"><span class=\"name-tag-lv "+rankBand(label)+"\">"+label+"</span><b>"+rp.toLocaleString()+" RP</b><small>"+
-      (nextFloor!==undefined ? "다음 단계까지 "+(nextFloor-rp).toLocaleString()+" RP" : "PRISM은 이번 시즌 Lv.Ace 상위 "+RANK_PRISM_TOP+"명")+"</small></div>"+
-    "<p class=\"coin-note rk-help\">이기면 오르고 지면 조금 내려가요 (단계 아래로는 안 떨어져요). 혼자하기는 어려움일수록 많이 올라요 (쉬움은 Lv.4, 보통은 Lv.7까지). 챌린지를 완성해도 올라요. 매달 새 시즌에 두 단계 아래에서 다시 시작해요.</p>"+
+      (nextFloor!==undefined ? "다음 레벨까지 "+(nextFloor-rp).toLocaleString()+" RP" : "PRISM은 이번 시즌 Lv.Ace 상위 "+RANK_PRISM_TOP+"명")+"</small></div>"+
+    "<ul class=\"rk-help\">"+
+      "<li>혼자하기 승리 쉬움 +6 · 보통 +10 · 어려움 +16</li>"+
+      "<li>혼자하기 패배 쉬움 −8 · 보통 −6 · 어려움 −4</li>"+
+      "<li>멀티 1:1 승리 +20 · 패배 −12</li>"+
+      "<li>멀티 3~4인 1등 +30 · 나머지 −8 · 탈주 −30</li>"+
+      "<li>챌린지 완성 +15 · 3연승부터 판마다 +2 (최대 +10)</li>"+
+      "<li>쉬움은 Lv.4, 보통은 Lv.7까지만 올라요</li>"+
+      "<li>Lv.8부터 패배 점수 1.5배</li>"+
+      "<li>지금 레벨 아래로는 안 떨어져요</li>"+
+      "<li>매달 1일 새 시즌 · 두 레벨 아래에서 시작</li>"+
+      "<li>PRISM: Lv.Ace 중 시즌 RP 상위 "+RANK_PRISM_TOP+"명</li></ul>"+
     "<div class=\"rk-list\">"+rows+"</div><div class=\"ms-head\"><span>🌈 이번 시즌 PRISM</span></div><div class=\"rk-tops\">"+top+"</div>",
     [{ label:"닫기" }]);
 }
