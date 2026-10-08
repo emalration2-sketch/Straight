@@ -2031,7 +2031,7 @@ function accountRole(){
 }
 // Test period (until the official launch): every item is free to use. Achievement and paid
 // designations stay as they are; set this to false at launch.
-var OPEN_TEST = true;
+var OPEN_TEST = false;
 // Items handed out by mail (e.g. the alpha-tester title) stay locked even in the test period.
 function preset_isMailOnly(p){ return !!(p && p.mail); }
 function isDevAccount(){ return accountRole()==="dev"; }
