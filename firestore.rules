@@ -169,6 +169,15 @@ service cloud.firestore {
         && n.lastBuy != o.get('lastBuy', '')
         && n.coins == o.coins - 490;
     }
+    // Event coins: claimed once together with users/{uid}/mail/{cid}, exactly the event's amount.
+    function isMailCoins(n, o, uid){
+      return sameExcept(n, o, ['coins','lastBuy'])
+        && n.lastBuy is string && n.lastBuy.matches('^mail:[A-Za-z0-9]+$')
+        && get(/databases/$(database)/documents/campaigns/$(n.lastBuy.split(':')[1])).data.rewardKind == 'coins'
+        && !exists(/databases/$(database)/documents/users/$(uid)/mail/$(n.lastBuy.split(':')[1]))
+        && existsAfter(/databases/$(database)/documents/users/$(uid)/mail/$(n.lastBuy.split(':')[1]))
+        && n.coins == o.coins + get(/databases/$(database)/documents/campaigns/$(n.lastBuy.split(':')[1])).data.rewardCoins;
+    }
     function isGrant(n, o){
       return devRole() && sameExcept(n, o, ['coins']) && n.coins > o.coins && n.coins <= o.coins + 100;
     }
@@ -190,7 +199,8 @@ service cloud.firestore {
           isAttend(request.resource.data, resource.data)
           || isBuy(request.resource.data, resource.data)
           || isMembership(request.resource.data, resource.data)
-          || isNickChange(request.resource.data, resource.data)))
+          || isNickChange(request.resource.data, resource.data)
+          || isMailCoins(request.resource.data, resource.data, uid)))
         || isGrant(request.resource.data, resource.data));
       allow delete: if false;
     }

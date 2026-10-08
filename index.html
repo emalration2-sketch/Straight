@@ -6041,7 +6041,7 @@ var PRESENCE_FRESH_MS = 150000;
 var socialStarted = false, myFriends = {}, friendPresence = {}, friendUnsubs = {};
 var pendingRequests = [], pendingInvites = [], mailItems = [], shownInvites = {};
 // Event rewards: any collection item. rewardId is "<kind>:<id>" and unlocks as "mail:<kind>:<id>".
-var REWARD_KINDS = [["title","칭호"],["border","테두리"],["pattern","패턴"],["avatar","캐릭터"]];
+var REWARD_KINDS = [["coins","코인"],["title","칭호"],["border","테두리"],["pattern","패턴"],["avatar","캐릭터"]];
 function rewardItems(kind){
   if(kind==="avatar") return CHARACTERS.map(function(c){ return { id:c.name, name:c.name }; });
   var list = kind==="title" ? TITLE_PRESETS : kind==="border" ? BORDER_PRESETS : CARD_BACK_PRESETS;
@@ -6321,6 +6321,7 @@ function grantMailReward(rewardId){
 // Mail rewards stay only while their event exists: deleting an event takes it back.
 function syncMailRewards(valid){
   var before = straightUnlocks.length;
+  valid = valid.filter(function(r){ return !/^coins:/.test(r); });
   straightUnlocks = straightUnlocks.filter(function(id){ return !/^mail:/.test(id) || valid.indexOf(id.slice(5))!==-1; });
   valid.forEach(function(r){ if(straightUnlocks.indexOf("mail:"+r)===-1) straightUnlocks.push("mail:"+r); });
   if(straightUnlocks.length!==before || valid.length){ saveUnlocks(straightUnlocks); saveProgressSoon(); }
@@ -6367,11 +6368,23 @@ function renderMailBox(){
 function claimMail(c, btn){
   var F = fbFs;
   btn.disabled = true;
-  F.setDoc(F.doc(fbDb,"users",account.uid,"mail",c.id), { reward:c.rewardId, at:F.serverTimestamp() }).then(function(){
-    grantMailReward(c.rewardId);
+  var mailRef = F.doc(fbDb,"users",account.uid,"mail",c.id);
+  var write;
+  if(c.rewardKind==="coins"){
+    var w = account.wallet;
+    if(!w){ btn.disabled = false; alert("코인 지갑을 불러오는 중이에요. 잠시 후 다시 눌러 주세요."); return; }
+    var batch = F.writeBatch(fbDb);
+    batch.set(mailRef, { reward:c.rewardId, at:F.serverTimestamp() });
+    batch.update(F.doc(fbDb,"wallets",account.uid), { coins:w.coins + Number(c.rewardCoins), lastBuy:"mail:"+c.id });
+    write = batch.commit().then(function(){ w.coins += Number(c.rewardCoins); w.lastBuy = "mail:"+c.id; renderCoinPills(); });
+  } else {
+    write = F.setDoc(mailRef, { reward:c.rewardId, at:F.serverTimestamp() });
+  }
+  write.then(function(){
+    if(c.rewardKind!=="coins") grantMailReward(c.rewardId);
     mailItems = mailItems.filter(function(m){ return m.id!==c.id; });
     refreshSocialUI();
-    coinToast("🎁 <b>"+cleanText(c.rewardName,20)+"</b> 받았어요! 수집품에서 장착해 보세요.");
+    coinToast("🎁 <b>"+cleanText(c.rewardName,20)+"</b> 받았어요!"+(c.rewardKind==="coins" ? "" : " 수집품에서 장착해 보세요."));
   }).catch(function(e){ console.error("우편 받기 실패", e); btn.disabled = false; alert("받지 못했어요. 수령 기간이 지났을 수 있어요."); });
 }
 
@@ -6392,12 +6405,17 @@ function openOperatorModal(){
     "<label>받는 사람<select class=\"nickname-input\" id=\"op-target\"><option value=\"all\">기간 중 접속한 모든 플레이어</option><option value=\"list\">지정한 플레이어만 (기간 중 접속 시)</option></select></label>"+
     "<label class=\"hidden\" id=\"op-nicks-wrap\">닉네임 (쉼표로 구분)<input class=\"nickname-input\" id=\"op-nicks\" placeholder=\"예: 허니뱅, 수달과빙어\"></label>"+
     "<label>보상 종류<select class=\"nickname-input\" id=\"op-kind\">"+REWARD_KINDS.map(function(k){ return "<option value=\""+k[0]+"\">"+k[1]+"</option>"; }).join("")+"</select></label>"+
-    "<label>보상 아이템<select class=\"nickname-input\" id=\"op-item\"></select></label>"+
+    "<label id=\"op-item-wrap\">보상 아이템<select class=\"nickname-input\" id=\"op-item\"></select></label>"+
+    "<label id=\"op-coins-wrap\">코인 수량<input class=\"nickname-input\" type=\"number\" id=\"op-coins\" value=\"100\" min=\"1\" max=\"10000\"></label>"+
     "<label>기간 시작<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-start\" value=\""+local(now)+"\"></label>"+
     "<label>기간 끝<input class=\"nickname-input\" type=\"datetime-local\" id=\"op-end\" value=\""+local(new Date(now.getTime()+7*864e5))+"\"></label>"+
     "<label>끝난 뒤 받기 가능 (일)<input class=\"nickname-input\" type=\"number\" id=\"op-days\" value=\"30\" min=\"1\" max=\"365\"></label>";
   box.appendChild(form);
   var fillItems = function(){
+    var coins = $("op-kind").value==="coins";
+    $("op-item-wrap").classList.toggle("hidden", coins);
+    $("op-coins-wrap").classList.toggle("hidden", !coins);
+    if(coins) return;
     $("op-item").innerHTML = rewardItems($("op-kind").value).map(function(it, i){ return "<option value=\""+i+"\">"+cleanText(it.name,20)+"</option>"; }).join("");
   };
   $("op-kind").addEventListener("change", fillItems);
@@ -6405,7 +6423,10 @@ function openOperatorModal(){
   fillItems();
   var actions = el("div","coin-modal-actions");
   actions.appendChild(smallBtn("이벤트 만들기", true, function(b){
-    var kind = $("op-kind").value, item = rewardItems(kind)[Number($("op-item").value)];
+    var kind = $("op-kind").value;
+    var amount = Math.floor(Number($("op-coins").value)||0);
+    if(kind==="coins" && (amount<1 || amount>10000)){ alert("코인은 1~10000개로 정해 주세요."); return; }
+    var item = kind==="coins" ? { id:String(amount), name:amount+"코인" } : rewardItems(kind)[Number($("op-item").value)];
     var start = new Date($("op-start").value), end = new Date($("op-end").value);
     var days = Math.max(1, Number($("op-days").value)||30);
     var title = cleanText($("op-title").value, 30).trim();
@@ -6423,6 +6444,7 @@ function openOperatorModal(){
       var data = { title:title, cond:"login", rewardKind:kind, rewardId:kind+":"+item.id, rewardName:item.name,
         start:start, end:end, claimUntil:new Date(end.getTime()+days*864e5), createdAt:F.serverTimestamp() };
       if(uids){ data.targets = uids; data.targetNicks = nicks; }
+      if(kind==="coins") data.rewardCoins = amount;
       return F.addDoc(F.collection(fbDb,"campaigns"), data);
     }).then(function(){ coinToast("✅ 보상 이벤트를 만들었어요."); loadOperatorList(); refreshMail(); })
       .catch(function(e){ console.error("이벤트 생성 실패", e); alert(e && e.message && /닉네임/.test(e.message) ? e.message : "만들지 못했어요."); })
@@ -6442,7 +6464,7 @@ function loadOperatorList(){
       var c = d.data(), fmt = function(t){ var x = new Date(tsMillis(t)); return (x.getMonth()+1)+"/"+x.getDate(); };
       var who = c.targetNicks ? "대상 "+c.targetNicks.length+"명" : "전체";
       var row = socialRow("<b>"+cleanText(c.title,30)+"</b><small>"+cleanText(c.rewardName,20)+" · "+who+" · 기간 "+fmt(c.start)+"~"+fmt(c.end)+" · 받기 "+fmt(c.claimUntil)+"까지 · <span class=\"op-count\">참여 …</span></small>", [
-        smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요?\n이미 받은 플레이어의 보상도 회수돼요.")) F.deleteDoc(d.ref).then(loadOperatorList); })
+        smallBtn("삭제", false, function(){ if(confirm("이 이벤트를 삭제할까요?\n"+(c.rewardKind==="coins" ? "이미 받은 코인은 회수되지 않아요." : "이미 받은 플레이어의 보상도 회수돼요."))) F.deleteDoc(d.ref).then(loadOperatorList); })
       ]);
       list.appendChild(row);
       F.getCountFromServer(F.collection(fbDb,"campaigns",d.id,"entries")).then(function(r){
