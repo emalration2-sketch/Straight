@@ -6638,7 +6638,7 @@ function collItemValue(kind, it){
 function collectionItemDetailText(kind, name){
   var mp = presetByName(kind, name);
   if(mp && mp.mail) return mp.desc || "📮 이벤트 우편 보상";
-  if(isEventItem(kind, name)) return "🎉 이벤트로 만나요!";
+  if(isEventItem(kind, name)) return "🎉 이벤트 한정";
   if(isMemberItem(kind, name)) return "👑 멤버십 전용";
   if(isPaidItem(kind, name)) return COIN_PRICES[kind]+"코인";
   if(kind==="theme") return "기본 테마";
@@ -6732,7 +6732,7 @@ function renderCollectionScreen(){
     if(isPaidItem(tab, it.name) || isMemberItem(tab, it.name)) return "shop";
     return "goal";
   }
-  var SECTIONS = [["owned","보유"],["goal","도전해서 얻기"],["shop","상점 · 멤버십"],["event","🎉 이벤트로 만나요"]];
+  var SECTIONS = [["owned","보유"],["goal","도전해서 얻기"],["shop","상점 · 멤버십"],["event","🎉 이벤트 한정"]];
   SECTIONS.forEach(function(sec){
     var list = items.filter(function(it){ return sectionOf(it)===sec[0]; });
     if(!list.length) return;
