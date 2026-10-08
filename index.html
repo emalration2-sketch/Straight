@@ -926,7 +926,7 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .coll-grid .coll-item.equipped{border-color:transparent;}
 .coll-grid .coll-item.equipped .coll-item-name{color:var(--accent);}
 
-.coll-tip{position:fixed;z-index:99990;max-width:220px;padding:7px 11px;border-radius:9px;background:var(--text);color:var(--bg);font-size:13.5px;font-weight:700;line-height:1.35;text-align:center;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;box-shadow:0 4px 14px rgba(0,0,0,.3);}
+.coll-tip{position:fixed;z-index:99990;max-width:none;white-space:nowrap;padding:7px 11px;border-radius:9px;background:var(--text);color:var(--bg);font-size:13.5px;font-weight:700;line-height:1.35;text-align:center;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;box-shadow:0 4px 14px rgba(0,0,0,.3);}
 .coll-tip.show{opacity:1;transform:translateY(0);}
 .coll-grid.tab-avatar,.coll-grid.tab-title,.coll-grid.tab-pattern,.coll-grid.tab-theme{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;}
 .coll-grid.tab-avatar .achv-preview{font-size:30px;line-height:1.1;}
@@ -6580,6 +6580,12 @@ function showCollTip(card, text, ms){
   if(!tip){ tip = el("div","coll-tip"); tip.id = "coll-tip"; document.body.appendChild(tip); }
   tip.textContent = text;
   tip.classList.add("show");
+  // Always one line: measure from the left edge (a tip left near the right edge used to wrap
+  // the next one), and shrink the text if it is wider than the screen.
+  tip.style.left = "0px";
+  tip.style.fontSize = "";
+  var room = window.innerWidth - 16;
+  if(tip.offsetWidth > room) tip.style.fontSize = Math.max(10, Math.floor(13.5 * room / tip.offsetWidth)) + "px";
   var r = card.getBoundingClientRect();
   var w = tip.offsetWidth, h = tip.offsetHeight;
   var left = Math.max(8, Math.min(window.innerWidth - w - 8, r.left + r.width/2 - w/2));
