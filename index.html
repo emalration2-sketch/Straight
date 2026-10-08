@@ -42,7 +42,15 @@ button,input,select,textarea{font-family:inherit;}
   padding:calc(env(safe-area-inset-top) + 10px) calc(env(safe-area-inset-right) + 16px) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + 16px);
 }
 .hidden{display:none !important;}
-#screen-collection{justify-content:flex-start;padding-top:calc(env(safe-area-inset-top) + 28px);}
+#screen-collection{justify-content:flex-start;gap:6px;padding-top:calc(env(safe-area-inset-top) + 16px);}
+/* 수집품: tight header so the owned list gets the rest of the height. */
+#screen-collection h1{line-height:30px;}
+#screen-collection .coll-stage{margin-top:2px;gap:2px;}
+#screen-collection .coll-stage-table{padding:10px 10px 12px;gap:8px;}
+#screen-collection .coll-stage-bar{min-height:22px;}
+#screen-collection .coll-tabs{margin:0;}
+#screen-collection .coll-grid{flex:1 1 auto;min-height:0;max-height:none;}
+#screen-collection #coll-back-btn{flex:none;margin-bottom:2px;}
 h1{font-size:clamp(22px,5vw,40px);margin:0;letter-spacing:1px;}
 h1 span{color:var(--pink);}
 p.sub{color:var(--muted);font-size:14.5px;margin:0;}
