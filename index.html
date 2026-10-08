@@ -704,6 +704,22 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 #screen-collection .fx-stars i:nth-child(2),#screen-start .fx-stars i:nth-child(2),#screen-win .fx-stars i:nth-child(2){animation-delay:2.1s;}
 @keyframes fxTwinkle{0%,80%,100%{transform:scale(1);opacity:.85;}88%{transform:scale(1.4);opacity:1;}}
 .low-power .fx-sheen,.low-power .fx-sheen::before,.low-power .fx-stars i{animation:none !important;}
+/* Paid patterns: --pat-glow tints the edge glow, the glints and a brighter sweep. */
+.card.pattern-onyx{--pat-glow:#ffd778;}.card.pattern-stained{--pat-glow:#a8ecff;}.card.pattern-harlequin{--pat-glow:#ffd778;}.card.pattern-neon{--pat-glow:#7ff6ff;}.card.pattern-aurora{--pat-glow:#b8ffe6;}.card.pattern-tiger{--pat-glow:#ffc45a;}.card.pattern-bone{--pat-glow:#fff3d6;}.card.pattern-bamboo{--pat-glow:#b8ffb8;}
+.card .fx-edge{position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:1;box-shadow:inset 0 0 0 1.5px var(--pat-glow,#fff),inset 0 0 12px var(--pat-glow,#fff);opacity:.25;}
+.card .fx-glint{position:absolute;inset:0;pointer-events:none;z-index:2;}
+.card .fx-glint i{position:absolute;left:12%;top:10%;width:28%;aspect-ratio:1;background:var(--pat-glow,#fff);clip-path:polygon(50% 0,58% 42%,100% 50%,58% 58%,50% 100%,42% 58%,0 50%,42% 42%);opacity:0;transform:scale(0);}
+.card .fx-glint i:nth-child(2){left:auto;top:auto;right:12%;bottom:12%;width:20%;}
+.card.pattern-onyx .fx-sheen::before,.card.pattern-stained .fx-sheen::before,.card.pattern-harlequin .fx-sheen::before,.card.pattern-neon .fx-sheen::before,.card.pattern-aurora .fx-sheen::before,.card.pattern-tiger .fx-sheen::before,.card.pattern-bone .fx-sheen::before,.card.pattern-bamboo .fx-sheen::before{background-image:linear-gradient(105deg,transparent 26%,rgba(255,255,255,.55) 46%,var(--pat-glow,#fff) 50%,rgba(255,255,255,.55) 54%,transparent 74%);opacity:.85;}
+#screen-collection .fx-edge,#screen-start .fx-edge,#screen-win .fx-edge,.coin-buy-preview .fx-edge{animation:fxEdge 2.4s ease-in-out infinite;}
+#screen-collection .fx-glint i,#screen-start .fx-glint i,#screen-win .fx-glint i,.coin-buy-preview .fx-glint i{animation:fxGlint 3.2s ease-out infinite;}
+#screen-collection .fx-glint i:nth-child(2),#screen-start .fx-glint i:nth-child(2),#screen-win .fx-glint i:nth-child(2),.coin-buy-preview .fx-glint i:nth-child(2){animation-delay:1.6s;}
+.coin-buy-preview .fx-sheen::before{animation:fxSweep 2.6s ease-in-out infinite;}
+@keyframes fxEdge{0%,100%{opacity:.2;}50%{opacity:.95;}}
+@keyframes fxGlint{0%,55%,100%{opacity:0;transform:scale(0) rotate(0deg);}66%{opacity:1;transform:scale(1) rotate(45deg);}80%{opacity:0;transform:scale(.3) rotate(90deg);}}
+.low-power .fx-edge,.low-power .fx-glint i{animation:none !important;}
+html.fx-rest .fx-edge,html.fx-rest .fx-glint i{animation-play-state:paused !important;}
+
 .card.pattern-nebula::before{background:url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20viewBox%3D%270%200%2040%2056%27%20preserveAspectRatio%3D%27none%27%3E%3Cdefs%3E%3Cfilter%20id%3D%27b%27%20x%3D%27-30%25%27%20y%3D%27-30%25%27%20width%3D%27160%25%27%20height%3D%27160%25%27%3E%3CfeGaussianBlur%20stdDeviation%3D%271.5%27%2F%3E%3C%2Ffilter%3E%3CradialGradient%20id%3D%27k%27%3E%3Cstop%20offset%3D%270%27%20stop-color%3D%27white%27%20stop-opacity%3D%27.95%27%2F%3E%3Cstop%20offset%3D%271%27%20stop-color%3D%27white%27%20stop-opacity%3D%270%27%2F%3E%3C%2FradialGradient%3E%3C%2Fdefs%3E%3Cg%20transform%3D%27translate(29%2045)%20rotate(-30)%20scale(.6)%27%20fill%3D%27none%27%20stroke%3D%27white%27%20filter%3D%27url(%23b)%27%3E%3Cpath%20d%3D%27M0%200%20C8%20-5%2010%20-15%201%20-17%20C-8%20-19%20-14%20-9%20-12%200%27%20stroke-opacity%3D%27.45%27%20stroke-width%3D%274%27%2F%3E%3Cpath%20d%3D%27M0%200%20C-8%205%20-10%2015%20-1%2017%20C8%2019%2014%209%2012%200%27%20stroke-opacity%3D%27.45%27%20stroke-width%3D%274%27%2F%3E%3C%2Fg%3E%3Cellipse%20cx%3D%2729%27%20cy%3D%2745%27%20rx%3D%2710%27%20ry%3D%275.5%27%20transform%3D%27rotate(-30%2029%2045)%27%20fill%3D%27url(%23k)%27%20fill-opacity%3D%27.35%27%2F%3E%3Cellipse%20cx%3D%2729%27%20cy%3D%2745%27%20rx%3D%273%27%20ry%3D%272.2%27%20fill%3D%27url(%23k)%27%2F%3E%3Ccircle%20cx%3D%276%27%20cy%3D%278%27%20r%3D%270.5%27%20fill%3D%27white%27%20fill-opacity%3D%270.9%27%2F%3E%3Ccircle%20cx%3D%2713%27%20cy%3D%2730%27%20r%3D%270.4%27%20fill%3D%27white%27%20fill-opacity%3D%270.7%27%2F%3E%3Ccircle%20cx%3D%2730%27%20cy%3D%276%27%20r%3D%270.45%27%20fill%3D%27white%27%20fill-opacity%3D%270.8%27%2F%3E%3Ccircle%20cx%3D%2735%27%20cy%3D%2724%27%20r%3D%270.35%27%20fill%3D%27white%27%20fill-opacity%3D%270.6%27%2F%3E%3Ccircle%20cx%3D%2724%27%20cy%3D%2746%27%20r%3D%270.5%27%20fill%3D%27white%27%20fill-opacity%3D%270.85%27%2F%3E%3Ccircle%20cx%3D%278%27%20cy%3D%2750%27%20r%3D%270.35%27%20fill%3D%27white%27%20fill-opacity%3D%270.6%27%2F%3E%3Ccircle%20cx%3D%2733%27%20cy%3D%2740%27%20r%3D%270.4%27%20fill%3D%27white%27%20fill-opacity%3D%270.7%27%2F%3E%3Ccircle%20cx%3D%2718%27%20cy%3D%2715%27%20r%3D%270.3%27%20fill%3D%27white%27%20fill-opacity%3D%270.55%27%2F%3E%3Ccircle%20cx%3D%273%27%20cy%3D%2734%27%20r%3D%270.3%27%20fill%3D%27white%27%20fill-opacity%3D%270.5%27%2F%3E%3Ccircle%20cx%3D%2737%27%20cy%3D%2752%27%20r%3D%270.35%27%20fill%3D%27white%27%20fill-opacity%3D%270.6%27%2F%3E%3Ccircle%20cx%3D%2727%27%20cy%3D%2732%27%20r%3D%270.3%27%20fill%3D%27white%27%20fill-opacity%3D%270.5%27%2F%3E%3Ccircle%20cx%3D%2711%27%20cy%3D%2742%27%20r%3D%270.3%27%20fill%3D%27white%27%20fill-opacity%3D%270.5%27%2F%3E%3C%2Fsvg%3E") center/100% 100% no-repeat,linear-gradient(135deg,rgba(255,255,255,.4),rgba(255,255,255,0) 48%);}
 .pattern-nebula::after{background:radial-gradient(ellipse at 30% 30%,rgba(255,255,255,.6),transparent 55%),radial-gradient(ellipse at 75% 75%,rgba(255,255,255,.45),transparent 55%),radial-gradient(ellipse at 50% 50%,transparent 35%,rgba(0,0,0,.55));mix-blend-mode:soft-light;}
 /* 할리퀸: big alternating diamonds edged in gold, two per row. */
@@ -837,9 +853,9 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .coll-grid{width:100%;max-width:480px;max-height:70vh;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));gap:8px;padding:4px;align-content:start;}
 .coin-pill{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:calc(env(safe-area-inset-right) + 14px);z-index:5;display:inline-flex;align-items:center;gap:5px;padding:4px 12px 4px 5px;border-radius:999px;background:var(--panel);border:1.5px solid rgba(239,159,39,.6);color:var(--text);font-size:15px;font-weight:800;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .coin-pill{font-size:16px;padding:0;background:none !important;border:none !important;box-shadow:none !important;height:34px;}
-.top-cluster{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:calc(env(safe-area-inset-right) + 12px);z-index:5;display:flex;align-items:center;gap:2px;padding:3px 12px 3px 4px;border-radius:999px;background:var(--panel2);border:1.5px solid rgba(var(--line-rgb),.16);box-shadow:0 4px 14px rgba(0,0,0,.25);}
+.top-cluster{position:absolute;top:calc(env(safe-area-inset-top) + 12px);right:calc(env(safe-area-inset-right) + 12px);z-index:5;display:flex;align-items:center;gap:0;padding:1px 10px 1px 3px;border-radius:999px;background:var(--panel2);border:1.5px solid rgba(var(--line-rgb),.16);box-shadow:0 4px 14px rgba(0,0,0,.25);}
 .top-cluster.hidden{display:none;}
-.cluster-btn{position:relative;width:36px;height:36px;border-radius:50%;border:none;background:transparent;font-size:19px;line-height:1;cursor:pointer;color:var(--text);}
+.cluster-btn{position:relative;width:32px;height:30px;border-radius:50%;border:none;background:transparent;font-size:16px;line-height:1;cursor:pointer;color:var(--text);}
 .cluster-btn:active{background:rgba(var(--line-rgb),.12);}
 .cluster-btn.hidden{display:none;}
 /* The console keeps one size whichever tab is open. */
@@ -898,10 +914,12 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .op-pick{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
 .op-steps{display:flex;flex-wrap:wrap;gap:4px;}
 .op-err .op-steps .btn{align-self:auto;}
-.cluster-sep{width:1px;height:20px;margin:0 6px 0 4px;background:rgba(var(--line-rgb),.22);}
-.top-cluster .coin-pill{position:static;height:36px;}
-/* Alone (수집품) the coins sit exactly where they do inside the main-screen capsule: capsule top 10 + border 1.5 + padding 3, right 12 + 1.5 + 12. */
-.coin-pill:not(.top-cluster .coin-pill){top:calc(env(safe-area-inset-top) + 14.5px);right:calc(env(safe-area-inset-right) + 25.5px);height:36px;}
+.cluster-sep{width:1px;height:16px;margin:0 6px 0 3px;background:rgba(var(--line-rgb),.22);}
+.top-cluster .coin-pill{position:static;height:30px;}
+/* Alone (수집품) the coins sit exactly where they do inside the main-screen capsule: capsule top 12 + border 1.5 + padding 1, right 12 + 1.5 + 10. */
+.coin-pill:not(.top-cluster .coin-pill){top:calc(env(safe-area-inset-top) + 14.5px);right:calc(env(safe-area-inset-right) + 23.5px);height:30px;}
+.coin-pill{font-size:15px;}
+.start-me{cursor:pointer;}
 .top-cluster .side-badge{top:-2px;right:-2px;}
 .start-side{position:absolute;top:calc(env(safe-area-inset-top) + 56px);right:calc(env(safe-area-inset-right) + 12px);z-index:5;display:flex;flex-direction:column;gap:8px;}
 .side-btn{position:relative;width:42px;height:42px;border-radius:50%;border:1.5px solid rgba(var(--line-rgb),.16);background:var(--panel2);font-size:20px;line-height:1;cursor:pointer;color:var(--text);}
@@ -960,7 +978,7 @@ html.fx-rest .tag-glow,html.fx-rest .tag-shine::before,html.fx-rest .tag-shine::
 .op-dh select{flex:0 0 84px;width:84px !important;}
 .op-form input[type="date"],.op-form input[type="datetime-local"]{display:block;min-width:0;max-width:100%;-webkit-appearance:none;appearance:none;min-height:40px;line-height:normal;}
 .op-form input[type="datetime-local"]::-webkit-date-and-time-value{text-align:left;}
-.coin-pill .coin-ico{width:28px;height:28px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
+.coin-pill .coin-ico{width:24px;height:24px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35));}
 .coin-modal{width:min(340px,88vw);box-sizing:border-box;padding:22px 20px;text-align:center;}
 .coin-modal h2{font-size:21px;margin-bottom:12px;}
 .coin-modal-actions .btn{font-size:16px;}
@@ -1760,7 +1778,7 @@ function patternShines(p){ return !!p && (p.paid || p.member || SHINE_PATTERNS.i
 function patternFinishHTML(p){
   if(!p) return "";
   if(!patternShines(p)) return "<span class=\"fin-line\"></span>";
-  return "<span class=\"fx-sheen\"></span>"+(p.id==="nebula" ? "<span class=\"fx-stars\"><i></i><i></i></span>" : "")+
+  return "<span class=\"fx-sheen\"></span>"+(p.paid ? "<span class=\"fx-edge\"></span><span class=\"fx-glint\"><i></i><i></i></span>" : "")+(p.id==="nebula" ? "<span class=\"fx-stars\"><i></i><i></i></span>" : "")+
     (p.id==="fireworks" ? "<span class=\"fx-bursts\"><i></i></span>" : "");
 }
 var UNLOCK_STARTER_PATTERNS = ["stripe","argyle"];
@@ -2484,6 +2502,10 @@ function $(id){ return document.getElementById(id); }
 function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 function switchScreen(name){
+  // 수집품 shows every effect live: lift idle rest and low-power while it is open.
+  var rootEl = document.documentElement;
+  if(name==="collection"){ rootEl.classList.remove("fx-rest"); if(rootEl.classList.contains("low-power")){ rootEl.classList.remove("low-power"); rootEl.setAttribute("data-low-power","1"); } }
+  else if(rootEl.getAttribute("data-low-power")){ rootEl.removeAttribute("data-low-power"); rootEl.classList.add("low-power"); }
   if(name==="game" && (typeof noticedLog!=="undefined")){ noticedLog = {}; chipNoticeQueue = []; chipNoticeUntil = 0; }
   if(name==="win"){
     setTimeout(function(){ if(typeof selfCheckReport==="function") selfCheckReport(); }, 2000);
@@ -2524,12 +2546,13 @@ function renderStartMe(){
 // Adaptive quality: while the game is on screen, sample the frame rate now and then; if
 // the device can't hold ~40fps (hot phone, battery saver), switch to low-power mode for
 // the rest of the session. Applies to any current or future decorative effect.
+function collectionOpen(){ var c = document.getElementById("screen-collection"); return !!c && !c.classList.contains("hidden"); }
 (function idleRest(){
   var root = document.documentElement, t = null;
   function wake(){
     root.classList.remove("fx-rest");
     clearTimeout(t);
-    t = setTimeout(function(){ root.classList.add("fx-rest"); }, 10000);
+    t = setTimeout(function(){ if(collectionOpen()){ wake(); return; } root.classList.add("fx-rest"); }, 10000);
   }
   ["pointerdown","keydown"].forEach(function(ev){ document.addEventListener(ev, wake, { passive:true, capture:true }); });
   wake();
@@ -2537,7 +2560,7 @@ function renderStartMe(){
 (function watchFrameRate(){
   var sampling = false;
   function sample(){
-    if(sampling || document.hidden || document.documentElement.classList.contains("low-power")) return;
+    if(sampling || document.hidden || collectionOpen() || document.documentElement.classList.contains("low-power")) return;
     sampling = true;
     var frames = 0, start = performance.now();
     (function tick(now){
@@ -7936,6 +7959,7 @@ $("tutorial-btn").addEventListener("click", function(){
   sfxSelect();
   openTutorialModal();
 });
+$("start-me").addEventListener("click", function(){ if(account) $("collection-btn").click(); });
 $("collection-btn").addEventListener("click", function(){
   sfxSelect();
   var newIds = loadNewUnlocks();
