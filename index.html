@@ -79,6 +79,21 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 #screen-start{padding-bottom:calc(env(safe-area-inset-bottom) + 84px);}
 #screen-start .start-menu{gap:10px;}
 #screen-start .start-tile{width:72px;}
+/* Mode and online choices: one size for every button. */
+.mode-list,.online-choice-list{width:min(300px,88vw);}
+.mode-list .mode-btn,.online-choice-list .mode-btn{width:100%;height:68px;box-sizing:border-box;margin:0;padding:0 18px;}
+.mode-btn .mode-ico{flex:none;width:30px;text-align:center;}
+.mode-btn .mode-text{min-width:0;}
+.mode-btn .mode-text b,.mode-btn .mode-text small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+/* Weekly event banner in the game-start popup */
+.prism-intro-event{display:flex;flex-direction:column;align-items:center;gap:1px;margin-bottom:10px;padding:8px 18px;border-radius:14px;background:linear-gradient(135deg,rgba(255,92,138,.25),rgba(255,176,58,.25));border:1.5px solid rgba(255,176,58,.6);}
+.prism-intro-event span{font-size:11.5px;font-weight:800;letter-spacing:1px;opacity:.85;}
+.prism-intro-event b{font-size:20px;}
+.prism-intro-event small{font-size:13px;opacity:.9;}
+/* Mission tabs */
+.ms-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(0,1fr));gap:5px;margin-bottom:8px;}
+.ms-tab{position:relative;padding:7px 4px;min-height:0;font-size:13.5px;}
+.ms-tab i{position:absolute;top:-6px;right:-4px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#ff4d6d;color:#fff;font-size:10.5px;font-style:normal;font-weight:800;line-height:16px;box-sizing:border-box;}
 /* Missions */
 .ms-body{display:flex;flex-direction:column;gap:6px;text-align:left;max-height:62vh;overflow-y:auto;margin-bottom:6px;}
 .ms-head{display:flex;flex-direction:column;gap:1px;margin:6px 2px 2px;}
@@ -474,7 +489,7 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 @media (prefers-reduced-motion: reduce){.opp-progress.ready{animation:none;}}
 .online-choice-list{display:flex;flex-direction:column;align-items:stretch;gap:12px;width:min(300px,84vw);}
 .online-choice-list .btn{width:100%;box-sizing:border-box;margin:0;}
-.btn.quick-match-btn{padding:20px 24px;font-size:20px;font-weight:900;margin-top:6px;background:linear-gradient(135deg,#ff5c8a,#ffb03a);color:#fff;box-shadow:0 8px 20px rgba(255,92,138,.35);}
+.btn.quick-match-btn{background:linear-gradient(135deg,#ff5c8a,#ffb03a);color:#fff;box-shadow:0 8px 20px rgba(255,92,138,.35);}
 .lobby-invite-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;}
 .lobby-invite-row.hidden{display:none;}
 .reclaim-btn{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 84px);transform:translateX(-50%);z-index:9000;box-shadow:0 6px 18px rgba(0,0,0,.35);}
@@ -1206,9 +1221,9 @@ html.fx-rest .fx-edge,html.fx-rest .fx-glint i{animation-play-state:paused !impo
   <div class="screen hidden" id="screen-online-choice">
     <h1 style="font-size:20px;">온라인 멀티플레이</h1>
     <div class="online-choice-list">
-      <button class="btn primary big" id="online-create-btn">➕ 방 만들기</button>
-      <button class="btn primary big" id="online-join-btn">🔑 코드로 참가하기</button>
-      <button class="btn primary big quick-match-btn" id="online-quick-btn">⚡ 빠른 매칭</button>
+      <button class="btn primary big mode-btn quick-match-btn" id="online-quick-btn"><span class="mode-ico">⚡</span><span class="mode-text"><b>빠른 매칭</b><small>바로 상대 찾기</small></span></button>
+      <button class="btn primary big mode-btn" id="online-create-btn"><span class="mode-ico">➕</span><span class="mode-text"><b>방 만들기</b><small>친구와 함께할 방 열기</small></span></button>
+      <button class="btn primary big mode-btn" id="online-join-btn"><span class="mode-ico">🔑</span><span class="mode-text"><b>코드로 참가하기</b><small>받은 방 코드 입력</small></span></button>
     </div>
     <button class="btn" id="online-back-btn">← 뒤로</button>
   </div>
@@ -1592,6 +1607,10 @@ function readWallet(d){
   if(typeof d.lastBuy==="string") w.lastBuy = d.lastBuy;
   if(typeof d.missionDay==="number") w.missionDay = d.missionDay;
   if(Array.isArray(d.missionDone)) w.missionDone = d.missionDone.map(Number);
+  if(typeof d.missionWeek==="number") w.missionWeek = d.missionWeek;
+  if(Array.isArray(d.missionWeekDone)) w.missionWeekDone = d.missionWeekDone.map(Number);
+  if(typeof d.missionMonth==="number") w.missionMonth = d.missionMonth;
+  if(Array.isArray(d.missionMonthDone)) w.missionMonthDone = d.missionMonthDone.map(Number);
   if(Array.isArray(d.claimed)) w.claimed = d.claimed.map(String);
   return w;
 }
@@ -1826,10 +1845,10 @@ function startGame(){
 
 // ---------- 🎪 주간 이벤트: one rule twist per week (Monday KST), solo games ----------
 var WEEKLY_VARIANTS = [
-  { id:"prism3", emo:"🌈", name:"프리즘 축제", desc:"프리즘 숫자가 3개!" },
-  { id:"jokers4", emo:"🃏", name:"조커 파티", desc:"조커가 4장!" },
-  { id:"nojoker", emo:"⚔️", name:"정공법", desc:"조커 없이 실력으로!" },
-  { id:"bombs", emo:"💣", name:"폭탄 세일", desc:"폭탄 카드가 2장 더!" }
+  { id:"prism3", emo:"🌈", name:"프리즘 축제", desc:"프리즘 숫자 3개" },
+  { id:"jokers4", emo:"🃏", name:"조커 파티", desc:"조커 4장" },
+  { id:"nojoker", emo:"⚔️", name:"정공법", desc:"조커 없이 실력으로" },
+  { id:"bombs", emo:"💣", name:"폭탄 세일", desc:"폭탄 카드 +2장" }
 ];
 // KST day 0 (1970-01-01) was a Thursday, so +3 puts week boundaries on Mondays.
 function weeklyVariant(){ return WEEKLY_VARIANTS[Math.floor((kstDayNum() + 3) / 7) % WEEKLY_VARIANTS.length]; }
@@ -2598,7 +2617,7 @@ function $(id){ return document.getElementById(id); }
 function el(tag, cls, html){ var e=document.createElement(tag); if(cls) e.className=cls; if(html!==undefined) e.innerHTML=html; return e; }
 
 function switchScreen(name){
-  if(name==="game" && typeof missionBase==="function") missionBase();
+  if(name==="game" && typeof missionBase==="function" && MISSION_PERIODS) missionBase();
   if(name==="start" && typeof refreshMissionBadge==="function") refreshMissionBadge();
   if(name==="win" && typeof renderWinProgress==="function") setTimeout(renderWinProgress, 0);
   // 수집품 shows every effect live: lift idle rest and low-power while it is open.
@@ -3701,6 +3720,8 @@ function showPrismIntro(ranks){
   box.id = "prism-intro";
   var cards = el("div","prism-intro-cards");
   (ranks||[]).forEach(function(v, i){ cards.appendChild(cardEl({ id:"intro-"+i, isPrism:true, value:v, color:null }, {})); });
+  var ev = state.variant && WEEKLY_VARIANTS.filter(function(v){ return v.id===state.variant; })[0];
+  if(ev) box.appendChild(el("div","prism-intro-event","<span>🎪 주간 이벤트</span><b>"+ev.emo+" "+ev.name+"</b><small>"+ev.desc+"</small>"));
   box.appendChild(el("div","prism-intro-title","✨ 이번 판 프리즘"));
   box.appendChild(cards);
   box.appendChild(el("div","prism-intro-sub","이 숫자는 모든 색으로 쓸 수 있어요"));
@@ -4231,7 +4252,7 @@ $("count-next-btn").addEventListener("click", function(){
 
 /* ---------------- mode / online screens ---------------- */
 
-(function(){ var v = weeklyVariant(); $("weekly-sub").textContent = "이번 주: "+v.emo+" "+v.name+" · "+v.desc; })();
+(function(){ var v = weeklyVariant(); $("weekly-sub").textContent = v.emo+" "+v.name+" · "+v.desc; })();
 $("mode-weekly-btn").addEventListener("click", function(){ sfxSelect(); pendingVariant = weeklyVariant(); switchScreen("count"); });
 $("mode-solo-btn").addEventListener("click", function(){
   sfxSelect();
@@ -5238,16 +5259,33 @@ function finishDaily(outcome){
 // the security rules (see wallets/{uid} in firestore.rules), so no server is needed until
 // coins can be bought with money.
 function coinCount(){ return account && account.wallet ? account.wallet.coins : 0; }
-// ---------- 📋 오늘의 미션 + 첫걸음 보상 ----------
-// Three missions a day (one per slot, the same for everyone that day), measured as stat gains
-// since the day's first look (straightMission). Each claim is a wallet action the rules
-// recompute: +5 coins, +15 for the third. 첫걸음 rewards are one-time coins for early goals,
-// listed in firstStepRewards() in firestore.rules with the same amounts.
-var MISSION_COINS = 5, MISSION_BONUS = 10;
-var MISSION_SLOTS = [
-  [{ k:"games", n:3, t:"3판 플레이하기" }, { k:"games", n:5, t:"5판 플레이하기" }],
-  [{ k:"wins", n:1, t:"1승 하기" }, { k:"wins", n:3, t:"3승 하기" }, { k:"hardWins", n:1, t:"어려움 AI 이기기" }],
-  [{ k:"jokersBanked", n:2, t:"조커 2번 내려놓기" }, { k:"prismBanked", n:3, t:"프리즘 카드 3장 모으기" }, { k:"bombsUsed", n:1, t:"폭탄 1번 쓰기" }, { k:"challengeClears", n:1, t:"오늘의 챌린지 완성하기" }]
+// ---------- 📋 미션: 일일 · 주간 · 월간 + 첫걸음 보상 ----------
+// Each period has three missions (one per slot, the same for everyone), measured as stat gains
+// since the period's first look (straightMission:<period>). A claim is a wallet action the
+// rules recompute — amounts and period keys must match periodClaim() in firestore.rules:
+// 일일 5 (+10 for the third), 주간 10 (+10), 월간 30 (+30). Periods: KST day, week (Monday),
+// month. 첫걸음 rewards are one-time coins (firstStepRewards() in the rules).
+function kstWeekNum(){ return Math.floor((kstDayNum() + 3) / 7); }
+function kstMonthNum(){ var d = kstDate(); return d.getUTCFullYear()*12 + d.getUTCMonth() + 1; }
+var MISSION_PERIODS = [
+  { id:"day", name:"일일 미션", reset:"매일 밤 12시 초기화", each:5, bonus:10, keyF:"missionDay", doneF:"missionDone", cur:kstDayNum, seed:function(){ return dailyKey(); },
+    slots:[
+      [{ k:"games", n:3, t:"3판 플레이하기" }, { k:"games", n:5, t:"5판 플레이하기" }],
+      [{ k:"wins", n:1, t:"1승 하기" }, { k:"wins", n:3, t:"3승 하기" }, { k:"hardWins", n:1, t:"어려움 AI 이기기" }],
+      [{ k:"jokersBanked", n:2, t:"조커 2번 내려놓기" }, { k:"prismBanked", n:3, t:"프리즘 카드 3장 모으기" }, { k:"bombsUsed", n:1, t:"폭탄 1번 쓰기" }, { k:"challengeClears", n:1, t:"오늘의 챌린지 완성하기" }]
+    ] },
+  { id:"week", name:"주간 미션", reset:"매주 월요일 초기화", each:10, bonus:10, keyF:"missionWeek", doneF:"missionWeekDone", cur:kstWeekNum, seed:function(){ return "w"+kstWeekNum(); },
+    slots:[
+      [{ k:"games", n:20, t:"20판 플레이하기" }, { k:"games", n:30, t:"30판 플레이하기" }],
+      [{ k:"wins", n:10, t:"10승 하기" }, { k:"hardWins", n:5, t:"어려움 AI 5번 이기기" }],
+      [{ k:"jokersBanked", n:10, t:"조커 10번 내려놓기" }, { k:"prismBanked", n:15, t:"프리즘 카드 15장 모으기" }, { k:"bombsUsed", n:5, t:"폭탄 5번 쓰기" }, { k:"challengeClears", n:3, t:"챌린지 3번 완성하기" }]
+    ] },
+  { id:"month", name:"월간 미션", reset:"매달 1일 초기화", each:30, bonus:30, keyF:"missionMonth", doneF:"missionMonthDone", cur:kstMonthNum, seed:function(){ return seasonKey(); },
+    slots:[
+      [{ k:"games", n:80, t:"80판 플레이하기" }, { k:"games", n:100, t:"100판 플레이하기" }],
+      [{ k:"wins", n:40, t:"40승 하기" }, { k:"hardWins", n:20, t:"어려움 AI 20번 이기기" }],
+      [{ k:"prismBanked", n:50, t:"프리즘 카드 50장 모으기" }, { k:"jokersBanked", n:30, t:"조커 30번 내려놓기" }, { k:"challengeClears", n:10, t:"챌린지 10번 완성하기" }]
+    ] }
 ];
 var FIRST_STEPS = [
   { id:"first:game1", k:"games", n:1, t:"첫 판 플레이", coins:10 },
@@ -5259,27 +5297,29 @@ var FIRST_STEPS = [
   { id:"first:win25", k:"wins", n:25, t:"25승 달성", coins:30 }
 ];
 var MISSION_KEYS = ["games","wins","hardWins","jokersBanked","prismBanked","bombsUsed","challengeClears"];
-function todayMissions(){
-  var rng = seededRng("straight-mission-"+dailyKey());
-  return MISSION_SLOTS.map(function(slot){ return slot[Math.floor(rng()*slot.length)]; });
+function periodMissions(P){
+  var rng = seededRng("straight-mission-"+P.id+"-"+P.seed());
+  return P.slots.map(function(slot){ return slot[Math.floor(rng()*slot.length)]; });
 }
-function missionBase(){
-  var day = dailyKey(), m = null;
-  try{ m = JSON.parse(localStorage.getItem("straightMission") || "null"); }catch(e){}
-  if(!m || m.day!==day || !m.base){
+// Stats at the period's first look; progress is what was gained since.
+function missionBase(P){
+  if(!P){ MISSION_PERIODS.forEach(function(x){ missionBase(x); }); return null; }
+  var key = "straightMission:"+P.id, tag = String(P.seed()), m = null;
+  try{ m = JSON.parse(localStorage.getItem(key) || "null"); }catch(e){}
+  if(!m || m.tag!==tag || !m.base){
     var st = loadStats();
-    m = { day:day, base:{} };
+    m = { tag:tag, base:{} };
     MISSION_KEYS.forEach(function(k){ m.base[k] = Number(st[k])||0; });
-    try{ localStorage.setItem("straightMission", JSON.stringify(m)); }catch(e){}
+    try{ localStorage.setItem(key, JSON.stringify(m)); }catch(e){}
   }
   return m.base;
 }
-function missionStatus(){
-  var base = missionBase(), st = loadStats(), w = account && account.wallet, today = kstDayNum();
-  var done = w && w.missionDay===today && Array.isArray(w.missionDone) ? w.missionDone : [];
-  return todayMissions().map(function(m, i){
+function missionStatus(P){
+  var base = missionBase(P), st = loadStats(), w = account && account.wallet, cur = P.cur();
+  var done = w && w[P.keyF]===cur && Array.isArray(w[P.doneF]) ? w[P.doneF] : [];
+  return periodMissions(P).map(function(m, i){
     var p = Math.max(0, (Number(st[m.k])||0) - (base[m.k]||0));
-    return { i:i, m:m, p:Math.min(p, m.n), ready:p>=m.n, claimed:done.indexOf(i)!==-1 };
+    return { P:P, i:i, m:m, p:Math.min(p, m.n), ready:p>=m.n, claimed:done.indexOf(i)!==-1 };
   });
 }
 function firstStepStatus(){
@@ -5290,28 +5330,29 @@ function firstStepStatus(){
   });
 }
 function missionClaimableCount(){
-  if(!account || !account.wallet) return 0;
-  return missionStatus().filter(function(x){ return x.ready && !x.claimed; }).length +
-    firstStepStatus().filter(function(x){ return x.ready && !x.claimed; }).length;
+  if(!account || !account.wallet || !MISSION_PERIODS) return 0;
+  var n = 0;
+  MISSION_PERIODS.forEach(function(P){ n += missionStatus(P).filter(function(x){ return x.ready && !x.claimed; }).length; });
+  return n + firstStepStatus().filter(function(x){ return x.ready && !x.claimed; }).length;
 }
 function refreshMissionBadge(){
-  // Runs from early screen switches too, before the mission tables below are assigned.
+  // Runs from early screen switches too, before the mission tables above are assigned.
   var b = $("mission-btn");
-  if(!b || !MISSION_SLOTS) return;
+  if(!b || !MISSION_PERIODS) return;
   var n = missionClaimableCount(), badge = b.querySelector(".side-badge");
   badge.textContent = n;
   badge.classList.toggle("hidden", !n);
 }
-function claimMission(i){
+function claimMission(P, i){
   return walletTx(function(w){
     if(!w) throw new Error("wallet");
-    var today = kstDayNum();
-    var done = w.missionDay===today && Array.isArray(w.missionDone) ? w.missionDone.slice() : [];
+    var cur = P.cur();
+    var done = w[P.keyF]===cur && Array.isArray(w[P.doneF]) ? w[P.doneF].slice() : [];
     if(done.indexOf(i)!==-1) return null;
     var next = readWallet(w);
     done.push(i);
-    next.missionDay = today; next.missionDone = done;
-    next.coins += done.length===3 ? MISSION_COINS + MISSION_BONUS : MISSION_COINS;
+    next[P.keyF] = cur; next[P.doneF] = done;
+    next.coins += done.length===3 ? P.each + P.bonus : P.each;
     return next;
   });
 }
@@ -5332,25 +5373,36 @@ function missionRowHTML(title, p, n, coins, state, key){
     (state==="claimed" ? "<span class=\"ms-ok\">받음 ✓</span>"
       : "<button class=\"btn ms-claim"+(state==="ready" ? " primary" : "")+"\" data-key=\""+key+"\""+(state==="ready" ? "" : " disabled")+">"+COIN_SVG+coins+"</button>")+"</div>";
 }
+var missionTab = "day";
 function openMissionModal(){
   if(!account){ alert("로그인하면 미션을 할 수 있어요."); return; }
-  coinModal("📋 미션", "<div class=\"ms-body\" id=\"ms-body\"></div>", [{ label:"닫기" }]);
+  coinModal("📋 미션", "<div class=\"ms-tabs\" id=\"ms-tabs\"></div><div class=\"ms-body\" id=\"ms-body\"></div>", [{ label:"닫기" }]);
   renderMissionBody();
 }
 function renderMissionBody(){
-  var body = $("ms-body");
-  if(!body) return;
-  var ms = missionStatus(), fs = firstStepStatus();
-  var got = ms.filter(function(x){ return x.claimed; }).length;
-  var html = "<div class=\"ms-head\"><span>오늘의 미션</span><small>"+got+"/3 · 3개 모두 받으면 보너스 "+MISSION_BONUS+"코인 · 매일 밤 12시 갱신</small></div>";
-  ms.forEach(function(x){
-    var coins = MISSION_COINS + (got===2 && !x.claimed ? MISSION_BONUS : 0);
-    html += missionRowHTML(x.m.t, x.p, x.m.n, coins, x.claimed ? "claimed" : x.ready ? "ready" : "todo", "m"+x.i);
+  var body = $("ms-body"), tabs = $("ms-tabs");
+  if(!body || !tabs) return;
+  var fs = firstStepStatus(), openSteps = fs.filter(function(x){ return !x.claimed; });
+  var list = MISSION_PERIODS.map(function(P){ return { id:P.id, name:P.name.replace(" 미션",""), n:missionStatus(P).filter(function(x){ return x.ready && !x.claimed; }).length }; });
+  if(openSteps.length) list.push({ id:"first", name:"첫걸음", n:fs.filter(function(x){ return x.ready && !x.claimed; }).length });
+  if(!list.some(function(t){ return t.id===missionTab; })) missionTab = "day";
+  tabs.innerHTML = "";
+  list.forEach(function(t){
+    var b = el("button","btn ms-tab"+(t.id===missionTab ? " primary" : ""), t.name+(t.n ? "<i>"+t.n+"</i>" : ""));
+    b.addEventListener("click", function(){ sfxSelect(); missionTab = t.id; renderMissionBody(); });
+    tabs.appendChild(b);
   });
-  var openSteps = fs.filter(function(x){ return !x.claimed; });
-  if(openSteps.length){
-    html += "<div class=\"ms-head\"><span>첫걸음 보상</span><small>한 번만 받을 수 있어요</small></div>";
+  var html = "";
+  if(missionTab==="first"){
+    html += "<div class=\"ms-head\"><span>첫걸음 보상</span><small>처음 한 번만 받을 수 있어요</small></div>";
     openSteps.forEach(function(x){ html += missionRowHTML(x.f.t, x.p, x.f.n, x.f.coins, x.ready ? "ready" : "todo", x.f.id); });
+  } else {
+    var P = MISSION_PERIODS.filter(function(x){ return x.id===missionTab; })[0];
+    var ms = missionStatus(P), got = ms.filter(function(x){ return x.claimed; }).length;
+    html += "<div class=\"ms-head\"><span>"+P.name+" "+got+"/3</span><small>3개 모두 받으면 보너스 "+P.bonus+"코인 · "+P.reset+"</small></div>";
+    ms.forEach(function(x){
+      html += missionRowHTML(x.m.t, x.p, x.m.n, P.each + (got===2 && !x.claimed ? P.bonus : 0), x.claimed ? "claimed" : x.ready ? "ready" : "todo", P.id+":"+x.i);
+    });
   }
   body.innerHTML = html;
   Array.prototype.forEach.call(body.querySelectorAll(".ms-claim"), function(btn){
@@ -5358,8 +5410,9 @@ function renderMissionBody(){
       var key = btn.getAttribute("data-key");
       btn.disabled = true;
       var step = FIRST_STEPS.filter(function(f){ return f.id===key; })[0];
+      var parts = key.split(":"), P = MISSION_PERIODS.filter(function(x){ return x.id===parts[0]; })[0];
       var before = coinCount();
-      (step ? claimFirstStep(step) : claimMission(Number(key.slice(1)))).then(function(){
+      (step ? claimFirstStep(step) : claimMission(P, Number(parts[1]))).then(function(){
         var gain = coinCount() - before;
         sfxCapture();
         renderCoinPills();
@@ -5371,23 +5424,25 @@ function renderMissionBody(){
   refreshMissionBadge();
 }
 
-// After a game: how close the next reward is (a mission, a 첫걸음 goal, or a collectible).
+// After a game: how close the next reward is (a mission, or a collectible).
 function nextGoalLines(){
-  var lines = [];
-  var ms = missionStatus(), open = ms.filter(function(x){ return !x.claimed; });
-  var ready = missionClaimableCount();
+  var lines = [], ready = missionClaimableCount();
   if(ready) lines.push({ t:"📋 받을 보상이 "+ready+"개 있어요!", ready:true });
-  var todo = open.filter(function(x){ return !x.ready; }).sort(function(a, b){ return b.p/b.m.n - a.p/a.m.n; })[0];
-  if(todo) lines.push({ t:"📋 "+todo.m.t, p:todo.p, n:todo.m.n });
+  var todo = [];
+  MISSION_PERIODS.forEach(function(P){ missionStatus(P).forEach(function(x){ if(!x.claimed && !x.ready) todo.push(x); }); });
+  todo.sort(function(a, b){ return b.p/b.m.n - a.p/a.m.n; });
+  if(todo[0]) lines.push({ t:"📋 "+todo[0].P.name.replace(" 미션","")+" · "+todo[0].m.t, p:todo[0].p, n:todo[0].m.n });
   var st = loadStats(), best = null;
   UNLOCK_MILESTONES.forEach(function(m){
     if(m.boolCond || straightUnlocks.indexOf(m.id)!==-1) return;
-    var d = /(\d+)\/(\d+)/.exec(m.detail(st) || "");
+    // detail reads like "승리 59/100회": goal = "승리", target 100, unit "회".
+    var d = /^(.*?)\s*(\d+)\/(\d+)(\S*)/.exec(m.detail(st) || "");
     if(!d) return;
-    var r = Number(d[1]) / Number(d[2]);
-    if(r<1 && (!best || r>best.r)) best = { m:m, r:r, a:Number(d[1]), b:Number(d[2]), d:m.detail(st).replace(/\s*\d+\/\d+.*/, "") };
+    var r = Number(d[2]) / Number(d[3]);
+    if(r<1 && (!best || r>best.r)) best = { m:m, r:r, a:Number(d[2]), b:Number(d[3]), goal:d[1]+" "+d[3]+d[4] };
   });
-  if(best) lines.push({ t:"🎁 "+(UNLOCK_KIND_LABELS[best.m.kind]||"보상")+" '"+best.m.label+"' · "+best.d, p:best.a, n:best.b });
+  // e.g. "🎁 승리 100회 달성하면 새 아바타 '용씨'"
+  if(best) lines.push({ t:"🎁 "+best.goal+" 달성하면 "+(UNLOCK_KIND_LABELS[best.m.kind]||"보상")+" '"+best.m.label+"'", p:best.a, n:best.b });
   return lines.slice(0, 3);
 }
 function renderWinProgress(){
@@ -7582,7 +7637,7 @@ function renderOpEvents(box){
       return list;
     }) : Promise.resolve(null);
     lookup.then(function(found){
-      var who = past ? (instant ? "지금 가입된 플레이어 " : md(end.getTime())+" "+end.getHours()+"시 전 가입자 ")+found.length+"명\n"+found.slice(0,15).map(function(f){ return cleanText(f.nick,16); }).join(", ")+(found.length>15 ? " 외 "+(found.length-15)+"명" : "")+"\n(지금부터 "+days+"일 안에 접속하면 받아요)"
+      var who = past ? (instant ? "지금 가입된 플레이어 " : md(end.getTime())+" "+end.getHours()+"시 전 가입자 ")+found.length+"명\n(지금부터 "+days+"일 안에 접속하면 받아요)"
         : found ? "\n"+found.map(function(f){ return f.line; }).join("\n") : "기간 중 접속한 모든 플레이어";
       if(!confirm((instant ? "⚡ 지금 바로 우편함으로 보낼까요?" : "이 이벤트를 만들까요?")+"\n\n"+title+"\n보상: "+item.name+" ("+kindName+")\n받는 사람: "+who)) throw new Error("cancel");
       return found ? found.map(function(f){ return f.uid; }) : null;
