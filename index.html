@@ -115,6 +115,8 @@ p.sub{color:var(--muted);font-size:14.5px;margin:0;}
 .rk-row small{font-size:11px;color:var(--muted);white-space:nowrap;}
 .rk-row .name-tag-lv{cursor:default;font-size:14px;}
 .rk-rank-btn{display:block;width:100%;margin:0 0 2px;}
+.rk-rank-soon{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px;border-radius:12px;border:1.5px dashed rgba(var(--line-rgb),.25);color:var(--muted);font-size:14px;}
+.rk-rank-soon small{font-size:11.5px;padding:2px 8px;border-radius:999px;background:rgba(var(--line-rgb),.1);}
 .rk-board-head{display:grid;grid-template-columns:36px 1fr 36px;align-items:center;margin:0 0 8px;}
 .rk-board-head b{font-size:16px;text-align:center;}
 .rk-board-head small{grid-column:2;text-align:center;color:var(--muted);font-size:12px;}
@@ -5394,8 +5396,9 @@ function renderRankHome(){
     "<div class=\"rk-me\"><span class=\"name-tag-lv "+rankBand(label)+"\">"+label+"</span><b>"+rp.toLocaleString()+" LP</b>"+
       "<small>"+(next!==undefined ? "다음 레벨까지 "+(next-rp).toLocaleString()+" LP" : "최고 레벨이에요")+"</small></div>"+
     "<div class=\"rk-list\">"+rows+"</div>"+
-    "<button class=\"btn rk-rank-btn\" id=\"rk-rank-btn\">🏆 LP 랭킹</button>";
-  $("rk-rank-btn").addEventListener("click", function(){ sfxSelect(); renderRankBoard(); });
+    (RANK_BETA ? "<div class=\"rk-rank-soon\">🏆 LP 랭킹 <small>정식 버전 적용</small></div>"
+      : "<button class=\"btn rk-rank-btn\" id=\"rk-rank-btn\">🏆 LP 랭킹</button>");
+  if(!RANK_BETA) $("rk-rank-btn").addEventListener("click", function(){ sfxSelect(); renderRankBoard(); });
 }
 function renderRankBoard(){
   var body = $("rk-body");
