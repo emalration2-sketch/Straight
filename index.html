@@ -3449,7 +3449,7 @@ function cleanPlayer(p){
   out.aiTakeover = !!p.aiTakeover;
   out.ready = !!p.ready;
   out.medal = [1,2,3].indexOf(Number(p.medal))!==-1 ? Number(p.medal) : 0;
-  out.lv = /^(Lv\.([1-9]|10|Ace)|PRISM)$/.test(p.lv) ? p.lv : null;
+  out.lv = /^(Lv\.([1-9]|10)|Ace|PRISM)$/.test(p.lv) ? p.lv : null;
   out.isAI = !!p.isAI;
   out.hand = cleanCards(p.hand);
   out.score = cleanCards(p.score);
@@ -5317,44 +5317,63 @@ function finishDaily(outcome){
 // the security rules (see wallets/{uid} in firestore.rules), so no server is needed until
 // coins can be bought with money.
 function coinCount(){ return account && account.wallet ? account.wallet.coins : 0; }
-// ---------- 🏅 레벨: Lv.1~10 (정식 버전: Lv.Ace · PRISM) ----------
-// LP per season (ranks/{season}/players/{uid}: {rp, name, avatar, at}; the field keeps its old
-// name "rp"). LP only goes up: a win pays 5 + a weight per opponent (AI 쉬움 2 · 보통 4 · 어려움 7,
-// person 10 — a seat a person left counts as the easy AI that took it over), a loss or draw 1,
-// a quit 0, a finished challenge 6. Level floors were set with a 30-day simulation of player
-// types. A new season starts two levels lower. During the beta the top is Lv.10; Lv.Ace (season
-// top 5%) and PRISM (season top 10) come with the full release (RANK_BETA).
+// ---------- 🏅 레벨: Lv.1~10 (영구) + 시즌 LP (Ace · PRISM) ----------
+// Levels are permanent: lifetime LP in levels/{uid} {lp}, never reset. LP only goes up: a win
+// pays 5 + a weight per opponent (AI 쉬움 2 · 보통 4 · 어려움 7, person 10 — a seat a person
+// left counts as the easy AI that took it over), a loss or draw 1, a quit 0, a finished
+// challenge 6. Floors were set with a 30-day simulation of player types.
+// LP earned past Lv.10 is season LP (ranks/{season}/players/{uid} {rp, …}; the field keeps its
+// old name): the season ranking shows the top 50 — Ace — and its top 10 are PRISM. A season
+// is a KST month, so everyone at Lv.10 starts the 1st at 0. During the beta the ranking, Ace
+// and PRISM stay off (RANK_BETA); season LP is still recorded.
 var RANK_BETA = true;
 var RANK_FLOORS = [0, 30, 80, 160, 300, 500, 800, 1300, 2000, 3200]; // Lv.1..Lv.10
-var RANK_PRISM_TOP = 10;
+var RANK_MAX_LP = RANK_FLOORS[RANK_FLOORS.length-1];
+var RANK_ACE_TOP = 50, RANK_PRISM_TOP = 10;
 var LP_WEIGHTS = { easy:2, normal:4, hard:7, human:10 };
-var myRank = { season:"", rp:0, prism:false, ace:false, loaded:false };
-function rankIndex(rp){ var i = 0; while(i+1<RANK_FLOORS.length && rp>=RANK_FLOORS[i+1]) i++; return i; }
-function rankLabelOf(rp, prism, ace){ return !RANK_BETA && prism ? "PRISM" : !RANK_BETA && ace ? "Lv.Ace" : "Lv."+(rankIndex(rp)+1); }
+var myRank = { lp:0, season:"", srp:0, ace:false, prism:false, loaded:false };
+function rankIndex(lp){ var i = 0; while(i+1<RANK_FLOORS.length && lp>=RANK_FLOORS[i+1]) i++; return i; }
+function rankLabelOf(lp, prism, ace){ return !RANK_BETA && prism ? "PRISM" : !RANK_BETA && ace ? "Ace" : "Lv."+(rankIndex(lp)+1); }
 function rankBand(label){
   if(label==="PRISM") return "rk-prism";
-  if(label==="Lv.Ace") return "rk-ace";
+  if(label==="Ace") return "rk-ace";
   var n = Number(String(label).replace("Lv.",""))||1;
   return n<=3 ? "rk-silver" : n<=6 ? "rk-mint" : n<=9 ? "rk-sky" : "rk-violet";
 }
-function myRankLabel(){ return myRank && myRank.loaded ? rankLabelOf(myRank.rp, myRank.prism, myRank.ace) : null; }
-function rankRef(season){ return fbFs.doc(fbDb, "ranks", season, "players", account.uid); }
+function myRankLabel(){ return myRank && myRank.loaded ? rankLabelOf(myRank.lp, myRank.prism, myRank.ace) : null; }
+function levelRef(){ return fbFs.doc(fbDb, "levels", account.uid); }
+function seasonRef(season){ return fbFs.doc(fbDb, "ranks", season, "players", account.uid); }
 function loadMyRank(){
   if(!account || !fbDb) return Promise.resolve();
   var F = fbFs, season = seasonKey();
-  return F.getDoc(rankRef(season)).then(function(d){
-    if(d.exists()){ myRank = { season:season, rp:Number(d.data().rp)||0, prism:false, ace:false, loaded:true }; return; }
-    // New season: carry over two levels lower.
-    return F.getDoc(rankRef(prevSeasonKey())).then(function(p){
-      var prev = p.exists() ? Number(p.data().rp)||0 : 0;
-      myRank = { season:season, rp:RANK_FLOORS[Math.max(0, rankIndex(prev) - 2)], prism:false, ace:false, loaded:true };
-      return saveMyRank();
-    });
-  }).catch(function(e){ console.warn("레벨 불러오기 실패", e); });
+  return Promise.all([F.getDoc(levelRef()), F.getDoc(seasonRef(season))]).then(function(r){
+    var srp = r[1].exists() ? Number(r[1].data().rp)||0 : 0;
+    if(r[0].exists()){
+      myRank = { lp:Number(r[0].data().lp)||0, season:season, srp:srp, ace:false, prism:false, loaded:true };
+      return;
+    }
+    // First time with permanent levels: what this season's doc held becomes level LP.
+    var lp = srp;
+    myRank = { lp:lp, season:season, srp:Math.max(0, lp - RANK_MAX_LP), ace:false, prism:false, loaded:true };
+    return Promise.all([saveLevel(), r[1].exists() ? saveSeason() : null]);
+  }).then(loadSeasonTop).catch(function(e){ console.warn("레벨 불러오기 실패", e); });
 }
-function saveMyRank(){
+function saveLevel(){ return fbFs.setDoc(levelRef(), { lp:myRank.lp, at:fbFs.serverTimestamp() }); }
+function saveSeason(){
   var me = dailyIdentity();
-  return fbFs.setDoc(rankRef(myRank.season), { rp:myRank.rp, name:me.name, avatar:me.avatar, at:fbFs.serverTimestamp() });
+  return fbFs.setDoc(seasonRef(myRank.season), { rp:myRank.srp, name:me.name, avatar:me.avatar, at:fbFs.serverTimestamp() });
+}
+// Ace / PRISM from this season's top 50 (full release only).
+function loadSeasonTop(){
+  if(RANK_BETA || !account || !fbDb) return Promise.resolve();
+  var F = fbFs;
+  return F.getDocs(F.query(F.collection(fbDb,"ranks",seasonKey(),"players"), F.orderBy("rp","desc"), F.limit(RANK_ACE_TOP))).then(function(s){
+    var at = -1;
+    s.docs.forEach(function(d, k){ if(d.id===account.uid && (Number(d.data().rp)||0)>0) at = k; });
+    myRank.prism = at>=0 && at<RANK_PRISM_TOP;
+    myRank.ace = at>=0;
+    if(typeof renderStartMe==="function") renderStartMe();
+  }).catch(function(){});
 }
 // LP for the game that just ended, from the seats still in it.
 function lpForGame(outcome){
@@ -5368,17 +5387,22 @@ function lpForGame(outcome){
   return lp;
 }
 function applyRankResult(gain){
-  if(!account || !myRank || !myRank.loaded || myRank.season!==seasonKey() || !(gain>0)) return null;
-  var before = myRank.rp;
-  myRank.rp = before + gain;
-  var res = { delta:gain, before:before, after:myRank.rp, up:rankIndex(myRank.rp)>rankIndex(before) };
+  if(!account || !myRank || !myRank.loaded || !(gain>0)) return null;
+  if(myRank.season!==seasonKey()){ myRank.season = seasonKey(); myRank.srp = 0; }
+  var before = myRank.lp, toLevel = Math.max(0, Math.min(gain, RANK_MAX_LP - before)), toSeason = gain - toLevel;
+  myRank.lp = before + toLevel;
+  myRank.srp += toSeason;
+  var res = { delta:gain, before:before, after:myRank.lp, seasonGain:toSeason, seasonLp:myRank.srp, up:rankIndex(myRank.lp)>rankIndex(before) };
   state.lastRank = res;
-  if(fbDb) saveMyRank().catch(function(e){ console.warn("레벨 저장 실패", e); });
+  if(fbDb){
+    if(toLevel>0) saveLevel().catch(function(e){ console.warn("레벨 저장 실패", e); });
+    if(toSeason>0) saveSeason().then(loadSeasonTop).catch(function(e){ console.warn("시즌 LP 저장 실패", e); });
+  }
   return res;
 }
 function rankTagHTML(label){ return label ? "<span class=\"name-tag-lv "+rankBand(label)+"\">"+label+"</span>" : ""; }
 
-// 레벨 window: my level and LP, the level table, and the LP ranking.
+// 레벨 window: my level and LP, the level table, and the season LP ranking.
 function openRankModal(){
   coinModal("🏅 레벨", "<div id=\"rk-body\"></div>", [{ label:"닫기" }]);
   var box = document.querySelector(".coin-modal");
@@ -5388,45 +5412,39 @@ function openRankModal(){
 function renderRankHome(){
   var body = $("rk-body");
   if(!body) return;
-  var rp = myRank.rp, i = rankIndex(rp), label = myRankLabel() || "Lv.1", next = RANK_FLOORS[i+1];
+  var lp = myRank.lp, i = rankIndex(lp), label = myRankLabel() || "Lv.1", next = RANK_FLOORS[i+1];
   var cell = function(l, sub, me, soon){ return "<div class=\"rk-row"+(me ? " me" : "")+(soon ? " soon" : "")+"\"><span class=\"name-tag-lv "+rankBand(l)+"\">"+l+"</span><small>"+sub+"</small></div>"; };
-  var rows = RANK_FLOORS.map(function(f, k){ return cell("Lv."+(k+1), f.toLocaleString()+" LP", k===i); }).join("") +
-    cell("Lv.Ace", "정식 버전 적용", false, true) + cell("PRISM", "정식 버전 적용", false, true);
+  var top = !RANK_BETA && (myRank.ace || myRank.prism);
+  var rows = RANK_FLOORS.map(function(f, k){ return cell("Lv."+(k+1), f.toLocaleString()+" LP", !top && k===i); }).join("") +
+    cell("Ace", RANK_BETA ? "정식 버전 적용" : "시즌 상위 "+RANK_ACE_TOP+"명", !RANK_BETA && myRank.ace && !myRank.prism, RANK_BETA) +
+    cell("PRISM", RANK_BETA ? "정식 버전 적용" : "시즌 상위 "+RANK_PRISM_TOP+"명", !RANK_BETA && myRank.prism, RANK_BETA);
+  var sub = next!==undefined ? "다음 레벨까지 "+(next-lp).toLocaleString()+" LP"
+    : RANK_BETA ? "최고 레벨이에요" : "이번 시즌 LP "+myRank.srp.toLocaleString();
   body.innerHTML =
-    "<div class=\"rk-me\"><span class=\"name-tag-lv "+rankBand(label)+"\">"+label+"</span><b>"+rp.toLocaleString()+" LP</b>"+
-      "<small>"+(next!==undefined ? "다음 레벨까지 "+(next-rp).toLocaleString()+" LP" : "최고 레벨이에요")+"</small></div>"+
+    "<div class=\"rk-me\"><span class=\"name-tag-lv "+rankBand(label)+"\">"+label+"</span><b>"+lp.toLocaleString()+" LP</b><small>"+sub+"</small></div>"+
     "<div class=\"rk-list\">"+rows+"</div>"+
-    (RANK_BETA ? "<div class=\"rk-rank-soon\">🏆 LP 랭킹 <small>정식 버전 적용</small></div>"
-      : "<button class=\"btn rk-rank-btn\" id=\"rk-rank-btn\">🏆 LP 랭킹</button>");
+    (RANK_BETA ? "<div class=\"rk-rank-soon\">🏆 시즌 LP 랭킹 <small>정식 버전 적용</small></div>"
+      : "<button class=\"btn rk-rank-btn\" id=\"rk-rank-btn\">🏆 시즌 LP 랭킹</button>");
   if(!RANK_BETA) $("rk-rank-btn").addEventListener("click", function(){ sfxSelect(); renderRankBoard(); });
 }
 function renderRankBoard(){
   var body = $("rk-body");
   if(!body) return;
   var F = fbFs, season = seasonKey();
-  body.innerHTML = "<div class=\"rk-board-head\"><button class=\"btn rk-back\" id=\"rk-back\">←</button><b>🏆 LP 랭킹</b><small>"+season.replace("-",".")+" 시즌</small></div>"+
+  body.innerHTML = "<div class=\"rk-board-head\"><button class=\"btn rk-back\" id=\"rk-back\">←</button><b>🏆 시즌 LP 랭킹</b><small>"+season.replace("-",".")+" 시즌 · 상위 "+RANK_ACE_TOP+"명</small></div>"+
     "<div class=\"rk-board\" id=\"rk-board\"><p class=\"coin-note muted\">불러오는 중...</p></div>";
   $("rk-back").addEventListener("click", function(){ sfxSelect(); renderRankHome(); });
   var board = $("rk-board");
-  Promise.all([
-    F.getDocs(F.query(F.collection(fbDb,"ranks",season,"players"), F.orderBy("rp","desc"), F.limit(50))),
-    F.getCountFromServer(F.query(F.collection(fbDb,"ranks",season,"players"), F.where("rp",">",myRank.rp))).catch(function(){ return null; })
-  ]).then(function(r){
-    var docs = r[0].docs, myPlace = r[1] ? r[1].data().count + 1 : null;
-    if(!docs.length){ board.innerHTML = "<p class=\"coin-note muted\">아직 기록이 없어요.</p>"; return; }
-    var row = function(place, d, me){
-      var ch = presetByName("avatar", currentCharacterName(d.avatar||""));
-      var lv = rankLabelOf(Number(d.rp)||0);
-      return "<div class=\"rk-brow"+(me ? " me" : "")+"\"><b>"+(place<=3 ? ["🥇","🥈","🥉"][place-1] : place)+"</b><span class=\"rk-ava\">"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
+  F.getDocs(F.query(F.collection(fbDb,"ranks",season,"players"), F.orderBy("rp","desc"), F.limit(RANK_ACE_TOP))).then(function(snap){
+    var docs = snap.docs.filter(function(d){ return (Number(d.data().rp)||0)>0; });
+    if(!docs.length){ board.innerHTML = "<p class=\"coin-note muted\">아직 Lv.10을 넘긴 플레이어가 없어요.</p>"; return; }
+    board.innerHTML = docs.map(function(doc, k){
+      var d = doc.data(), ch = presetByName("avatar", currentCharacterName(d.avatar||""));
+      var lv = k<RANK_PRISM_TOP ? "PRISM" : "Ace";
+      return "<div class=\"rk-brow"+(account && doc.id===account.uid ? " me" : "")+"\"><b>"+(k<3 ? ["🥇","🥈","🥉"][k] : k+1)+"</b><span class=\"rk-ava\">"+(ch ? avatarIconHTML(ch) : "🙂")+"</span>"+
         "<span class=\"rk-name\">"+cleanText(d.name,16)+"</span><span class=\"name-tag-lv "+rankBand(lv)+"\">"+lv+"</span><small>"+(Number(d.rp)||0).toLocaleString()+"</small></div>";
-    };
-    var mine = false, html = docs.map(function(d, k){ var me = account && d.id===account.uid; if(me) mine = true; return row(k+1, d.data(), me); }).join("");
-    if(!mine && myPlace){
-      var me = dailyIdentity();
-      html += "<div class=\"rk-gap\">⋯</div>"+row(myPlace, { name:me.name, avatar:me.avatar, rp:myRank.rp }, true);
-    }
-    board.innerHTML = html;
-  }).catch(function(e){ console.warn("LP 랭킹 실패", e); board.innerHTML = "<p class=\"coin-note muted\">불러오지 못했어요.</p>"; });
+    }).join("");
+  }).catch(function(e){ console.warn("시즌 LP 랭킹 실패", e); board.innerHTML = "<p class=\"coin-note muted\">불러오지 못했어요.</p>"; });
 }
 // Results: "+12 LP" and the bar toward the next level filling up (a level-up fills it, flashes,
 // then continues from the new level). Transform-only.
@@ -5438,7 +5456,7 @@ function renderLpGain(host){
   var frac = function(rp, i){ var lo = RANK_FLOORS[i], hi = RANK_FLOORS[i+1]; return hi===undefined ? 1 : (rp-lo)/(hi-lo); };
   var next = RANK_FLOORS[toI+1];
   wrap.innerHTML = "<div class=\"lp-top\"><span class=\"name-tag-lv "+rankBand("Lv."+(fromI+1))+"\" id=\"lp-lv\">Lv."+(fromI+1)+"</span><b>+"+lr.delta+" LP</b>"+
-    "<small id=\"lp-left\">"+(next!==undefined ? "다음 레벨까지 "+(next-lr.after).toLocaleString()+" LP" : "최고 레벨")+"</small></div>"+
+    "<small id=\"lp-left\">"+(next!==undefined ? "다음 레벨까지 "+(next-lr.after).toLocaleString()+" LP" : !RANK_BETA && lr.seasonGain>0 ? "시즌 LP "+lr.seasonLp.toLocaleString() : "최고 레벨")+"</small></div>"+
     "<div class=\"lp-bar\"><i id=\"lp-fill\" style=\"transform:scaleX("+frac(lr.before, fromI)+")\"></i></div><div class=\"lp-up hidden\" id=\"lp-up\">LEVEL UP!</div>";
   host.appendChild(wrap);
   var fill = wrap.querySelector("#lp-fill");
@@ -8501,11 +8519,8 @@ function openTutorialFromMenu(){
   sfxSelect();
   openTutorialModal();
 }
-$("start-me").addEventListener("click", function(e){
-  if(!account) return;
-  if(e.target.closest && e.target.closest(".name-tag-lv")){ sfxSelect(); openRankModal(); return; }
-  $("collection-btn").click();
-});
+// Main name tag → 레벨 (수집품 has its own tile).
+$("start-me").addEventListener("click", function(){ if(!account) return; sfxSelect(); openRankModal(); });
 $("mission-btn").addEventListener("click", function(){ sfxSelect(); openMissionModal(); });
 $("collection-btn").addEventListener("click", function(){
   sfxSelect();

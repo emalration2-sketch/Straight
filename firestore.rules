@@ -376,7 +376,16 @@ service cloud.firestore {
       allow read, delete: if devRole();
       allow update: if false;
     }
-    // 계급: one RP doc per player per season, public (PRISM = the season's top 10).
+    // 레벨: lifetime LP, only ever growing.
+    match /levels/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || devRole());
+      allow create, update: if signedIn() && request.auth.uid == uid && notBanned()
+        && request.resource.data.keys().hasOnly(['lp','at'])
+        && request.resource.data.lp is int && request.resource.data.lp >= 0 && request.resource.data.lp <= 1000000
+        && (request.method == 'create' || request.resource.data.lp >= resource.data.lp);
+      allow delete: if false;
+    }
+    // 시즌 LP (past Lv.10): one doc per player per season, public — the top 50 are Ace, top 10 PRISM.
     match /ranks/{season}/players/{uid} {
       allow read: if signedIn();
       allow create, update: if signedIn() && request.auth.uid == uid && notBanned()
